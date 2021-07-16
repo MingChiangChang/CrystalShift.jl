@@ -130,3 +130,15 @@ check_equal(x...) = all(y->y==x[1], x)
 Cubic(a::AbstractFloat) = Cubic(a, a, a, pi/2, pi/2, pi/2)
 
 Base.Bool(c::Crystal) = true # For ease of testing
+
+function volume(cl::Crystal)
+    cl.a*cl.b*cl.c*sqrt(1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ)-cos(cl.α)^2-cos(cl.β)^2-cos(cl.γ)^2)
+end
+
+function volume(cl::Monoclinic)
+    cl.a*cl.b*cl.c*sin(cl.β)
+end
+
+function volume(cl::Union{Orthohombic, Tetragonal, Cubic})
+    cl.a*cl.b*cl.c
+end

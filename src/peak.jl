@@ -5,3 +5,7 @@ struct Peak{T<:Real, H<:Real}
 
     I::H # Intensity
 end
+
+function (cl::Crystal)(P::Peak)
+    2pi/volume(cl)*sqrt(cl.h^2)
+end
