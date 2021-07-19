@@ -1,6 +1,6 @@
 using Test
 
-include("../src/Crystal.jl")
+include("../src/crystal.jl")
 
 @testset "Utilities" begin
     @test check_not_equal(1,2,3)

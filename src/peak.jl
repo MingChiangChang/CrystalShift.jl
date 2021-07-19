@@ -6,6 +6,7 @@ struct Peak{T<:Real, H<:Real}
     I::H # Intensity
 end
 
+# Fallback function and for triclinic
 function (cl::Crystal)(P::Peak)
-    2pi/volume(cl)*sqrt(cl.h^2)
+    2pi/volume(cl)*sqrt(P.h^2)
 end

@@ -1,6 +1,6 @@
 using PhaseMapping
 
-# Abstract type to as super type for 7 different
+# Abstract type to as supertype for 7 different crystal systems
 abstract type Crystal end
 
 struct Triclinic{T}<:Crystal
@@ -139,6 +139,6 @@ function volume(cl::Monoclinic)
     cl.a*cl.b*cl.c*sin(cl.β)
 end
 
-function volume(cl::Union{Orthohombic, Tetragonal, Cubic})
+function volume(cl::Union{Orthorhombic, Tetragonal, Cubic})
     cl.a*cl.b*cl.c
 end
