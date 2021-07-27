@@ -6,7 +6,7 @@ function optimize!(θ::AbstracVector, x::AbstractVector, y::AbstractVector,
 end
 
 
-function optimize!(θ::AbstracVector, phases::AbstractVector{:<Crystal},
+function optimize!(θ::AbstracVector, phases::AbstractVector{:<CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean::AbstractVector,
                    std_θ::AbstractVector; maxiter::Int = 32,
