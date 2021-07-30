@@ -6,8 +6,15 @@ include("../src/crystalphase.jl")
 using Plots
 using PhaseMapping
 
-pyro = CrystalPhase("data/Bi2Ti2O7.csv")
+test_path = "data/sticks.csv"
+f = open(test_path, "r")
+s = split(read(f, String), '#')
+println(s)
+cs = Vector{CrystalPhase}()
 
-x = collect(8:.1:45)
 
-plot(collect(8:.1:45),pyro(collect(8:.1:45)))
+pyro = CrystalPhase(String(s[1]))
+
+x = collect(8:.1:60)
+
+plot(collect(8:.1:60),pyro(collect(8:.1:60)))

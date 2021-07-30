@@ -15,9 +15,9 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
 end
 
 
-function CrystalPhase(path::String, wid_init::Real=.1,
+function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile=Lorentz())
-    f = readdlm(path)
+    f = split(_stn, '\n')
     lattice_info = split(f[1], ',')
     id = parse(Int64, lattice_info[1])
     crystal = get_crystal(cast(lattice_info[4:end], Float64))
@@ -48,10 +48,10 @@ function (CP::CrystalPhase)(x::AbstractVector)
     y
 end
 
-# function (CPs::AbstractVector{:<CrystalPhase})(x::AbstractVector)
-#     y = zero(x)
-#     for CP in CPS
-#         y += CP(x)
-#     end
-#     y
-# end
+function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector)
+    y = zero(x)
+    for CP in CPS
+        y += CP(x)
+    end
+    y
+end
