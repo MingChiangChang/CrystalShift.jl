@@ -1,4 +1,5 @@
 using PhaseMapping
+using DelimitedFiles
 
 # Abstract type to as supertype for 7 different crystal systems
 abstract type Crystal end
@@ -127,18 +128,83 @@ end
 check_not_equal(x...) = length(Set(x)) == length(x)
 check_equal(x...) = all(y->y==x[1], x)
 
+function isCubic(a::Real, b::Real, c::Real,
+                 α::Real, β::Real, γ::Real)
+    return check_equal(a, b, c) && check_equal(α, β, γ, pi/2)
+end
+
+function isTetragonal(a::Real, b::Real, c::Real,
+                      α::Real, β::Real, γ::Real)
+    return check_not_equal(a, c) && check_equal(a, b) &&\
+           check_equal(a, b) && check_equal(α, β, γ, pi/2)
+end
+
+function isHexagonal(a::Real, b::Real, c::Real,
+                      α::Real, β::Real, γ::Real)
+    return check_not_equal(a, c) && check_equal(a, b) &&\
+           check_equal(α, β, pi/2) && check_equal(γ, 2*pi/3)
+end
+
+function isRhombohedral(a::Real, b::Real, c::Real,
+                       α::Real, β::Real, γ::Real)
+    return check_equal(a, b, c) && check_equal(α, β, pi/2) &&\
+           check_equal(γ, 2*pi/3)
+end
+
+function isOrthohombic(a::Real, b::Real, c::Real,
+                       α::Real, β::Real, γ::Real)
+    return check_not_equal(a, b, c) && check_equal(α, β, γ, pi/2)
+end
+
+function isMonoclinic(a::Real, b::Real, c::Real,
+                      α::Real, β::Real, γ::Real)
+    return check_not_equal(a, c) && check_equal(a, b) &&\
+           check_equal(α, γ, pi/2) && check_not_equal(β, pi/2)
+end
+
 Cubic(a::AbstractFloat) = Cubic(a, a, a, pi/2, pi/2, pi/2)
 
 Base.Bool(c::Crystal) = true # For ease of testing
 
 function volume(cl::Crystal)
-    cl.a*cl.b*cl.c*sqrt(1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ)-cos(cl.α)^2-cos(cl.β)^2-cos(cl.γ)^2)
+    return (cl.a * cl.b * cl.c *
+           sqrt( 1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ) -
+           cos(cl.α)^2 - cos(cl.β)^2 - cos(cl.γ)^2 ) )
 end
 
 function volume(cl::Monoclinic)
-    cl.a*cl.b*cl.c*sin(cl.β)
+    cl.a * cl.b * cl.c * sin(cl.β)
 end
 
 function volume(cl::Union{Orthorhombic, Tetragonal, Cubic})
-    cl.a*cl.b*cl.c
+    cl.a * cl.b * cl.c
+end
+
+deg_to_rad(deg::Real) = deg/180*pi
+
+function get_crystal(lattice_param::AbstractVector)
+    length(lattice_param) == 6 || throw("There should be 6 lattice parameters!")
+    a, b, c, α, β, γ = lattice_param
+    α, β, γ = deg_to_rad.((α, β, γ))
+    t = typeof(a)
+    if isCubic(a, b, c, α, β, γ)
+       return Cubic{t}(a, b, c, α, β, γ)
+    elseif isTetragonal(a, b, c, α, β, γ)
+       return Tetragonal{t}(a, b, c, α, β, γ)
+    elseif isHexagonal(a, b, c, α, β, γ)
+       return Hexagonal{t}(a, b, c, α, β, γ)
+    elseif isRhombohedral(a, b, c, α, β, γ)
+       return Rhombohedral{t}(a, b, c, α, β, γ)
+    elseif isOrthohombic(a, b, c, α, β, γ)
+       return Orthohombic{t}(a, b, c, α, β, γ)
+    elseif isMonoclinic(a, b, c, α, β, γ)
+       return Monoclinic{t}(a, b, c, α, β, γ)
+    else
+       return Triclinic{t}(a, b, c, α, β, γ)
+    end
+end
+
+# Fallback function and for triclinic
+function (cl::Crystal)(P::Peak)
+    2pi/volume(cl)*sqrt(P.h^2)
 end

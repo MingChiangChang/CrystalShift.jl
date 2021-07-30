@@ -4,7 +4,7 @@ using OptimizationAlgorithms
 using PhaseMapping
 using DelimitedFiles
 
-include("crystals.jl")
+include("crystal.jl")
 include("peak.jl")
 include("crystalphase.jl")
 
