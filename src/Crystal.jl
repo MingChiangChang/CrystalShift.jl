@@ -117,7 +117,9 @@ struct Cubic{T}<:Crystal
     α::T
     β::T
     γ::T
-
+    # get_property to get b,c, α, β, γ
+    function Cubic{T}(a::T)
+        new{T}(a, a, a, pi/2, pi/2, pi/2)
     function Cubic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:AbstractFloat}
         check_equal(a, b, c) || throw(DomainError((a, b, c), "a, b and c must equal for cubic crystals."))
         check_equal(α, β, γ, pi/2) || throw(DomainError((α, β, γ, pi/2), "α, β and γ must equal π/2 for cubic crystals"))
