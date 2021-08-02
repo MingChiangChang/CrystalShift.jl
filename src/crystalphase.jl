@@ -11,7 +11,7 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
     σ::M # Width of peaks
     profile::P # Peak profile
                # Do import from PhaseMapping if
-               # need other peak profile
+               # other peak profiles are needed
 end
 
 
@@ -40,7 +40,7 @@ end
 # Reconstruct spectrum
 function (CP::CrystalPhase)(x::AbstractVector)
     y = zero(x)
-    for i in eachindex(CP.peaks)
+    @simd for i in eachindex(CP.peaks)
         q = CP.peaks[i].q
         y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
     end
