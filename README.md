@@ -1,8 +1,9 @@
 # Crystallography_based_shifting
-- [ ] Data Structure
+- [x] Data Structure
 - [ ] Test cases
 - [ ] Using Optimization API
 
 ## Development log
-### 7/12
-* Pondering on data structure
+### 8/1
+* Capable of creating input file with python
+* Using crystal and peak info to reconstruct spectrum

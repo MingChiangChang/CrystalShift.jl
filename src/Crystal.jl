@@ -182,5 +182,18 @@ end
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
 function (cl::Crystal)(P::Peak)
-    2pi/volume(cl)*sqrt(P.h^2)
+    (2pi/volume(cl) *
+    sqrt(P.h^2 * cl.b^2 * cl.c^2 * sin(cl.α)^2
+    + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
+    + P.l^2 * cl.a^2 * cl.b^2 * sin(cl.γ)^2
+    + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cos(cl.α)*cos(cl.β) - cos(cl.γ))
+    + 2*P.k * P.l * cl.a^2 * cl.b * cl.c * (cos(cl.β)*cos(cl.γ) - cos(cl.α))
+    + 2*P.h * P.l * cl.a * cl.b^2 * cl.c * (cos(cl.α)*cos(cl.γ) - cos(cl.β))
+    ))
 end
+
+function (cl::Cubic)(P::Peak)
+    sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
+end
+
+# TODO More to go

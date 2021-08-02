@@ -49,7 +49,7 @@ end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector)
     y = zero(x)
-    for CP in CPS
+    @simd for CP in CPS
         y += CP(x)
     end
     y
