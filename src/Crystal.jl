@@ -4,6 +4,7 @@ using DelimitedFiles
 # Abstract type to as supertype for 7 different crystal systems
 abstract type Crystal end
 
+# TODO use Base.getproperty to make things easier
 struct Triclinic{T}<:Crystal
     a::T
     b::T
@@ -12,6 +13,8 @@ struct Triclinic{T}<:Crystal
     α::T
     β::T
     γ::T
+
+    free_param = 6
 
     function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:AbstractFloat}
         new{T}(a, b, c, α, β, γ)
@@ -27,6 +30,8 @@ struct Monoclinic{T}<:Crystal
     β::T
     γ::T
 
+    free_param = 3
+
     function Monoclinic{T}(a::T, c::T, β::T) where {T<:AbstractFloat}
         new{T}(a, a, c, pi/2, β, pi/2)
     end
@@ -41,6 +46,7 @@ struct Orthorhombic{T}<:Crystal
     β::T
     γ::T
 
+    free_param = 3
     function Orthorhombic{T}(a::T, b::T, c::T) where {T<:AbstractFloat}
         new{T}(a, b, c, pi/2, pi/2, pi/2)
     end
@@ -54,6 +60,8 @@ struct Tetragonal{T}<:Crystal
     α::T
     β::T
     γ::T
+
+    free_param = 2
 
     function Tetragonal{T}(a::T, c::T) where {T<:AbstractFloat}
         new{T}(a, a, c, pi/2, pi/2, pi/2)
@@ -69,6 +77,8 @@ struct Rhombohedral{T}<:Crystal
     β::T
     γ::T
 
+    free_param = 1
+
     function Rhombohedral{T}(a) where {T<:AbstractFloat}
         new{T}(a, a, a, pi/2, pi/2, 2*pi/3)
     end
@@ -83,6 +93,8 @@ struct Hexagonal{T}<:Crystal
     β::T
     γ::T
 
+    free_param = 2
+
     function Hexagonal{T}(a::T, c::T) where {T<:AbstractFloat}
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3)
     end
@@ -96,6 +108,9 @@ struct Cubic{T}<:Crystal
     α::T
     β::T
     γ::T
+
+    free_param = 1
+
     # get_property to get b,c, α, β, γ
     function Cubic{T}(a::T) where {T<:AbstractFloat}
         new{T}(a, a, a, pi/2, pi/2, pi/2)

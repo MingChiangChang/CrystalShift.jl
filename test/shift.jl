@@ -5,7 +5,7 @@ using PhaseMapping: readsticks, Lorentz, Phase, StickPattern
 using PhaseMapping: pmp_path!, Library
 using Test
 
-# Backdoor
+################## Backdoors for testing ##################
 function Phase(c, μ, id::Int, a::Real, α::Real, σ::Real; profile = Lorentz(), width_init::Real = 1.)
 	length(c) == length(μ) || throw(DimensionMismatch())
 	c, μ = promote(c, μ)
@@ -18,13 +18,14 @@ end
 function Phase(S::StickPattern, a::Float64, α::Float64; profile = Lorentz(), width_init::Real = 1.)
     Phase(S.c, S.μ, S.id, a, α, width_init, profile = profile)
 end
+################## Backdoors for testing ##################
 
 function get_ids(lib::Library)
     [p.id for p in lib.phases]
 end
 
-path = "C:/Users/r2121/Desktop/Code/crystal_shift/test/"
-path = path*"sticks.txt"
+#path = "C:/Users/r2121/Desktop/Code/crystal_shift/test/"
+path = "test/sticks.txt"
 
 sticks = readsticks(path, Float64)
 println(typeof(sticks[1]))

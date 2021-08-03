@@ -41,7 +41,8 @@ end
 function (CP::CrystalPhase)(x::AbstractVector)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
-        q = CP.peaks[i].q
+        q = (CP.cl)(CP.peaks[i])*100 # TODO fix python script to make input to be nm
+        println(q)
         y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
     end
     y
