@@ -117,7 +117,7 @@ if __name__ == "__main__":
     path = home / 'Desktop' / 'github' /\
             'Crystallography_based_shifting' / 'data' 
     #cif_paths = list(path.glob('*ICSD.cif'))
-    cif_paths = ['/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/Bi2Ti2O7_ICSD.cif', '/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/Bi2Ti2O7_ICSD.cif']
+    cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
     out_path = path 
     print(cif_paths)
     cif_to_input(cif_paths, out_path, (0, 66))
