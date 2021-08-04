@@ -14,10 +14,10 @@ struct Triclinic{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 6
+    free_param::Int8
 
     function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:AbstractFloat}
-        new{T}(a, b, c, α, β, γ)
+        new{T}(a, b, c, α, β, γ, 6)
     end
 end
 
@@ -30,10 +30,10 @@ struct Monoclinic{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 3
+    free_param::Int8
 
     function Monoclinic{T}(a::T, c::T, β::T) where {T<:AbstractFloat}
-        new{T}(a, a, c, pi/2, β, pi/2)
+        new{T}(a, a, c, pi/2, β, pi/2, 3)
     end
 end
 
@@ -46,9 +46,10 @@ struct Orthorhombic{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 3
+    free_param::Int8
+
     function Orthorhombic{T}(a::T, b::T, c::T) where {T<:AbstractFloat}
-        new{T}(a, b, c, pi/2, pi/2, pi/2)
+        new{T}(a, b, c, pi/2, pi/2, pi/2, 3)
     end
 end
 
@@ -61,10 +62,10 @@ struct Tetragonal{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 2
+    free_param::Int8
 
     function Tetragonal{T}(a::T, c::T) where {T<:AbstractFloat}
-        new{T}(a, a, c, pi/2, pi/2, pi/2)
+        new{T}(a, a, c, pi/2, pi/2, pi/2, 2)
     end
 end
 
@@ -77,10 +78,10 @@ struct Rhombohedral{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 1
+    free_param::Int8
 
     function Rhombohedral{T}(a) where {T<:AbstractFloat}
-        new{T}(a, a, a, pi/2, pi/2, 2*pi/3)
+        new{T}(a, a, a, pi/2, pi/2, 2*pi/3, 1)
     end
 end
 
@@ -93,10 +94,10 @@ struct Hexagonal{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 2
+    free_param::Int8
 
     function Hexagonal{T}(a::T, c::T) where {T<:AbstractFloat}
-        new{T}(a, a, c, pi/2, pi/2, 2*pi/3)
+        new{T}(a, a, c, pi/2, pi/2, 2*pi/3, 2)
     end
 end
 
@@ -109,11 +110,11 @@ struct Cubic{T}<:Crystal
     β::T
     γ::T
 
-    free_param = 1
+    free_param::Int8
 
     # get_property to get b,c, α, β, γ
     function Cubic{T}(a::T) where {T<:AbstractFloat}
-        new{T}(a, a, a, pi/2, pi/2, pi/2)
+        new{T}(a, a, a, pi/2, pi/2, pi/2, 1)
     end
 end
 
