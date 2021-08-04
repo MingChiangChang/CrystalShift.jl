@@ -14,6 +14,7 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
                # other peak profiles are needed
 end
 
+get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile=Lorentz())
@@ -26,6 +27,13 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     act = 1.0
 
     CrystalPhase(crystal, peaks, id, name, act, wid_init, profile)
+end
+
+# Create a new CP object with the new parameters
+function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
+    crystal = typeof(CP.cl)
+    CrystalPhase(crystal(θ[1:end-2]), CP.peaks, CP.id, CP.name,
+                θ[end-1], θ[end], CP.profile)
 end
 
 # TODO ... unpacking does not work for arrays?
@@ -54,4 +62,21 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector)
         y += CP(x)
     end
     y
+end
+
+function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
+    # Pop the first (# free param of CP) and create a new phase
+    # reconstruction
+    num_of_param = get_param_nums(CP)
+    y = CrystalPhase(CP, θ)(x)
+    deleteat!(θ, collect(1:num_of_param))
+    return y
+end
+
+function reconstruct!(CPs::AbstrractVector{<:CrystalPhase},
+                      θ::AbstractVecotr, x::AbstractVector)
+    y = zeros(size(x))
+    for i in eachindex(CPs)
+        y += reconstruct(CPs[i], θ, x)
+    end
 end
