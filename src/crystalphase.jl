@@ -32,7 +32,7 @@ end
 # Create a new CP object with the new parameters
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
-    CrystalPhase(crystal(θ[1:end-2]), CP.peaks, CP.id, CP.name,
+    CrystalPhase(crystal(θ[1:end-2]...), CP.peaks, CP.id, CP.name,
                 θ[end-1], θ[end], CP.profile)
 end
 
@@ -58,8 +58,8 @@ end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector)
     y = zero(x)
-    @simd for CP in CPS
-        y += CP(x)
+    @simd for i in eachindex(CPs)
+        y += CPs[i](x)
     end
     y
 end
@@ -73,8 +73,8 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     return y
 end
 
-function reconstruct!(CPs::AbstrractVector{<:CrystalPhase},
-                      θ::AbstractVecotr, x::AbstractVector)
+function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
+                      θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
     for i in eachindex(CPs)
         y += reconstruct(CPs[i], θ, x)
