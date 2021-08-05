@@ -9,7 +9,7 @@ using PhaseMapping
 
 test_path = "data/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n")
+s = split(read(f, String), "#\n") # Windows: #\r\n ...
 println(s[2])
 cs = Vector{CrystalPhase}()
 

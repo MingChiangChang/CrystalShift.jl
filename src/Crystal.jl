@@ -4,6 +4,7 @@ using DelimitedFiles
 # Abstract type to as supertype for 7 different crystal systems
 abstract type Crystal end
 
+# Unit in angstrom and radians
 # TODO use Base.getproperty to make things easier
 struct Triclinic{T}<:Crystal
     a::T
@@ -158,9 +159,9 @@ end
 Base.Bool(c::Crystal) = true # For ease of testing
 
 function volume(cl::Crystal)
-    return (cl.a * cl.b * cl.c *
-           sqrt( 1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ) -
-           cos(cl.α)^2 - cos(cl.β)^2 - cos(cl.γ)^2 ) )
+    return (cl.a * cl.b * cl.c
+           * sqrt( 1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ) 
+           - cos(cl.α)^2 - cos(cl.β)^2 - cos(cl.γ)^2 ) )
 end
 
 function volume(cl::Monoclinic)
