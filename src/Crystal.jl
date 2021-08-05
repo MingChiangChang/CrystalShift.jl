@@ -185,7 +185,7 @@ function get_crystal(lattice_param::AbstractVector)
     elseif isHexagonal(a, b, c, α, β, γ)
        return Hexagonal{t}(a, c)
     elseif isRhombohedral(a, b, c, α, β, γ)
-       return Rhombohedral{t}(a) # TODO Or use trigonal????
+       return Rhombohedral{t}(a)
     elseif isOrthohombic(a, b, c, α, β, γ)
        return Orthohombic{t}(a, b, c)
     elseif isMonoclinic(a, b, c, α, β, γ)
@@ -212,4 +212,9 @@ function (cl::Cubic)(P::Peak)
     sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
 end
 
-# TODO More to go
+# TODO to be implemented
+function (cl::Tetragonal)(P::Peak) end
+function (cl::Hexagonal)(P::Peak) end
+function (cl::Orthorhombic)(P::Peak) end
+function (cl::Rhombohedral)(P::Peak) end
+function (cl::Monoclinic)(P::Peak) end

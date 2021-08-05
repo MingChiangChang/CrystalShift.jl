@@ -68,7 +68,7 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # Pop the first (# free param of CP) and create a new phase
     # reconstruction
     num_of_param = get_param_nums(CP)
-    y = CrystalPhase(CP, θ)(x)
+    y = CrystalPhase(CP, θ[1:num_of_param])(x)
     deleteat!(θ, collect(1:num_of_param))
     return y
 end
@@ -77,6 +77,7 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
                       θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
     for i in eachindex(CPs)
-        y += reconstruct(CPs[i], θ, x)
+        y += reconstruct!(CPs[i], θ, x)
     end
+    y
 end
