@@ -1,15 +1,16 @@
+# TODO A lot more test should be written
 include("../src/util.jl")
 include("../src/peak.jl")
 include("../src/crystal.jl")
 include("../src/crystalphase.jl")
-#include("../src/optimize.jl")
+include("../src/optimize.jl")
 
 using Plots
 using PhaseMapping
 
 test_path = "data/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
 println(s[2])
 cs = Vector{CrystalPhase}()
 
@@ -28,5 +29,5 @@ plot(x, y)
 
 # Compare old phase mapping and current ones
 
-# optimize!(cs, x, y)
-# plot!(x, cs(x)) # This should give the fitted spectrum
+optimize!(cs, x, y)
+plot!(x, cs(x)) # This should give the fitted spectrum

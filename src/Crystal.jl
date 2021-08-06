@@ -160,7 +160,7 @@ Base.Bool(c::Crystal) = true # For ease of testing
 
 function volume(cl::Crystal)
     return (cl.a * cl.b * cl.c
-           * sqrt( 1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ) 
+           * sqrt( 1+2*cos(cl.α)*cos(cl.β)*cos(cl.γ)
            - cos(cl.α)^2 - cos(cl.β)^2 - cos(cl.γ)^2 ) )
 end
 
@@ -213,9 +213,17 @@ function (cl::Cubic)(P::Peak)
     sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
 end
 
-# TODO to be implemented
+# TODO peak position functions to be implemented
 function (cl::Tetragonal)(P::Peak) end
 function (cl::Hexagonal)(P::Peak) end
 function (cl::Orthorhombic)(P::Peak) end
 function (cl::Rhombohedral)(P::Peak) end
 function (cl::Monoclinic)(P::Peak) end
+
+get_free_params(cl::Cubic) = [cl.a]
+get_free_params(cl::Tetragonal) = [cl.a, cl.c]
+get_free_params(cl::Hexagonal) = [cl.a, cl.c]
+get_free_params(cl::Orthorhombic) = [cl.a, cl.b, cl.c]
+get_free_params(cl::Rhombohedral) = [cl.a]
+get_free_params(cl::Monoclinic) = [cl.a, cl.c, cl.β]
+get_free_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]

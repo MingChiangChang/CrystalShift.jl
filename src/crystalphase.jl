@@ -32,11 +32,11 @@ end
 # Create a new CP object with the new parameters
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
-    CrystalPhase(crystal(θ[1:end-2]...), CP.peaks, CP.id, CP.name,
-                θ[end-1], θ[end], CP.profile)
+    θ_temp = θ[1:get_param_nums(CP)]
+    CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
+                θ_temp[end-1], θ_temp[end], CP.profile)
 end
 
-# TODO ... unpacking does not work for arrays?
 function get_peaks(lines)
     peaks = Vector{Peak}()
     for line in lines
@@ -45,11 +45,22 @@ function get_peaks(lines)
     peaks
 end
 
+function get_paramters(CP::CrystalPhase)
+    return [get_free_params(CP.cl)..., CP.act, CP.σ]
+end
+
+function get_paramters(CPs::AbstractVector{<:CrystalPhase})
+    p = Vector{Float64}()
+    for cp in CPs
+        push!(p, get_paramters(cp)...)
+    end
+end
+
 # Reconstruct spectrum
 function (CP::CrystalPhase)(x::AbstractVector)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i])*100 # TODO fix python script to make input to be nm
+        q = (CP.cl)(CP.peaks[i]) * 100 # account for unit difference
         println(q)
         y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
     end

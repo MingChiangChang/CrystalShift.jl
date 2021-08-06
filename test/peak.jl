@@ -7,7 +7,6 @@ include("../src/peak.jl")
 cl = Cubic{Float64}(1.0, 1.0, 1.0, pi/2, pi/2, pi/2)
 
 # Peak list creation
-# TODO Read in hkl from cif
 # Spec:
 p = Peak(1, 0, 0, 10)
 
