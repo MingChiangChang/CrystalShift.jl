@@ -3,7 +3,7 @@ using OptimizationAlgorithms
     optimize!
 
     This is the function that each of the node would call on.
-    Try to fit a vector of CrystalPhase to the given spectrum
+    Try to fit a vector of CrystalPhase to the given spectrum y.
 	Treat θ as a vector only.
 """
 function optimize!(phases::AbstractVector{<:CrystalPhase},
@@ -12,7 +12,10 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [3., .01, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_paramters(phases)
-	#TODO Modify simple three priors to fit num of paramter in phases
+
+	if length(mean_θ) == 3
+	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phase)
+	end
     optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
 	          maxiter = maxiter, regularization = regularization)
     for (i, cp) in enumerate(phases)
@@ -22,12 +25,51 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	return phases
 end
 
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+	                    phases::AbstractVector{<:CrystalPhase})
+	totl_params = sum([get_param_nums for phase in phases])
+	full_mean_θ = zeros(totl_params)
+	full_std_θ = zeros(totl_params)
+	start = 1
+	for phase in phases
+		n = phase.cl.free_param
+		full_mean_θ[start:start+n] = repeat(mean_θ, n)
+		full_std_θ[start:start+n] = repeat(std_θ, n)
+		full_mean_θ[start + + 1: start + + 2] = mean_θ[2:3]
+		full_std_θ[start + + 1:start + + 2 ] = std_θ[2:3]
+    end
+	return full_mean_θ, full_std_θ
+end
+
+function get_parameters(phases::AbstractVector{<:CrystalPhase})
+    θ = Vector{Flot64}()
+	for phase in phases
+        push!(get_parameters(phase)...)
+	end
+	θ
+end
+
 # Single phase situation. Put phase into [phase].
 function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
                    std_θ::AbstractVector = [3., .01, 1.],
                    max_iter::Int = 32, regularization::Bool = true)
     optimize!([phase], x, y, std_noise, mean_θ, std_θ, max)
+end
+
+# What parameter needs to be estimate
+function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
+	                 x::AbstractVector, y::AbstractVector)
+	# Use inner product to set initial act
+	new_θ = θ # make a copy
+	start = 1
+	for phase in phases
+        param_num = get_param_nums(phase)
+		p = reconstruct!(phase, θ)
+		new_θ[start + param_num - 2] =  dot(p, y) / sum(abs2, p)
+        start += param_num
+	end
+	return new_θ
 end
 
 # TODO apply prior for different num of free params ....
@@ -63,9 +105,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     end
 
     # TODO initialize parameters
-    initialize_θ!(θ)
+    θ = initialize_activation!(θ, phases, x, y)
 
     @. θ = log(θ) # tramsform to log space for better conditioning
+    (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
     if regularization
 		r = zeros(eltype(θ), length(y) + length(θ)) # Reason??
@@ -79,6 +122,6 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 						decrease_factor = 7, increase_factor = 10, max_step = 1.0)
 	λ = 1e-6
 	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(false))
-
 	@. θ = exp(θ) # transform back
+	return θ
 end
