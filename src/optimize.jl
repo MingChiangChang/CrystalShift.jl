@@ -35,8 +35,8 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 		n = phase.cl.free_param
 		full_mean_θ[start:start+n] = repeat(mean_θ, n)
 		full_std_θ[start:start+n] = repeat(std_θ, n)
-		full_mean_θ[start + + 1: start + + 2] = mean_θ[2:3]
-		full_std_θ[start + + 1:start + + 2 ] = std_θ[2:3]
+		full_mean_θ[start + n + 1: start + n + 2] = mean_θ[2:3]
+		full_std_θ[start + n + 1:start + n + 2 ] = std_θ[2:3]
     end
 	return full_mean_θ, full_std_θ
 end
@@ -57,10 +57,9 @@ function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
     optimize!([phase], x, y, std_noise, mean_θ, std_θ, max)
 end
 
-# What parameter needs to be estimate
 function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	                 x::AbstractVector, y::AbstractVector)
-	# Use inner product to set initial act
+	# Use inner product to set initial activation
 	new_θ = θ # make a copy
 	start = 1
 	for phase in phases

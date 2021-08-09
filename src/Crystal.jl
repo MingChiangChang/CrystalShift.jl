@@ -18,6 +18,8 @@ struct Triclinic{T}<:Crystal
     free_param::Int8
 
     function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:AbstractFloat}
+        check_not_equal(a, b, c) ||  throw(MethodError((a, b, c), "a,b,c should be different for triclinic"))
+        check_not_equal(α, β, γ, pi/2) || throw(MethodError((a, b, c), "α, β, γ, pi/2 should be different for triclinic"))
         new{T}(a, b, c, α, β, γ, 6)
     end
 end
@@ -34,6 +36,8 @@ struct Monoclinic{T}<:Crystal
     free_param::Int8
 
     function Monoclinic{T}(a::T, c::T, β::T) where {T<:AbstractFloat}
+        check_not_equal(a, c) || throw(MethodError((a, c), "a,c should be different for monoclinic"))
+        check_not_equal(β, pi/2) || throw(MethodError((β), "β, pi/2 should be different for monoclinic"))
         new{T}(a, a, c, pi/2, β, pi/2, 3)
     end
 end
@@ -50,6 +54,7 @@ struct Orthorhombic{T}<:Crystal
     free_param::Int8
 
     function Orthorhombic{T}(a::T, b::T, c::T) where {T<:AbstractFloat}
+        check_not_equal(a, b, c) || throw(MethodError((a, b, c), "a, b, c should be different for orthhombic"))
         new{T}(a, b, c, pi/2, pi/2, pi/2, 3)
     end
 end
@@ -66,6 +71,7 @@ struct Tetragonal{T}<:Crystal
     free_param::Int8
 
     function Tetragonal{T}(a::T, c::T) where {T<:AbstractFloat}
+        check_not_equal(a, c) || throw(MethodError((a, c), "a, c should be different for tetragonal"))
         new{T}(a, a, c, pi/2, pi/2, pi/2, 2)
     end
 end
@@ -98,6 +104,7 @@ struct Hexagonal{T}<:Crystal
     free_param::Int8
 
     function Hexagonal{T}(a::T, c::T) where {T<:AbstractFloat}
+        check_not_equal(a, c) || throw((MethodError(a, c), "a, c should be different for hexagonal"))
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3, 2)
     end
 end
@@ -198,8 +205,8 @@ end
 
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
-function (cl::Crystal)(P::Peak)
-    (2pi/volume(cl) *
+function get_peak(cl::Crystal, P::Peak)
+    (1/volume(cl) *
     sqrt(P.h^2 * cl.b^2 * cl.c^2 * sin(cl.α)^2
     + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
     + P.l^2 * cl.a^2 * cl.b^2 * sin(cl.γ)^2
@@ -209,9 +216,9 @@ function (cl::Crystal)(P::Peak)
     ))
 end
 
-function (cl::Cubic)(P::Peak)
-    sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
-end
+# function (cl::Cubic)(P::Peak)
+#     sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
+# end
 
 # TODO peak position functions to be implemented
 function (cl::Tetragonal)(P::Peak) end
