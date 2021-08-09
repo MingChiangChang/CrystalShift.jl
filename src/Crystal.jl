@@ -87,8 +87,8 @@ struct Rhombohedral{T}<:Crystal
 
     free_param::Int8
 
-    function Rhombohedral{T}(a) where {T<:AbstractFloat}
-        new{T}(a, a, a, pi/2, pi/2, 2*pi/3, 1)
+    function Rhombohedral{T}(a, α) where {T<:AbstractFloat}
+        new{T}(a, a, a, α, α, α, 2)
     end
 end
 
@@ -205,7 +205,7 @@ end
 
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
-function get_peak(cl::Crystal, P::Peak)
+function (cl::Crystal)(P::Peak)
     (1/volume(cl) *
     sqrt(P.h^2 * cl.b^2 * cl.c^2 * sin(cl.α)^2
     + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
@@ -216,16 +216,44 @@ function get_peak(cl::Crystal, P::Peak)
     ))
 end
 
-# function (cl::Cubic)(P::Peak)
-#     sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
-# end
+function (cl::Cubic)(P::Peak)
+    sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
+end
 
 # TODO peak position functions to be implemented
-function (cl::Tetragonal)(P::Peak) end
-function (cl::Hexagonal)(P::Peak) end
-function (cl::Orthorhombic)(P::Peak) end
-function (cl::Rhombohedral)(P::Peak) end
-function (cl::Monoclinic)(P::Peak) end
+function (cl::Tetragonal)(P::Peak)
+    sqrt(P.h^2*cl.c^2 + P.k^2*cl.c^2 + P.l^2*cl.a^2) / (cl.a*cl.c)
+end
+function (cl::Hexagonal)(P::Peak)
+    (1/volume(cl) *
+    sqrt(P.h^2 * cl.b^2 * cl.c^2
+    + P.k^2 * cl.a^2 * cl.c^2
+    + P.l^2 * cl.a^2 * cl.b^2 * sin(cl.γ)^2
+    + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cos(cl.α)*cos(cl.β) - cos(cl.γ))))
+end
+
+function (cl::Orthorhombic)(P::Peak)
+    (1/(cl.a*cl.b*cl.c) *
+    sqrt(P.h^2 * cl.b^2 * cl.c^2
+         + P.k^2 * cl.a^2 * cl.c^2
+         + P.l^2 * cl.a^2 * cl.b^2))
+end
+
+function (cl::Rhombohedral)(P::Peak)
+    (1/volume(cl) *
+    sqrt(P.h^2 * cl.a^4 * sin(cl.α)^2
+    + P.k^2 * cl.a^4 * sin(cl.α)^2
+    + P.l^2 * cl.a^4 * sin(cl.α)^2
+    + ((2cl.a^4)(cos(cl.α)^2 - cos(cl.α))
+    * (P.h * P.k + P.k * P.l + P.h * P.l) )))
+end
+
+function (cl::Monoclinic)(P::Peak)
+    (1/volume(cl) *
+    sqrt(P.h^2 * cl.b^2 * cl.c^2
+    + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
+    + P.l^2 * cl.a^2 * cl.b^2))
+end
 
 get_free_params(cl::Cubic) = [cl.a]
 get_free_params(cl::Tetragonal) = [cl.a, cl.c]

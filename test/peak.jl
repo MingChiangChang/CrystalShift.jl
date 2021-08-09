@@ -1,15 +1,12 @@
 # test peak construction
-using Plots
+using Test
 
-include("../src/Crystal.jl")
 include("../src/peak.jl")
 
-cl = Cubic{Float64}(1.0, 1.0, 1.0, pi/2, pi/2, pi/2)
+Base.Bool(p::Peak) = true
 
-# Peak list creation
-# Spec:
-p = Peak(1, 0, 0, 10)
-
-
-# Reconstruction using cl and compare with Phasemapping?
-cl(p)
+@testset "Peak creation" begin
+    @test Bool(Peak(1, 0, 0, 10., 10.))
+    @test_throws InexactError Peak(2.5, 2.5, 2, 3, 3)
+    @test Bool(Peak("1,2,3,4,5"))
+end

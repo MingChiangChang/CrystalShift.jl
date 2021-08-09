@@ -16,8 +16,12 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	if length(mean_θ) == 3
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phase)
 	end
+
+	length(phases) == length(mean_θ) == length(std_θ) || error("phases and prior terms should have the same length")
+
     optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
-	          maxiter = maxiter, regularization = regularization)
+	          maxiter = maxiter, regularization = regularization
+			  
     for (i, cp) in enumerate(phases)
         phases[i] = CrystalPhase(cp, θ)
 		deleteat!(θ, collect(1:get_param_nums(phase[i])))
@@ -77,7 +81,6 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real, mean_θ::AbstractVector,
                    std_θ::AbstractVector; maxiter::Int = 32,
                    regularization::Bool = true)
-	length(phases) == length(mean_θ) == length(std_θ) || error("phases and prior terms should have the same length")
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = θ # make a copy
         @. r = y
