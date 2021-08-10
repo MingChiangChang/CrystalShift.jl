@@ -17,7 +17,7 @@ struct Triclinic{T}<:Crystal
 
     free_param::Int8
 
-    function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:AbstractFloat}
+    function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:Real}
         check_not_equal(a, b, c) ||  throw(MethodError((a, b, c), "a,b,c should be different for triclinic"))
         check_not_equal(α, β, γ, pi/2) || throw(MethodError((a, b, c), "α, β, γ, pi/2 should be different for triclinic"))
         new{T}(a, b, c, α, β, γ, 6)
@@ -35,7 +35,7 @@ struct Monoclinic{T}<:Crystal
 
     free_param::Int8
 
-    function Monoclinic{T}(a::T, c::T, β::T) where {T<:AbstractFloat}
+    function Monoclinic{T}(a::T, c::T, β::T) where {T<:Real}
         check_not_equal(a, c) || throw(MethodError((a, c), "a,c should be different for monoclinic"))
         check_not_equal(β, pi/2) || throw(MethodError((β), "β, pi/2 should be different for monoclinic"))
         new{T}(a, a, c, pi/2, β, pi/2, 3)
@@ -53,7 +53,7 @@ struct Orthorhombic{T}<:Crystal
 
     free_param::Int8
 
-    function Orthorhombic{T}(a::T, b::T, c::T) where {T<:AbstractFloat}
+    function Orthorhombic{T}(a::T, b::T, c::T) where {T<:Real}
         check_not_equal(a, b, c) || throw(MethodError((a, b, c), "a, b, c should be different for orthhombic"))
         new{T}(a, b, c, pi/2, pi/2, pi/2, 3)
     end
@@ -70,7 +70,7 @@ struct Tetragonal{T}<:Crystal
 
     free_param::Int8
 
-    function Tetragonal{T}(a::T, c::T) where {T<:AbstractFloat}
+    function Tetragonal{T}(a::T, c::T) where {T<:Real}
         check_not_equal(a, c) || throw(MethodError((a, c), "a, c should be different for tetragonal"))
         new{T}(a, a, c, pi/2, pi/2, pi/2, 2)
     end
@@ -87,7 +87,7 @@ struct Rhombohedral{T}<:Crystal
 
     free_param::Int8
 
-    function Rhombohedral{T}(a, α) where {T<:AbstractFloat}
+    function Rhombohedral{T}(a, α) where {T<:Real}
         new{T}(a, a, a, α, α, α, 2)
     end
 end
@@ -103,7 +103,7 @@ struct Hexagonal{T}<:Crystal
 
     free_param::Int8
 
-    function Hexagonal{T}(a::T, c::T) where {T<:AbstractFloat}
+    function Hexagonal{T}(a::T, c::T) where {T<:Real}
         check_not_equal(a, c) || throw((MethodError(a, c), "a, c should be different for hexagonal"))
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3, 2)
     end
@@ -121,7 +121,7 @@ struct Cubic{T}<:Crystal
     free_param::Int8
 
     # get_property to get b,c, α, β, γ
-    function Cubic{T}(a::T) where {T<:AbstractFloat}
+    function Cubic{T}(a::T) where {T<:Real}
         new{T}(a, a, a, pi/2, pi/2, pi/2, 1)
     end
 end

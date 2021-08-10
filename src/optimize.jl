@@ -75,7 +75,7 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	return new_θ
 end
 
-# TODO apply prior for different num of free params ....
+# TODO apply prior for different num of free params
 function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector,
@@ -84,10 +84,12 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = exp.(θ) # make a copy
         @. r = y
-		println("residual called")
-		println(typeof(phases), typeof(params), typeof(x))
-        r -= reconstruct!(phases, params, x)
-		#r ./= sqrt(2) * std_noise # ???
+		println("Reconstructing")
+		a = reconstruct!(phases, params, x)
+		println("In between...")
+        r -= a
+		println("Reconstructed")
+		r ./= sqrt(2) * std_noise # ???
 		plt = plot!(x, r, title="Residual")
 		display(plt)
 		savefig("test_$(sum(r)).png")

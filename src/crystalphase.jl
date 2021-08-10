@@ -1,4 +1,5 @@
 using PhaseMapping: Lorentz
+using ForwardDiff: Dual
 
 struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
     cl::C # crystal object
@@ -34,8 +35,20 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
     θ_temp = θ[1:get_param_nums(CP)]
     println(θ_temp)
-    CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
+    c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
                 θ_temp[end-1], θ_temp[end], CP.profile)
+    println("CrystalPhase created through original func")
+    return c
+end
+
+function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{<:Dual})
+    crystal = typeof(CP.cl)
+    θ_temp = [i.value for i in θ[1:get_param_nums(CP)]]
+    println(θ_temp)
+    c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
+                θ_temp[end-1], θ_temp[end], CP.profile)
+    println("CrystalPhase created through Dual func")
+    return c
 end
 
 function get_peaks(lines)
@@ -80,9 +93,11 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # Pop the first (# free param of CP) and create a new phase
     # reconstruction
     num_of_param = get_param_nums(CP)
-    println("Reconstructing with θ: $(θ) ")
+    println(θ[1:num_of_param])
     y = CrystalPhase(CP, θ[1:num_of_param])(x)
     deleteat!(θ, collect(1:num_of_param))
+    println("Crashed or not")
+    println(typeof(x), typeof(y))
     return y
 end
 
