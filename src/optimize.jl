@@ -1,4 +1,9 @@
 using OptimizationAlgorithms
+using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
+using LinearAlgebra
+
+# IDEA might want to define a prior object
+
 """
     optimize!
 
@@ -11,17 +16,18 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
                    std_θ::AbstractVector = [3., .01, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
-    θ = get_paramters(phases)
+    θ = get_parameters(phases)
 
 	if length(mean_θ) == 3
-	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phase)
+	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
 
-	length(phases) == length(mean_θ) == length(std_θ) || error("phases and prior terms should have the same length")
+	(sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) ||
+	 error("number of parameter must match number of terms in the prior"))
 
     optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
-	          maxiter = maxiter, regularization = regularization
-			  
+	          maxiter = maxiter, regularization = regularization)
+
     for (i, cp) in enumerate(phases)
         phases[i] = CrystalPhase(cp, θ)
 		deleteat!(θ, collect(1:get_param_nums(phase[i])))
@@ -31,44 +37,38 @@ end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	                    phases::AbstractVector{<:CrystalPhase})
-	totl_params = sum([get_param_nums for phase in phases])
+	totl_params = sum([get_param_nums(phase) for phase in phases])
 	full_mean_θ = zeros(totl_params)
 	full_std_θ = zeros(totl_params)
 	start = 1
 	for phase in phases
 		n = phase.cl.free_param
-		full_mean_θ[start:start+n] = repeat(mean_θ, n)
-		full_std_θ[start:start+n] = repeat(std_θ, n)
-		full_mean_θ[start + n + 1: start + n + 2] = mean_θ[2:3]
-		full_std_θ[start + n + 1:start + n + 2 ] = std_θ[2:3]
+		full_mean_θ[start:start+n-1] = repeat(mean_θ[1, :], n)
+		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
+		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
+		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
     end
 	return full_mean_θ, full_std_θ
-end
-
-function get_parameters(phases::AbstractVector{<:CrystalPhase})
-    θ = Vector{Flot64}()
-	for phase in phases
-        push!(get_parameters(phase)...)
-	end
-	θ
 end
 
 # Single phase situation. Put phase into [phase].
 function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [3., .01, 1.],
+                   std_θ::AbstractVector = [.1, .01, 1.],
                    max_iter::Int = 32, regularization::Bool = true)
-    optimize!([phase], x, y, std_noise, mean_θ, std_θ, max)
+	optimize!([phase], x, y, std_noise, mean_θ, std_θ, max)
 end
 
 function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	                 x::AbstractVector, y::AbstractVector)
 	# Use inner product to set initial activation
-	new_θ = θ # make a copy
+	new_θ = copy(θ) # make a copy
+	println(new_θ)
 	start = 1
 	for phase in phases
         param_num = get_param_nums(phase)
-		p = reconstruct!(phase, θ)
+		p = reconstruct!(phase, θ, x)
+		println(new_θ)
 		new_θ[start + param_num - 2] =  dot(p, y) / sum(abs2, p)
         start += param_num
 	end
@@ -82,10 +82,15 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector; maxiter::Int = 32,
                    regularization::Bool = true)
     function residual!(r::AbstractVector, θ::AbstractVector)
-        params = θ # make a copy
+        params = exp.(θ) # make a copy
         @. r = y
+		println("residual called")
+		println(typeof(phases), typeof(params), typeof(x))
         r -= reconstruct!(phases, params, x)
-		r ./= sqrt(2) * std_noise # ???
+		#r ./= sqrt(2) * std_noise # ???
+		plt = plot!(x, r, title="Residual")
+		display(plt)
+		savefig("test_$(sum(r)).png")
         return r
 	end
 
@@ -114,10 +119,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
     if regularization
 		r = zeros(eltype(θ), length(y) + length(θ)) # Reason??
-        LM = LavernbergMarquart(f, r, θ)
+        LM = LevenbergMarquart(f, θ, r)
 	else
 		r = zeros(eltype(θ), size(y))
-        LM = LavernbergMarquart(residual!, r, θ)
+        LM = LevenbergMarquart(residual!, θ, r)
 	end
     stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-8, max_iter = maxiter,

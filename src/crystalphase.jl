@@ -33,6 +33,7 @@ end
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
     θ_temp = θ[1:get_param_nums(CP)]
+    println(θ_temp)
     CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
                 θ_temp[end-1], θ_temp[end], CP.profile)
 end
@@ -45,15 +46,16 @@ function get_peaks(lines)
     peaks
 end
 
-function get_paramters(CP::CrystalPhase)
+function get_parameters(CP::CrystalPhase)
     return [get_free_params(CP.cl)..., CP.act, CP.σ]
 end
 
-function get_paramters(CPs::AbstractVector{<:CrystalPhase})
+function get_parameters(CPs::AbstractVector{<:CrystalPhase})
     p = Vector{Float64}()
     for cp in CPs
-        push!(p, get_paramters(cp)...)
+        push!(p, get_parameters(cp)...)
     end
+    p
 end
 
 # Reconstruct spectrum
@@ -61,7 +63,6 @@ function (CP::CrystalPhase)(x::AbstractVector)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 100 # account for unit difference
-        println(q)
         y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
     end
     y
@@ -79,6 +80,7 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # Pop the first (# free param of CP) and create a new phase
     # reconstruction
     num_of_param = get_param_nums(CP)
+    println("Reconstructing with θ: $(θ) ")
     y = CrystalPhase(CP, θ[1:num_of_param])(x)
     deleteat!(θ, collect(1:num_of_param))
     return y
@@ -87,8 +89,11 @@ end
 function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
                       θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
+    plot(title="$(θ)")
     for i in eachindex(CPs)
         y += reconstruct!(CPs[i], θ, x)
     end
+    plt = plot!(x, y)
+    savefig("recon$(sum(y)).png")
     y
 end

@@ -9,7 +9,6 @@ end
 
 function Peak(s::String)
     info = split(s, ',')
-    println(info)
     length(info) == 5 || throw("info must has length of 5")
     h, k, l = cast(info[1:3], Int8)
     q, I = cast(info[4:5], Float64)

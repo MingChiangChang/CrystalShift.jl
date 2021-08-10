@@ -10,8 +10,7 @@ using PhaseMapping
 
 test_path = "data/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
-println(s[2])
+s = split(read(f, String), "#\n") # Windows: #\r\n ...
 cs = Vector{CrystalPhase}()
 
 pyro = CrystalPhase(String(s[1]))
@@ -23,11 +22,11 @@ x = collect(8:.1:60)
 # TODO use phases with less symmetry
 y = ( reconstruct!(pyro, [10., 0.2, .3], x)
     + reconstruct!(delta, [5.4, 0.6, .1], x) )
-y = reconstruct!(cs, [10., 0.2, .3, 5.4, 0.6, .1], x)
+#y = reconstruct!(cs, [10., 0.2, .3, 5.4, 0.6, .1], x)
 #plot(x,cs(x))
-plot(x, y)
+#plot(x, y)
 
 # Compare old phase mapping and current ones
-
-optimize!(cs, x, y)
+#
+optimize!(cs, x, y; regularization=false)
 plot!(x, cs(x)) # This should give the fitted spectrum
