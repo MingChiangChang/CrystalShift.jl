@@ -1,7 +1,8 @@
 using OptimizationAlgorithms
 using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
+using OptimizationAlgorithms: update_jacobian!
 using LinearAlgebra
-
+using ForwardDiff: Dual
 # IDEA might want to define a prior object
 
 """
@@ -25,12 +26,12 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	(sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) ||
 	 error("number of parameter must match number of terms in the prior"))
 
-    optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
+    θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
 	          maxiter = maxiter, regularization = regularization)
-
+    println("optimized!")
     for (i, cp) in enumerate(phases)
         phases[i] = CrystalPhase(cp, θ)
-		deleteat!(θ, collect(1:get_param_nums(phase[i])))
+		deleteat!(θ, collect(1:get_param_nums(phases[i])))
 	end
 	return phases
 end
@@ -68,7 +69,6 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	for phase in phases
         param_num = get_param_nums(phase)
 		p = reconstruct!(phase, θ, x)
-		println(new_θ)
 		new_θ[start + param_num - 2] =  dot(p, y) / sum(abs2, p)
         start += param_num
 	end
@@ -84,15 +84,16 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = exp.(θ) # make a copy
         @. r = y
-		println("Reconstructing")
-		a = reconstruct!(phases, params, x)
-		println("In between...")
-        r -= a
-		println("Reconstructed")
-		r ./= sqrt(2) * std_noise # ???
-		plt = plot!(x, r, title="Residual")
+		r .-= reconstruct!(phases, params, x)
+		#r ./= sqrt(2) * std_noise # ???
+		if r isa AbstractVector{<:Dual}
+			plot_r = [r[i].value for i in eachindex(r)]
+			plt = plot(x, plot_r, title="Residual")
+		else
+		    plt = plot(x, r, title="Residual")
+		end
 		display(plt)
-		savefig("test_$(sum(r)).png")
+		#savefig("test_$(sum(r)).png")
         return r
 	end
 
@@ -130,7 +131,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 						min_decrease = 1e-8, max_iter = maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = 1.0)
 	λ = 1e-6
-	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(false))
+	#t, J = update_jacobian!(LM, θ)
+
+	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(true))
 	@. θ = exp(θ) # transform back
+	println(θ)
 	return θ
 end

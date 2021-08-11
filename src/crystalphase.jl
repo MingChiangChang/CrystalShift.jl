@@ -34,22 +34,42 @@ end
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
     θ_temp = θ[1:get_param_nums(CP)]
-    println(θ_temp)
-    c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
+    params = get_six_params(crystal, θ_temp)
+    println(isCubic(params...))
+    println(params, get_crystal(params, false))
+    c = CrystalPhase(get_crystal(params, false), CP.peaks, CP.id, CP.name,
                 θ_temp[end-1], θ_temp[end], CP.profile)
     println("CrystalPhase created through original func")
     return c
 end
 
-function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{<:Dual})
-    crystal = typeof(CP.cl)
-    θ_temp = [i.value for i in θ[1:get_param_nums(CP)]]
-    println(θ_temp)
-    c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
-                θ_temp[end-1], θ_temp[end], CP.profile)
-    println("CrystalPhase created through Dual func")
-    return c
+function get_six_params(crystal::Type, θ::AbstractVector)
+    if crystal <: Cubic
+        return [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2]
+    elseif crystal <: Tetragonal
+        return [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2]
+    elseif crystal <: Orthorhomic
+        return [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2]
+    elseif crystal <: Rhombohedral
+        return [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2]]
+    elseif crystal <: Hexagonal
+        return [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3]
+    elseif crystal <: Monoclinic
+        return [θ[1], θ[1], θ[2], pi/2, θ[3], pi/2]
+    elseif crystal <: Triclinic
+        return θ
+    end
 end
+
+# function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{<:Dual})
+#     crystal = typeof(CP.cl)
+#     θ_temp = [i.value for i in θ[1:get_param_nums(CP)]]
+#     println(θ_temp)
+#     c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
+#                 θ_temp[end-1], θ_temp[end], CP.profile)
+#     println("CrystalPhase created through Dual func")
+#     return c
+# end
 
 function get_peaks(lines)
     peaks = Vector{Peak}()
@@ -96,8 +116,6 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     println(θ[1:num_of_param])
     y = CrystalPhase(CP, θ[1:num_of_param])(x)
     deleteat!(θ, collect(1:num_of_param))
-    println("Crashed or not")
-    println(typeof(x), typeof(y))
     return y
 end
 
@@ -108,7 +126,7 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     for i in eachindex(CPs)
         y += reconstruct!(CPs[i], θ, x)
     end
-    plt = plot!(x, y)
-    savefig("recon$(sum(y)).png")
+    #plt = plot(x, y)
+    #savefig("recon$(sum(y)).png")
     y
 end

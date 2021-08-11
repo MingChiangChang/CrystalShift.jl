@@ -181,10 +181,12 @@ end
 
 deg_to_rad(deg::Real) = deg/180*pi
 
-function get_crystal(lattice_param::AbstractVector)
+function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
     length(lattice_param) == 6 || throw("There should be 6 lattice parameters!")
     a, b, c, α, β, γ = lattice_param
-    α, β, γ = deg_to_rad.((α, β, γ))
+    if deg
+        α, β, γ = deg_to_rad.((α, β, γ))
+    end
     t = typeof(a)
     if isCubic(a, b, c, α, β, γ)
        return Cubic{t}(a)
