@@ -95,7 +95,7 @@ end
 function (CP::CrystalPhase)(x::AbstractVector)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i]) * 100 # account for unit difference
+        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
         y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
     end
     y

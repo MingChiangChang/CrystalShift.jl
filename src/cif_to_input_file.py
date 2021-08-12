@@ -51,6 +51,7 @@ def write_peaks_info(f, cif, q_range, wvlen):
     diff = xrd_cal.get_pattern(structure=structure,
                                two_theta_range=two_theta_range)
     for hkl, x, y in zip(diff.hkls, diff.x, diff.y):
+        print(x, y, hkl)
         h, k, l = hkl[0]['hkl']
         f.write(f'\n{h},{k},{l},{x},{y}')
     f.write('#\n')
