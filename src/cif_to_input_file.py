@@ -13,7 +13,10 @@ import os
 from pathlib import Path
 
 from pymatgen.io.cif import CifParser
-import pymatgen.analysis.diffraction.xrd as pm_xrd
+#import pymatgen.analysis.diffraction.xrd as pm_xrd
+from xrayutilities.materials.cif import CIFFile
+from xrayutilities.materials.material import Crystal
+from xrayutilities.simpack import PowderDiffraction
 import numpy as np
 
 def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
@@ -26,12 +29,13 @@ def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
     with open(output_path / f'{output_name}.csv', 'w') as f:
         for idx, cif_path in enumerate(cif_paths):
             cif = CifParser(cif_path)
-            write_cif(f, idx, cif, _type, q_range, wvlen)
+            lattice = CIFFile(cif_path).SGLattice()
+            write_cif(f, idx, cif, lattice, _type, q_range, wvlen)
 
-def write_cif(f, idx, cif, _type, q_range, wvlen):
+def write_cif(f, idx, cif, lattice, _type, q_range, wvlen):
     f.write(f'{idx},')
     write_crystal_info(f, cif, _type)
-    write_peaks_info(f, cif, q_range, wvlen)
+    write_peaks_info(f, lattice, q_range, wvlen)
 
 def write_crystal_info(f, cif, _type):
     cif_dict = cif.as_dict()
@@ -43,20 +47,16 @@ def write_crystal_info(f, cif, _type):
     f.write(',')
     f.write(_get_lattice_parameters(info_dict, _type))
 
-def write_peaks_info(f, cif, q_range, wvlen):
-    structure = cif.get_structures()[0]
-    two_theta_range = q_to_two_theta(wvlen, *q_range)
-    print(f"two theta range: {two_theta_range}")
-    xrd_cal = pm_xrd.XRDCalculator() # Instantiate calculator class
-    diff = xrd_cal.get_pattern(structure=structure,
-                               two_theta_range=two_theta_range)
-    for hkl, x, y in zip(diff.hkls, diff.x, diff.y):
-        print(x, y, hkl)
-        h, k, l = hkl[0]['hkl']
-        f.write(f'\n{h},{k},{l},{x},{y}')
+def write_peaks_info(f, lattice, q_range, wvlen):
+    crystal = Crystal('test', lattice)
+    xrd = PowderDiffraction(crystal).data
+    
+    for peak in xrd:
+        q = xrd[peak]['qpos']*10
+        I = xrd[peak]['r']
+        if q_range[0] < q < q_range[1] and I>0.1:
+            f.write(f'\n{peak[0]},{peak[1]},{peak[2]},{q},{I}')
     f.write('#\n')
-    return diff
-
 
 def q_to_two_theta(wvlen, *args):
     two_thetas = []
