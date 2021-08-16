@@ -18,17 +18,17 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [3., .01, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
-
+    println(θ)
 	if length(mean_θ) == 3
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
-
+    println(mean_θ, std_θ)
 	(sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) ||
 	 error("number of parameter must match number of terms in the prior"))
 
     θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
 	          maxiter = maxiter, regularization = regularization)
-    println("optimized!")
+
     for (i, cp) in enumerate(phases)
         phases[i] = CrystalPhase(cp, θ)
 		deleteat!(θ, collect(1:get_param_nums(phases[i])))
@@ -44,10 +44,12 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	start = 1
 	for phase in phases
 		n = phase.cl.free_param
+		println(n)
 		full_mean_θ[start:start+n-1] = repeat(mean_θ[1, :], n)
 		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
 		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
 		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
+		start += (n+2)
     end
 	return full_mean_θ, full_std_θ
 end
@@ -55,16 +57,16 @@ end
 # Single phase situation. Put phase into [phase].
 function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [.1, .01, 1.],
-                   max_iter::Int = 32, regularization::Bool = true)
-	optimize!([phase], x, y, std_noise, mean_θ, std_θ, max)
+                   std_θ::AbstractVector = [.1, .5, 1.];
+                   maxiter::Int = 32, regularization::Bool = true)
+	optimize!([phase], x, y, std_noise, mean_θ, std_θ,
+	          maxiter=maxiter, regularization=regularization)
 end
 
 function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	                 x::AbstractVector, y::AbstractVector)
 	# Use inner product to set initial activation
 	new_θ = copy(θ) # make a copy
-	println(new_θ)
 	start = 1
 	for phase in phases
         param_num = get_param_nums(phase)
@@ -86,13 +88,13 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
         @. r = y
 		r .-= reconstruct!(phases, params, x)
 		#r ./= sqrt(2) * std_noise # ???
-		if r isa AbstractVector{<:Dual}
-			plot_r = [r[i].value for i in eachindex(r)]
-			plt = plot(x, plot_r, title="Residual")
-		else
-		    plt = plot(x, r, title="Residual")
-		end
-		display(plt)
+		# if r isa AbstractVector{<:Dual}
+		# 	plot_r = [r[i].value for i in eachindex(r)]
+		# 	plt = plot(x, plot_r, title="Residual")
+		# else
+		#     plt = plot(x, r, title="Residual")
+		# end
+		# display(plt)
 		#savefig("test_$(sum(r)).png")
         return r
 	end
@@ -100,7 +102,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, θ::AbstractVector)
-		μ =  log.(mean_θ) # [0, 0, 0]
+		μ = log.(mean_θ) # [0, 0, 0]
 		σ² = std_θ.^2 # var_a, var_α, var_σ
 		@. p = (θ - μ) / 2σ²
 	end
@@ -133,8 +135,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	λ = 1e-6
 	#t, J = update_jacobian!(LM, θ)
 
-	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(true))
+	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(false))
 	@. θ = exp(θ) # transform back
-	println(θ)
 	return θ
 end

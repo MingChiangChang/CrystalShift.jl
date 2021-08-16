@@ -29,7 +29,7 @@ y /= max(y...)
 
 # Compare old phase mapping and current ones
 #
-cs = optimize!(cs, x, y; regularization=false)
+cs = optimize!(cs, x, y; regularization=true)
 println("Res:$(norm(cs(x)-y))")
 plot(x, cs(x)) # This should give the fitted spectrum
 plot!(x, y)

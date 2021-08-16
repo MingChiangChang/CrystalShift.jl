@@ -35,11 +35,10 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     crystal = typeof(CP.cl)
     θ_temp = θ[1:get_param_nums(CP)]
     params = get_six_params(crystal, θ_temp)
-    println(isCubic(params...))
-    println(params, get_crystal(params, false))
+    #println(isCubic(params...))
+    #println(params, get_crystal(params, false))
     c = CrystalPhase(get_crystal(params, false), CP.peaks, CP.id, CP.name,
                 θ_temp[end-1], θ_temp[end], CP.profile)
-    println("CrystalPhase created through original func")
     return c
 end
 
@@ -48,7 +47,7 @@ function get_six_params(crystal::Type, θ::AbstractVector)
         return [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2]
     elseif crystal <: Tetragonal
         return [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2]
-    elseif crystal <: Orthorhomic
+    elseif crystal <: Orthorhombic
         return [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2]
     elseif crystal <: Rhombohedral
         return [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2]]
@@ -113,7 +112,7 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # Pop the first (# free param of CP) and create a new phase
     # reconstruction
     num_of_param = get_param_nums(CP)
-    println(θ[1:num_of_param])
+    #println(θ[1:num_of_param])
     y = CrystalPhase(CP, θ[1:num_of_param])(x)
     deleteat!(θ, collect(1:num_of_param))
     return y
@@ -122,7 +121,6 @@ end
 function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
                       θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
-    plot(title="$(θ)")
     for i in eachindex(CPs)
         y += reconstruct!(CPs[i], θ, x)
     end

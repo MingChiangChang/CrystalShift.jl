@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 
 from pymatgen.io.cif import CifParser
-#import pymatgen.analysis.diffraction.xrd as pm_xrd
 from xrayutilities.materials.cif import CIFFile
 from xrayutilities.materials.material import Crystal
 from xrayutilities.simpack import PowderDiffraction
@@ -73,6 +72,7 @@ def _get_phase_name(info_dict):
 def _get_lattice_parameters(info_dict, _type):
     a, b, c = _get_cell_length(info_dict)
     alpha, beta, gamma = _get_cell_angle(info_dict)
+    print(a, b, c, alpha, beta, gamma)
     return (f"{_type(a)},{_type(b)},{_type(c)},"
             f"{_type(alpha)},{_type(beta)},{_type(gamma)}")
 
@@ -92,12 +92,16 @@ def remove_blank(string):
     return string
 
 def _get_cell_angle(info_dict):
-    return (info_dict['_cell_angle_alpha'],
-            info_dict['_cell_angle_beta'],
-            info_dict['_cell_angle_gamma'])
+    return (remove_parentheses(info_dict['_cell_angle_alpha']),
+            remove_parentheses(info_dict['_cell_angle_beta']),
+            remove_parentheses(info_dict['_cell_angle_gamma']))
 
 def _get_crystal_system(info_dict):
-    sg_num = int(info_dict['_space_group_IT_number'])
+    try:
+        sg_num = int(info_dict['_space_group_IT_number'])
+    except KeyError:
+        print("No space group info in cif. Default to triclinic")
+        return "triclinic"
     if sg_num in [1,2]:
         return "triclinic"
     elif 3 <= sg_num <= 15:
@@ -117,8 +121,10 @@ if __name__ == "__main__":
     home = Path.home()
     path = home / 'Desktop' / 'github' /\
             'Crystallography_based_shifting' / 'data' 
-    #cif_paths = list(path.glob('*ICSD.cif'))
-    cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
-    out_path = path 
+    # cif_paths = list(path.glob('*ICSD.cif'))
+    cif_paths = path.glob("Ta-Sn-O/*/*.cif")
+        
+    # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
+    out_path = path / 'Ta-Sn-O'
     print(cif_paths)
     cif_to_input(cif_paths, out_path, (0, 66))

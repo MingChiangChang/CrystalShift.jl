@@ -1,7 +1,7 @@
 using PhaseMapping
 using DelimitedFiles
 
-# Abstract type to as supertype for 7 different crystal systems
+# Abstract type to serve as supertype for 7 different crystal systems
 abstract type Crystal end
 
 # Unit in angstrom and radians
@@ -18,8 +18,8 @@ struct Triclinic{T}<:Crystal
     free_param::Int8
 
     function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:Real}
-        check_not_equal(a, b, c) ||  throw(MethodError((a, b, c), "a,b,c should be different for triclinic"))
-        check_not_equal(α, β, γ, pi/2) || throw(MethodError((a, b, c), "α, β, γ, pi/2 should be different for triclinic"))
+        check_not_equal(a, b, c) ||  error("a,b,c should be different for triclinic")
+        check_not_equal(α, β, γ, pi/2) || error("α, β, γ, pi/2 should be different for triclinic")
         new{T}(a, b, c, α, β, γ, 6)
     end
 end
@@ -36,8 +36,8 @@ struct Monoclinic{T}<:Crystal
     free_param::Int8
 
     function Monoclinic{T}(a::T, c::T, β::T) where {T<:Real}
-        check_not_equal(a, c) || throw(MethodError((a, c), "a,c should be different for monoclinic"))
-        check_not_equal(β, pi/2) || throw(MethodError((β), "β, pi/2 should be different for monoclinic"))
+        check_not_equal(a, c) || error("a,c should be different for monoclinic")
+        check_not_equal(β, pi/2) || error("β, pi/2 should be different for monoclinic")
         new{T}(a, a, c, pi/2, β, pi/2, 3)
     end
 end
@@ -71,7 +71,7 @@ struct Tetragonal{T}<:Crystal
     free_param::Int8
 
     function Tetragonal{T}(a::T, c::T) where {T<:Real}
-        check_not_equal(a, c) || throw(MethodError((a, c), "a, c should be different for tetragonal"))
+        check_not_equal(a, c) || error("a, c should be different for tetragonal")
         new{T}(a, a, c, pi/2, pi/2, pi/2, 2)
     end
 end
@@ -104,7 +104,7 @@ struct Hexagonal{T}<:Crystal
     free_param::Int8
 
     function Hexagonal{T}(a::T, c::T) where {T<:Real}
-        check_not_equal(a, c) || throw((MethodError(a, c), "a, c should be different for hexagonal"))
+        check_not_equal(a, c) || error("a, c should be different for hexagonal")
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3, 2)
     end
 end
@@ -136,8 +136,8 @@ end
 
 function isTetragonal(a::Real, b::Real, c::Real,
                       α::Real, β::Real, γ::Real)
-    return check_not_equal(a, c) && check_equal(a, b) &&\
-           check_equal(a, b) && check_equal(α, β, γ, pi/2)
+    return (check_not_equal(a, c) && check_equal(a, b) &&
+           check_equal(a, b) && check_equal(α, β, γ, pi/2))
 end
 
 function isHexagonal(a::Real, b::Real, c::Real,
@@ -159,8 +159,8 @@ end
 
 function isMonoclinic(a::Real, b::Real, c::Real,
                       α::Real, β::Real, γ::Real)
-    return check_not_equal(a, c) && check_equal(a, b) &&\
-           check_equal(α, γ, pi/2) && check_not_equal(β, pi/2)
+    return (check_not_equal(a, c) && check_not_equal(a, b) &&
+           check_equal(α, γ, pi/2) && check_not_equal(β, pi/2))
 end
 
 Base.Bool(c::Crystal) = true # For ease of testing
@@ -182,7 +182,7 @@ end
 deg_to_rad(deg::Real) = deg/180*pi
 
 function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
-    length(lattice_param) == 6 || throw("There should be 6 lattice parameters!")
+    length(lattice_param) == 6 || error("There should be 6 lattice parameters!")
     a, b, c, α, β, γ = lattice_param
     if deg
         α, β, γ = deg_to_rad.((α, β, γ))
@@ -197,7 +197,7 @@ function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
     elseif isRhombohedral(a, b, c, α, β, γ)
        return Rhombohedral{t}(a)
     elseif isOrthohombic(a, b, c, α, β, γ)
-       return Orthohombic{t}(a, b, c)
+       return Orthorhombic{t}(a, b, c)
     elseif isMonoclinic(a, b, c, α, β, γ)
        return Monoclinic{t}(a, c, β)
     else
