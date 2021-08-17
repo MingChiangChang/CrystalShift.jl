@@ -44,7 +44,7 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	start = 1
 	for phase in phases
 		n = phase.cl.free_param
-		println(n)
+		# println(n)
 		full_mean_θ[start:start+n-1] = repeat(mean_θ[1, :], n)
 		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
 		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
@@ -87,7 +87,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
         params = exp.(θ) # make a copy
         @. r = y
 		r .-= reconstruct!(phases, params, x)
-		#r ./= sqrt(2) * std_noise # ???
+		r ./= sqrt(2) * std_noise # ???
 		# if r isa AbstractVector{<:Dual}
 		# 	plot_r = [r[i].value for i in eachindex(r)]
 		# 	plt = plot(x, plot_r, title="Residual")

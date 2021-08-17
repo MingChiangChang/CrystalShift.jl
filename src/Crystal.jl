@@ -35,10 +35,10 @@ struct Monoclinic{T}<:Crystal
 
     free_param::Int8
 
-    function Monoclinic{T}(a::T, c::T, β::T) where {T<:Real}
-        check_not_equal(a, c) || error("a,c should be different for monoclinic")
+    function Monoclinic{T}(a::T, b::T, c::T, β::T) where {T<:Real}
+        check_not_equal(a, b, c) || error("a,c should be different for monoclinic")
         check_not_equal(β, pi/2) || error("β, pi/2 should be different for monoclinic")
-        new{T}(a, a, c, pi/2, β, pi/2, 3)
+        new{T}(a, b, c, pi/2, β, pi/2, 4)
     end
 end
 
@@ -142,8 +142,8 @@ end
 
 function isHexagonal(a::Real, b::Real, c::Real,
                       α::Real, β::Real, γ::Real)
-    return check_not_equal(a, c) && check_equal(a, b) &&\
-           check_equal(α, β, pi/2) && check_equal(γ, 2*pi/3)
+    return (check_not_equal(a, c) && check_equal(a, b) &&
+           check_equal(α, β, pi/2) && check_equal(γ, 2*pi/3))
 end
 
 function isRhombohedral(a::Real, b::Real, c::Real,
@@ -159,7 +159,7 @@ end
 
 function isMonoclinic(a::Real, b::Real, c::Real,
                       α::Real, β::Real, γ::Real)
-    return (check_not_equal(a, c) && check_not_equal(a, b) &&
+    return (check_not_equal(a, b, c) &&
            check_equal(α, γ, pi/2) && check_not_equal(β, pi/2))
 end
 
@@ -199,7 +199,7 @@ function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
     elseif isOrthohombic(a, b, c, α, β, γ)
        return Orthorhombic{t}(a, b, c)
     elseif isMonoclinic(a, b, c, α, β, γ)
-       return Monoclinic{t}(a, c, β)
+       return Monoclinic{t}(a, b, c, β)
     else
        return Triclinic{t}(a, b, c, α, β, γ)
     end
@@ -251,7 +251,8 @@ function (cl::Rhombohedral)(P::Peak)
 end
 
 function (cl::Monoclinic)(P::Peak)
-    (2pi/volume(cl) *
+    println(cl, P.h)
+    return (2pi/volume(cl) *
     sqrt(P.h^2 * cl.b^2 * cl.c^2
     + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
     + P.l^2 * cl.a^2 * cl.b^2))
@@ -262,5 +263,10 @@ get_free_params(cl::Tetragonal) = [cl.a, cl.c]
 get_free_params(cl::Hexagonal) = [cl.a, cl.c]
 get_free_params(cl::Orthorhombic) = [cl.a, cl.b, cl.c]
 get_free_params(cl::Rhombohedral) = [cl.a]
-get_free_params(cl::Monoclinic) = [cl.a, cl.c, cl.β]
+get_free_params(cl::Monoclinic) = [cl.a, cl.b, cl.c, cl.β]
 get_free_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]
+
+function Base.show(io::IO, ct::Crystal)
+    println("a: $(ct.a), b: $(ct.b), c: $(ct.c)")
+    println("α: $(ct.α/pi*180), β: $(ct.β/pi*180), γ: $(ct.γ/pi*180)")
+end

@@ -19,11 +19,13 @@ if s[end] == ""
 end
 cs = Vector{CrystalPhase}(undef, size(s))
 for i in eachindex(s)
-    println(i)
     cs[i] = CrystalPhase(String(s[i]))
 end
 
 x = collect(12:.01:40)
+h = heatmap(data)
+display(h)
+readline()
 # plot(x, cs[6](x), label="ICSD", linewidth=1.4)
 # plot!(x, reconstruct!(cs[6], [6.24, 3.62, 7.7, 1., .1], x), label="Modified", linewidth=1.4)
 # xlabel!("Q (1/nm)")
@@ -32,7 +34,8 @@ x = collect(12:.01:40)
 # savefig("ta2o5.png")
 # heatmap(data)
 W, H, K = xray(data, 4)
-# plot(H')
+plot(H')
+readline()
 
 for i in eachcol(W)
     plt = plot()
@@ -42,6 +45,12 @@ for i in eachcol(W)
     plot!(Q, new)
 
     phase = optimize!(cs[6], Q, new; regularization=false)
-    plot!(Q, phase(Q))
+    rec = phase(Q)
+    plot!(Q, rec)
+    xlabel!("Q (1/nm)")
+    ylabel!("a. u.")
     display(plt)
+    # println(norm(rec.-new)/max.(rec...)) why is this so slow?
+    println(phase[1].cl)
+    readline()
 end

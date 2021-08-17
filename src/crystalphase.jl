@@ -54,7 +54,7 @@ function get_six_params(crystal::Type, θ::AbstractVector)
     elseif crystal <: Hexagonal
         return [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3]
     elseif crystal <: Monoclinic
-        return [θ[1], θ[1], θ[2], pi/2, θ[3], pi/2]
+        return [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2]
     elseif crystal <: Triclinic
         return θ
     end
@@ -128,3 +128,6 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     #savefig("recon$(sum(y)).png")
     y
 end
+
+# TODO what to print for CP
+# Base.show(CP::CrystalPhase) end

@@ -1,7 +1,7 @@
 struct Peak
-    h::Int8 # Stored separately to be explicit
-    k::Int8 # Enforce h, k, l to be integer
-    l::Int8
+    h::Int16 # Stored separately to be explicit
+    k::Int16 # Enforce h, k, l to be integer
+    l::Int16
 
     q::Float64 # Reference for now, probably don't need in final version
     I::Float64 # Intensity
