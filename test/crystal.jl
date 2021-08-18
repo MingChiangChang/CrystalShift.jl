@@ -21,6 +21,9 @@ include("../src/crystal.jl")
     @test !isHexagonal(1,2,3, pi/2, pi/2, 2pi/3)
 
     @test isRhombohedral()
+    @test !isRhombohedral()
+
+    @test is
 end
 
 @testset "Crystal object creation" begin
