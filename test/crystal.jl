@@ -9,7 +9,18 @@ include("../src/crystal.jl")
     @test !check_equal(1,1,1,1,1,1,2)
 
     # TODO isFuncs tests here
-    # TODO deg_to_rad test
+    @test deg_to_rad(90.) == pi/2
+
+    @test isCubic(1, 1, 1, pi/2, pi/2, pi/2)
+    @test !isCubic(1, 2, 1, pi/2, pi/2, pi/2)
+
+    @test isTetragonal(1, 1, 2, pi/2, pi/2, pi/2)
+    @test !isTetragonal(1, 2, 2, pi/2, pi/2, pi/2)
+
+    @test isHexagonal(1,1,3, pi/2, pi/2, 2pi/3)
+    @test !isHexagonal(1,2,3, pi/2, pi/2, 2pi/3)
+
+    @test isRhombohedral()
 end
 
 @testset "Crystal object creation" begin
@@ -49,7 +60,7 @@ end
 end
 
 @testset "Volume" begin
-
+    @test volume()
 end
 
 @testset "peak position" begin
