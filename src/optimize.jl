@@ -44,7 +44,6 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	start = 1
 	for phase in phases
 		n = phase.cl.free_param
-		# println(n)
 		full_mean_θ[start:start+n-1] = repeat(mean_θ[1, :], n)
 		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
 		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
@@ -77,7 +76,7 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	return new_θ
 end
 
-# TODO apply prior for different num of free params
+# TODO create prior for each crystal phases
 function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector,
@@ -88,14 +87,6 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
         @. r = y
 		r .-= reconstruct!(phases, params, x)
 		r ./= sqrt(2) * std_noise # ???
-		# if r isa AbstractVector{<:Dual}
-		# 	plot_r = [r[i].value for i in eachindex(r)]
-		# 	plt = plot(x, plot_r, title="Residual")
-		# else
-		#     plt = plot(x, r, title="Residual")
-		# end
-		# display(plt)
-		#savefig("test_$(sum(r)).png")
         return r
 	end
 
@@ -116,7 +107,6 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     	return rp
     end
 
-    # TODO initialize parameters
     θ = initialize_activation!(θ, phases, x, y)
 
     @. θ = log(θ) # tramsform to log space for better conditioning

@@ -222,7 +222,6 @@ function (cl::Cubic)(P::Peak)
     2pi*sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
 end
 
-# TODO peak position functions to be implemented
 function (cl::Tetragonal)(P::Peak)
     2pi*sqrt(P.h^2*cl.c^2 + P.k^2*cl.c^2 + P.l^2*cl.a^2) / (cl.a*cl.c)
 end

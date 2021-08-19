@@ -68,16 +68,6 @@ function get_six_params(crystal::Type, θ::AbstractVector)
     end
 end
 
-# function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{<:Dual})
-#     crystal = typeof(CP.cl)
-#     θ_temp = [i.value for i in θ[1:get_param_nums(CP)]]
-#     println(θ_temp)
-#     c = CrystalPhase(crystal(θ_temp[1:end-2]...), CP.peaks, CP.id, CP.name,
-#                 θ_temp[end-1], θ_temp[end], CP.profile)
-#     println("CrystalPhase created through Dual func")
-#     return c
-# end
-
 function get_peaks(lines)
     peaks = Vector{Peak}()
     for line in lines
@@ -136,6 +126,3 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     #savefig("recon$(sum(y)).png")
     y
 end
-
-# TODO what to print for CP
-# Base.show(CP::CrystalPhase) end
