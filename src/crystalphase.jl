@@ -15,6 +15,14 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
                # other peak profiles are needed
 end
 
+function Base.show(io::IO, CP::CrystalPhase)
+    println("Phase name: $(CP.name), ID: $(CP.id)")
+    println("Optimization parameters:")
+    println("Activation: $(CP.act), Peak width: $(CP.σ)")
+    println("Lattice information:")
+    println(CP.cl)
+end
+
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,

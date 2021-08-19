@@ -56,7 +56,6 @@ end
 
     @test_throws MethodError Cubic{Float64}(1.0, 1.0, 1.0, pi/2, pi/2, 1/2)
     @test Bool(Cubic{Float64}(1.0))
-
 end
 
 # @testset "Volume" begin
