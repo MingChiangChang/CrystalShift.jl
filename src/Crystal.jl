@@ -54,7 +54,7 @@ struct Orthorhombic{T}<:Crystal
     free_param::Int8
 
     function Orthorhombic{T}(a::T, b::T, c::T) where {T<:Real}
-        check_not_equal(a, b, c) || throw(MethodError((a, b, c), "a, b, c should be different for orthhombic"))
+        check_not_equal(a, b, c) || error("a, b, c should be different for orthhombic")
         new{T}(a, b, c, pi/2, pi/2, pi/2, 3)
     end
 end
