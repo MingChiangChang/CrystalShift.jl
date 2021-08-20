@@ -45,7 +45,7 @@ for i in eachcol(W)
     @. new = max(new, 0)
     plot!(Q, new)
 
-    phase = optimize!(cs[6], Q, new; regularization=false)
+    phase = optimize!(cs[6], Q, new; regularization=true)
     rec = phase(Q)
     plot!(Q, rec)
     xlabel!("Q (1/nm)")

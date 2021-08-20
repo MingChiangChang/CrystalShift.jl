@@ -1,10 +1,3 @@
-using OptimizationAlgorithms
-using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
-using OptimizationAlgorithms: update_jacobian!
-using LinearAlgebra
-using ForwardDiff: Dual
-# IDEA might want to define a prior object
-
 """
     optimize!
 
@@ -15,11 +8,12 @@ using ForwardDiff: Dual
 function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [3., .01, 1.];
+                   std_θ::AbstractVector = [1., .1, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
     println(θ)
 	if length(mean_θ) == 3
+		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
     println(mean_θ, std_θ)
@@ -44,7 +38,7 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	start = 1
 	for phase in phases
 		n = phase.cl.free_param
-		full_mean_θ[start:start+n-1] = repeat(mean_θ[1, :], n)
+		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase.cl)
 		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
 		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
 		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
