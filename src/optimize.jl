@@ -1,4 +1,3 @@
-using Base.Threads
 function fit_phase(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],

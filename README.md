@@ -4,7 +4,7 @@
 - [ ] Test cases for optimization
 - [x] Using Optimization API
 - [x] Figure out how to construct residual function with an array of phases
-- [ ] Implement function for q calculation for different crystals
+- [x] Implement function for q calculation for different crystals
 
 ## Development log
 ### 8/1
@@ -15,3 +15,9 @@
 * Updated optimize.jl
 * Tested peak position
 * Start implementing how to calculate residual with spectrum and params
+
+### 8/25
+* Test on real data
+* Each spectrum takes ~4 secs
+* Speedup needed
+* Want result object

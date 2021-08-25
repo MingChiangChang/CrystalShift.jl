@@ -21,9 +21,7 @@ cs = Vector{CrystalPhase}(undef, size(s))
 for i in eachindex(s)
     cs[i] = CrystalPhase(String(s[i]))
 end
-println(cs)
-
-plot(data[100, 110, :])
+println("$(size(cs)) phase objects created!")
 
 for i in 100:102 # size(data, 1)
     W, H, K = xray(Array(transpose(data[i, :, :])), 4)
@@ -38,7 +36,7 @@ for i in 100:102 # size(data, 1)
         new = W[:, j] - b
         @. new = max(new, 0)
         println(j)
-        @time p = fit_phase(cs, q[i, :], new, maxiter=10)
+        @time p = fit_phase(cs, q[i, :], new)
         println(j, p)
         plt = plot(q[i,:], p(q[i, :]))
         plot!(q[i, :], new)

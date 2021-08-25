@@ -1,5 +1,10 @@
 #module CrystalShift
 
+using Base.Threads
+
+using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
+using OptimizationAlgorithms: update_jacobian!
+using LinearAlgebra
 using OptimizationAlgorithms
 using PhaseMapping
 
