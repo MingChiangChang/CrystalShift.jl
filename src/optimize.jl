@@ -1,3 +1,22 @@
+using Base.Threads
+function fit_phase(phases::AbstractVector{<:CrystalPhase},
+                   x::AbstractVector, y::AbstractVector,
+                   std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
+                   std_θ::AbstractVector = [1., .1, 1.];
+                   maxiter::Int = 32, regularization::Bool = true)
+	optimized_phases = Vector{CrystalPhase}()
+    @threads for phase in phases
+        push!(optimized_phases, optimize!(phase, x, y, std_noise, mean_θ, std_θ,
+	                        maxiter=maxiter, regularization=regularization)[1] )
+    end
+	return optimized_phases[get_min_index(optimized_phases, x, y)]
+end
+
+function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
+	                   x::AbstractVector, y::AbstractVector)
+    argmin([norm(p(x)-y) for p in optimized_phases])
+end
+
 """
     optimize!
 
@@ -11,14 +30,13 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [1., .1, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
-    println(θ)
+    #println(θ)
 	if length(mean_θ) == 3
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
-    println(mean_θ, std_θ)
-	(sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) ||
-	 error("number of parameter must match number of terms in the prior"))
+
+	length_check(phases, mean_θ, std_θ) || error("number of parameter must match number of terms in the prior")
 
     θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
 	          maxiter = maxiter, regularization = regularization)
@@ -28,6 +46,10 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 		deleteat!(θ, collect(1:get_param_nums(phases[i])))
 	end
 	return phases
+end
+
+function length_check(phases::AbstractVector, mean_θ::AbstractVector, std_θ::AbstractVector)
+    (sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) )
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
@@ -102,7 +124,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     end
 
     θ = initialize_activation!(θ, phases, x, y)
-
+    println(θ)
     @. θ = log(θ) # tramsform to log space for better conditioning
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 

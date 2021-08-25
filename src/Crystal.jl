@@ -250,7 +250,7 @@ function (cl::Rhombohedral)(P::Peak)
 end
 
 function (cl::Monoclinic)(P::Peak)
-    println(cl, P.h)
+    #println(cl, P.h)
     return (2pi/volume(cl) *
     sqrt(P.h^2 * cl.b^2 * cl.c^2
     + P.k^2 * cl.a^2 * cl.c^2 * sin(cl.β)^2
