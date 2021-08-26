@@ -1,6 +1,3 @@
-using PhaseMapping: Lorentz
-using ForwardDiff: Dual
-
 struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
     cl::C # crystal object
     peaks::V # Vector of peak object

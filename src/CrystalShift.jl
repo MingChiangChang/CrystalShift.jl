@@ -6,12 +6,14 @@ using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
 using OptimizationAlgorithms: update_jacobian!
 using LinearAlgebra
 using OptimizationAlgorithms
-using PhaseMapping
+using PhaseMapping: Lorentz
+#using PhaseMapping
 
 include("util.jl")
 include("peak.jl")
 include("Crystal.jl")
 include("crystalphase.jl")
+include("phaseresult.jl")
 include("optimize.jl")
 
 #end

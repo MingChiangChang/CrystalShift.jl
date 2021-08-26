@@ -4,10 +4,15 @@ using PhaseMapping: xray
 using BackgroundSubtraction: mcbl
 using LinearAlgebra
 
+# Readin data
 include("../src/CrystalShift.jl")
 dl = "/Users/mingchiang/Downloads/"
 data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
 q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
+# x =
+# y =
+# tpeak =
+# dwell =
 
 # CrystalPhas object creation
 path = "/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/"
@@ -36,7 +41,7 @@ for i in 100:102 # size(data, 1)
         new = W[:, j] - b
         @. new = max(new, 0)
         println(j)
-        @time p = fit_phase(cs, q[i, :], new)
+        @time p = fit_phases(cs, q[i, :], new)
         println(j, p)
         plt = plot(q[i,:], p(q[i, :]))
         plot!(q[i, :], new)
