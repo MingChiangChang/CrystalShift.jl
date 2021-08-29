@@ -10,8 +10,8 @@ struct StripeResult
     x::Float64
     y::Float64
     cation_ratio::AbstractVector
-    tpeak::Int32
-    dwell::Int32
+    tpeak::Float64
+    dwell::Float64
 end
 
 function get_center(SR::StripeResult)
@@ -23,3 +23,4 @@ function get_center(SR::StripeResult)
 end
 
 # TODO some helper function to quickly access data for plotting or processing
+# TODO Constructor of StripeResult using an array of phaseresult

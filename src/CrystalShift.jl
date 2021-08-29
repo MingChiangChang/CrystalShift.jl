@@ -13,7 +13,7 @@ include("util.jl")
 include("peak.jl")
 include("Crystal.jl")
 include("crystalphase.jl")
-include("phaseresult.jl")
+#include("phaseresult.jl")
 include("optimize.jl")
 
 #end
