@@ -8,9 +8,12 @@ using TimerOutputs
 
 const to = TimerOutput()
 
+# Constant Declaration
+RANK = 4
+
 # Readin data
 include("../src/CrystalShift.jl")
-dl = "/Users/mingchiang/Downloads/"
+dl = "/home/mingchiang/Downloads/"
 data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
 q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
 
@@ -19,7 +22,7 @@ cond = JSON.parse(f)
 conds = parse_cond.(cond, Float64) # [x, y, tpeak, dwell]
 
 # CrystalPhas object creation
-path = "/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/"
+path = "data/"
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
 s = split(read(f, String), "#\n") # Windows: #\r\n ...
@@ -34,17 +37,19 @@ for i in eachindex(s)
 end
 println("$(size(cs)) phase objects created!")
 
-for i in 100:102 # size(data, 1)
-    W, H, K = xray(Array(transpose(data[i, :, :])), 4)
+for i in 100:101 # size(data, 1)
+    W, H, K = xray(Array(transpose(data[i, :, :])), RANK)
     println(size(W), size(H))
     nmf = plot(q[i, :], W)
     display(nmf)
-    # plot(H)
-    # display(H)
+    wanted = collect(1:RANK)
+    deleteat!(wanted, argmax(H[:,1]))
+    BW = W[:, wanted]
+    BH = H[wanted, :]
 
-    for j in 1:size(W, 2)
-        b = mcbl(W[:, j], q[i,:], 7)
-        new = W[:, j] - b
+    for j in 1:size(BW, 2)
+        b = mcbl(BW[:, j], q[i,:], 7)
+        new = BW[:, j] - b
         @. new = max(new, 0)
         println(j)
         @timeit to "fitting $(i)th stripe $(j)th pattern" p = fit_phases(cs, q[i, :], new)
