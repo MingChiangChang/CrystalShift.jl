@@ -1,15 +1,23 @@
 struct PhaseResult
     phase::AbstractVector{<:CrystalPhase}
-    acttivation::AbstractVector
+    activation::AbstractVector
     raw_spectrum::AbstractVector
     isCenter::Bool
 end
 
+function PhaseResult(CP::CrystalPhase, H::AbstractVector,
+                     y::AbstractVector, isCenter::Bool)
+    println("called")
+    PhaseResult([CP], H, y, isCenter)
+end
+
+(p::PhaseResult)(x::AbstractVector) = p.CP(x) # Quick Reconstruction
+
 struct StripeResult
     phase_results::AbstractVector{<:PhaseResult}
+    cation_ratio::AbstractVector
     x::Float64
     y::Float64
-    cation_ratio::AbstractVector
     tpeak::Float64
     dwell::Float64
 end

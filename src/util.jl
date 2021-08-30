@@ -5,3 +5,9 @@ function parse_cond(cond::AbstractString, T::Type)
     conds = split(cond, "_")[2:end]
     return cast(conds, T)
 end
+
+# TODO implement get_center
+function get_center(H::AbstractVector)
+    center_vec = []
+    return center_vec
+end
