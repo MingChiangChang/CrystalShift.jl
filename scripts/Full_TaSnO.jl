@@ -13,7 +13,7 @@ RANK = 4
 
 # Readin data
 include("../src/CrystalShift.jl")
-dl = "/home/mingchiang/Downloads/"
+dl = "/Users/mingchiang/Downloads/"
 data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
 q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
 
@@ -37,7 +37,11 @@ for i in eachindex(s)
 end
 println("$(size(cs)) phase objects created!")
 
+wafer_result = Vector{StripeResult}()
+
 for i in 100:101 # size(data, 1)
+    # TODO Pre-screening of the heatmap
+    # TODO Try t-SNE or UMAP on the data?
     W, H, K = xray(Array(transpose(data[i, :, :])), RANK)
     println(size(W), size(H))
     nmf = plot(q[i, :], W)
@@ -47,7 +51,11 @@ for i in 100:101 # size(data, 1)
     BW = W[:, wanted]
     BH = H[wanted, :]
 
+    stripe = Vector{PhaseResult}()
+    # center = get_center(BH)
+
     for j in 1:size(BW, 2)
+        # TODO Pre-screening of the spectrum
         b = mcbl(BW[:, j], q[i,:], 7)
         new = BW[:, j] - b
         @. new = max(new, 0)
@@ -57,7 +65,11 @@ for i in 100:101 # size(data, 1)
         plt = plot(q[i,:], p(q[i, :]))
         plot!(q[i, :], new)
         display(plt)
-    end
-end
 
+        # change false to j in center if get_center is actually implemented
+        push!(stripe, PhaseResult(p, BH[j, :], new, false))
+    end
+    # push!(wafer_result, StripeResult(stripe, [1,1], conds[i, :][1]...))
+end
+# Does data make sense
 show(to)
