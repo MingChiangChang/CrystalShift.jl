@@ -6,8 +6,12 @@ function parse_cond(cond::AbstractString, T::Type)
     return cast(conds, T)
 end
 
-# TODO implement get_center
-function get_center(H::AbstractVector)
-    center_vec = []
-    return center_vec
+# TODO Should have a better way to identify center
+function get_weighted_center(H::AbstractMatrix)
+    avg = []
+    for act in eachrow(H)
+        ind = collect(1:size(act)[1])
+        push!(avg, Int(floor( sum(act.*ind)/sum(act) )))
+    end
+    avg
 end

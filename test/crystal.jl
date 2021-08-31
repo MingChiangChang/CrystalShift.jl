@@ -1,6 +1,6 @@
 using Test
 
-include("../src/crystalshift.jl")
+include("../src/CrystalShift.jl")
 #include("../src/crystal.jl")
 
 @testset "Utilities" begin

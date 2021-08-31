@@ -5,11 +5,13 @@ using BackgroundSubtraction: mcbl
 using LinearAlgebra
 using JSON
 using TimerOutputs
+using ProgressBars
 
 const to = TimerOutput()
 
 # Constant Declaration
 RANK = 4
+THRESH = 0.3
 
 # Readin data
 include("../src/CrystalShift.jl")
@@ -39,37 +41,38 @@ println("$(size(cs)) phase objects created!")
 
 wafer_result = Vector{StripeResult}()
 
-for i in 100:101 # size(data, 1)
+for i in tqdm(1:size(data)[1]) # size(data, 1)
     # TODO Pre-screening of the heatmap
     # TODO Try t-SNE or UMAP on the data?
     W, H, K = xray(Array(transpose(data[i, :, :])), RANK)
-    println(size(W), size(H))
-    nmf = plot(q[i, :], W)
-    display(nmf)
+    # println(size(W), size(H))
+    # nmf = plot(q[i, :], W)
+    # display(nmf)
     wanted = collect(1:RANK)
     deleteat!(wanted, argmax(H[:,1]))
     BW = W[:, wanted]
     BH = H[wanted, :]
 
     stripe = Vector{PhaseResult}()
-    # center = get_center(BH)
+    center = get_weighted_center(BH)
+    isCenter = BitArray(undef, RANK-1)
+    for k in 1:3
+        isCenter[k] = BH[k, center[k]] > THRESH
+    end
 
     for j in 1:size(BW, 2)
         # TODO Pre-screening of the spectrum
         b = mcbl(BW[:, j], q[i,:], 7)
         new = BW[:, j] - b
         @. new = max(new, 0)
-        println(j)
         @timeit to "fitting $(i)th stripe $(j)th pattern" p = fit_phases(cs, q[i, :], new)
-        println(j, p)
-        plt = plot(q[i,:], p(q[i, :]))
-        plot!(q[i, :], new)
-        display(plt)
+        # plt = plot(q[i,:], p(q[i, :]))
+        # plot!(q[i, :], new)
+        # display(plt)
 
-        # change false to j in center if get_center is actually implemented
-        push!(stripe, PhaseResult(p, BH[j, :], new, false))
+        push!(stripe, PhaseResult(p, BH[j, :], new, isCenter[j]))
     end
-    # push!(wafer_result, StripeResult(stripe, [1,1], conds[i, :][1]...))
+    push!(wafer_result, StripeResult(stripe, [1,1], conds[i]...))
 end
 # Does data make sense
 show(to)

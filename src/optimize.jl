@@ -123,7 +123,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     end
 
     θ = initialize_activation!(θ, phases, x, y)
-    println(θ)
+    # println(θ)
     @. θ = log(θ) # tramsform to log space for better conditioning
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 

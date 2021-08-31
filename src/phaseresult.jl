@@ -7,7 +7,6 @@ end
 
 function PhaseResult(CP::CrystalPhase, H::AbstractVector,
                      y::AbstractVector, isCenter::Bool)
-    println("called")
     PhaseResult([CP], H, y, isCenter)
 end
 

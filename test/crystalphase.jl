@@ -1,6 +1,6 @@
 include("../src/util.jl")
 include("../src/peak.jl")
-include("../src/crystal.jl")
+include("../src/Crystal.jl")
 include("../src/crystalphase.jl")
 
 using Plots
