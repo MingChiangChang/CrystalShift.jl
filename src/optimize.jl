@@ -13,7 +13,7 @@ end
 
 function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
 	                   x::AbstractVector, y::AbstractVector)
-    argmin([norm(p(x)-y) for p in optimized_phases])
+    argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
 """

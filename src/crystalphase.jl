@@ -86,16 +86,16 @@ function get_parameters(CPs::AbstractVector{<:CrystalPhase})
 end
 
 # Reconstruct spectrum
-function (CP::CrystalPhase)(x::AbstractVector)
+function (CP::CrystalPhase)(x::Real)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        y += CP.act * CP.peaks[i].I * CP.profile.((x.-q)/CP.σ)
+        y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
     end
     y
 end
 
-function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector)
+function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     y = zero(x)
     @simd for i in eachindex(CPs)
         y += CPs[i](x)
@@ -108,7 +108,7 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # reconstruction
     num_of_param = get_param_nums(CP)
     #println(θ[1:num_of_param])
-    y = CrystalPhase(CP, θ[1:num_of_param])(x)
+    y = CrystalPhase(CP, θ[1:num_of_param]).(x)
     deleteat!(θ, collect(1:num_of_param))
     return y
 end

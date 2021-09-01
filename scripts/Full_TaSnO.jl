@@ -6,6 +6,7 @@ using LinearAlgebra
 using JSON
 using TimerOutputs
 using ProgressBars
+using Profile
 
 const to = TimerOutput()
 
@@ -41,7 +42,7 @@ println("$(size(cs)) phase objects created!")
 
 wafer_result = Vector{StripeResult}()
 
-for i in tqdm(1:size(data)[1]) # size(data, 1)
+for i in tqdm(100:102) # size(data, 1)
     # TODO Pre-screening of the heatmap
     # TODO Try t-SNE or UMAP on the data?
     W, H, K = xray(Array(transpose(data[i, :, :])), RANK)
