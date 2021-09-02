@@ -11,7 +11,13 @@ function get_weighted_center(H::AbstractMatrix)
     avg = []
     for act in eachrow(H)
         ind = collect(1:size(act)[1])
-        push!(avg, Int(floor( sum(act.*ind)/sum(act) )))
+        s = sum(act)
+        if s>0
+            push!(avg, Int(floor( sum(act.*ind)/sum(act) )))
+        else
+            print(size(act)[1]/2)
+            push!(avg, Int(floor(size(act)[1]/2)))
+        end
     end
     avg
 end

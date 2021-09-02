@@ -11,12 +11,13 @@ using Profile
 const to = TimerOutput()
 
 # Constant Declaration
-RANK = 4
-THRESH = 0.3
+const RANK = 4
+const THRESH = 0.3
 
 # Readin data
 include("../src/CrystalShift.jl")
-dl = "/Users/mingchiang/Downloads/"
+# dl = "/Users/mingchiang/Downloads/"
+dl = "/Users/r2121/Downloads/"
 data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
 q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
 
@@ -28,7 +29,7 @@ conds = parse_cond.(cond, Float64) # [x, y, tpeak, dwell]
 path = "data/"
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
-s = split(read(f, String), "#\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
 
 if s[end] == ""
     pop!(s)
@@ -40,9 +41,9 @@ for i in eachindex(s)
 end
 println("$(size(cs)) phase objects created!")
 
-wafer_result = Vector{StripeResult}()
+wafer_result = Vector{StripeResult}(undef, size(data)[1])
 
-for i in tqdm(100:102) # size(data, 1)
+for i in tqdm(1:size(data, 1)) # size(data, 1)
     # TODO Pre-screening of the heatmap
     # TODO Try t-SNE or UMAP on the data?
     W, H, K = xray(Array(transpose(data[i, :, :])), RANK)
@@ -54,7 +55,7 @@ for i in tqdm(100:102) # size(data, 1)
     BW = W[:, wanted]
     BH = H[wanted, :]
 
-    stripe = Vector{PhaseResult}()
+    stripe = Vector{PhaseResult}(undef, 3)
     center = get_weighted_center(BH)
     isCenter = BitArray(undef, RANK-1)
     for k in 1:3
@@ -71,9 +72,9 @@ for i in tqdm(100:102) # size(data, 1)
         # plot!(q[i, :], new)
         # display(plt)
 
-        push!(stripe, PhaseResult(p, BH[j, :], new, isCenter[j]))
+        stripe[j] =  PhaseResult(p, BH[j, :], new, isCenter[j])
     end
-    push!(wafer_result, StripeResult(stripe, [1,1], conds[i]...))
+    wafer_result[i] =  StripeResult(stripe, [1,1], conds[i]...)
 end
 # Does data make sense
 show(to)
