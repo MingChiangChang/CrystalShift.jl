@@ -1,24 +1,24 @@
-struct PhaseResult
-    phase::AbstractVector{<:CrystalPhase}
-    activation::AbstractVector
-    raw_spectrum::AbstractVector
+struct PhaseResult{T, V::AbstractVector{T}, K, M}
+    phase::V
+    activation::K
+    raw_spectrum::M
     isCenter::Bool
 end
 
-function PhaseResult(CP::CrystalPhase, H::AbstractVector,
+function PhaseResult(cl::Crystal, H::AbstractVector,
                      y::AbstractVector, isCenter::Bool)
-    PhaseResult([CP], H, y, isCenter)
+    PhaseResult([cl], H, y, isCenter)
 end
 
 (p::PhaseResult)(x::AbstractVector) = p.CP(x) # Quick Reconstruction
 
-struct StripeResult
-    phase_results::AbstractVector{<:PhaseResult}
-    cation_ratio::AbstractVector
-    x::Float64
-    y::Float64
-    tpeak::Float64
-    dwell::Float64
+struct StripeResult{T, V::AbstractVector{T}, K, M, L}
+    phase_results::V
+    cation_ratio::K
+    x::M
+    y::M
+    tpeak::L
+    dwell::L
 end
 
 function get_center(SR::StripeResult)

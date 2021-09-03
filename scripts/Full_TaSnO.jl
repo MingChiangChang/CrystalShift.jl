@@ -7,6 +7,8 @@ using JSON
 using TimerOutputs
 using ProgressBars
 using Profile
+using CSV
+using DataFrames
 
 const to = TimerOutput()
 
@@ -25,7 +27,14 @@ f = open(dl * "12_20F16_Ta-Sn-O_cond.json", "r")
 cond = JSON.parse(f)
 conds = parse_cond.(cond, Float64) # [x, y, tpeak, dwell]
 
+# Load composition
+df = DataFrame(CSV.File(dl * "59778_TaSn_20F16_DwellTpeak.csv"))
+ta = df[!, "Ta.nmol_offgrid"]
+sn = df[!, "Sn.nmol_offgrid"]
+cation = zero(ta)
+@. cation = ta/(ta+sn)
 # CrystalPhas object creation
+
 path = "data/"
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
@@ -78,3 +87,5 @@ for i in tqdm(1:size(data, 1)) # size(data, 1)
 end
 # Does data make sense
 show(to)
+
+# Plotting
