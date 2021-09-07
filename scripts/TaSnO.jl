@@ -6,14 +6,14 @@ using BackgroundSubtraction: mcbl
 include("../src/CrystalShift.jl")
 
 path = "/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/"
-
+path = "/Users/r2121/Desktop/Code/Crystallography_based_shifting/data/"
 Q = npzread(path * "Test_Ta2O5_Q.npy")
 data = npzread(path * "Test_Ta2O5_XRD_map.npy")
 
 # CrystalPhas object creation
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
-s = split(read(f, String), "#\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
 if s[end] == ""
     pop!(s)
 end
@@ -46,7 +46,7 @@ for i in eachcol(W)
     plot!(Q, new)
 
     phase = optimize!(cs[6], Q, new; regularization=true)
-    rec = phase(Q)
+    rec = phase.(Q)
     plot!(Q, rec)
     xlabel!("Q (1/nm)")
     ylabel!("a. u.")

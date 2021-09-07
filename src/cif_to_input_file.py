@@ -1,7 +1,7 @@
 # Module to turn cif file into input text file that
 # Can be turned into CrystalPhase object with the constructor
 # CrystalPhase(path_of_cif)
-# File start with the crystal information 
+# File start with the crystal information
 # Crystal system, a=?, b=?, c=?, alpha=?, beta=?, gamma=?
 # and follow by
 # the information of the sticks as follows
@@ -23,7 +23,7 @@ def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
     '''
     cif_to_input(cif_path, output_path)
 
-    Main function that you should be interfacing with this modul 
+    Main function that you should be interfacing with this modul
     '''
     with open(output_path / f'{output_name}.csv', 'w') as f:
         for idx, cif_path in enumerate(cif_paths):
@@ -49,7 +49,7 @@ def write_crystal_info(f, cif, _type):
 def write_peaks_info(f, lattice, q_range, wvlen):
     crystal = Crystal('test', lattice)
     xrd = PowderDiffraction(crystal).data
-    
+
     for peak in xrd:
         q = xrd[peak]['qpos']*10
         I = xrd[peak]['r']
@@ -66,6 +66,7 @@ def q_to_two_theta(wvlen, *args):
 def _get_key(cif_dict):
     return list(cif_dict.keys())[0]
 
+# TODO add space group after phase name
 def _get_phase_name(info_dict):
     return remove_blank(info_dict["_chemical_formula_structural"])
 
@@ -120,10 +121,10 @@ def _get_crystal_system(info_dict):
 if __name__ == "__main__":
     home = Path.home()
     path = home / 'Desktop' / 'github' /\
-            'Crystallography_based_shifting' / 'data' 
+            'Crystallography_based_shifting' / 'data'
     # cif_paths = list(path.glob('*ICSD.cif'))
     cif_paths = path.glob("Ta-Sn-O/*/*.cif")
-        
+
     # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
     out_path = path / 'Ta-Sn-O'
     print(cif_paths)

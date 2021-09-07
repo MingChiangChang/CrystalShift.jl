@@ -10,7 +10,7 @@ using Profile
 using CSV
 using DataFrames
 
-const to = TimerOutput()
+# const to = TimerOutput()
 
 # Constant Declaration
 const RANK = 4
@@ -33,8 +33,8 @@ ta = df[!, "Ta.nmol_offgrid"]
 sn = df[!, "Sn.nmol_offgrid"]
 cation = zero(ta)
 @. cation = ta/(ta+sn)
-# CrystalPhas object creation
 
+# CrystalPhas object creation
 path = "data/"
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
@@ -76,16 +76,24 @@ for i in tqdm(1:size(data, 1)) # size(data, 1)
         b = mcbl(BW[:, j], q[i,:], 7)
         new = BW[:, j] - b
         @. new = max(new, 0)
-        @timeit to "fitting $(i)th stripe $(j)th pattern" p = fit_phases(cs, q[i, :], new)
+        p = fit_phases(cs, q[i, :], new)
         # plt = plot(q[i,:], p(q[i, :]))
         # plot!(q[i, :], new)
         # display(plt)
 
-        stripe[j] =  PhaseResult(p, BH[j, :], new, isCenter[j])
+        stripe[j] =  PhaseResult(p.cl, p.name, BH[j, :], new, isCenter[j])
     end
-    wafer_result[i] =  StripeResult(stripe, [1,1], conds[i]...)
+    subdf = df[(df.xcenter .== conds[i][1]) .& (df.ycenter .== conds[i][2]), :]
+    local ta = subdf[!, "Ta.nmol_offgrid"]
+    local sn = subdf[!, "Sn.nmol_offgrid"]
+    local cation = ta./(ta.+sn)
+    wafer_result[i] =  StripeResult(stripe, cation[1], conds[i]...)
 end
 # Does data make sense
-show(to)
+
+# Store data
+open("data/TaSnO.json", "w") do f
+    JSON.print(f, wafer_result)
+end
 
 # Plotting
