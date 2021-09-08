@@ -21,9 +21,9 @@ import numpy as np
 def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
                  wvlen=0.15406, _type=float):
     '''
-    cif_to_input(cif_path, output_path)
+    cif_to_input(cif_path, output_path, q_range, output_name='sticks')
 
-    Main function that you should be interfacing with this modul
+    Main function that you should be interfacing with this module
     '''
     with open(output_path / f'{output_name}.csv', 'w') as f:
         for idx, cif_path in enumerate(cif_paths):
@@ -66,9 +66,14 @@ def q_to_two_theta(wvlen, *args):
 def _get_key(cif_dict):
     return list(cif_dict.keys())[0]
 
-# TODO add space group after phase name
 def _get_phase_name(info_dict):
-    return remove_blank(info_dict["_chemical_formula_structural"])
+    phase_name = remove_blank(info_dict["_chemical_formula_structural"])
+    try:
+        space_group = remove_blank(info_dict["_space_group_name_H-M_alt"])
+    except KeyError:
+        print(f"No _space_group_name_H-M_alt for {phase_name}")
+        space_group = ""
+    return phase_name + "_" + space_group
 
 def _get_lattice_parameters(info_dict, _type):
     a, b, c = _get_cell_length(info_dict)

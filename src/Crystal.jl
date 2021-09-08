@@ -126,6 +126,11 @@ struct Cubic{T}<:Crystal
     end
 end
 
+function Base.show(io::IO, ct::Crystal)
+    println("a: $(ct.a), b: $(ct.b), c: $(ct.c)")
+    println("α: $(ct.α/pi*180), β: $(ct.β/pi*180), γ: $(ct.γ/pi*180)")
+end
+
 check_not_equal(x...) = length(Set(x)) == length(x)
 check_equal(x...) = all(y->y==x[1], x)
 
@@ -264,8 +269,3 @@ get_free_params(cl::Orthorhombic) = [cl.a, cl.b, cl.c]
 get_free_params(cl::Rhombohedral) = [cl.a]
 get_free_params(cl::Monoclinic) = [cl.a, cl.b, cl.c, cl.β]
 get_free_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]
-
-function Base.show(io::IO, ct::Crystal)
-    println("a: $(ct.a), b: $(ct.b), c: $(ct.c)")
-    println("α: $(ct.α/pi*180), β: $(ct.β/pi*180), γ: $(ct.γ/pi*180)")
-end
