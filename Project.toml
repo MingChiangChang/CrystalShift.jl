@@ -1,3 +1,8 @@
+name = "CrystalShift"
+uuid = "bd08b025-496e-41a7-bb0b-8ec7e5300520"
+authors = ["Ming-Chiang Chang <mc2663@cornell.edu>"]
+version = "0.1.0"
+
 [deps]
 BackgroundSubtraction = "9977cdcb-3521-4027-9f3f-3caff6505f42"
 CompressedSensing = "adc28fdd-7b77-41a2-89a7-a1a193b336a0"
