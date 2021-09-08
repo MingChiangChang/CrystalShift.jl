@@ -1,4 +1,4 @@
-#module CrystalShift
+module CrystalShift
 
 using Base.Threads
 
@@ -16,4 +16,4 @@ include("crystalphase.jl")
 include("phaseresult.jl")
 include("optimize.jl")
 
-#end
+end
