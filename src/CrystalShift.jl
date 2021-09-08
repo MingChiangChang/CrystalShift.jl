@@ -11,7 +11,7 @@ using PhaseMapping: Lorentz
 
 include("util.jl")
 include("peak.jl")
-include("Crystal.jl")
+include("crystal.jl")
 include("crystalphase.jl")
 include("phaseresult.jl")
 include("optimize.jl")

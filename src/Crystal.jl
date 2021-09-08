@@ -1,6 +1,3 @@
-using PhaseMapping
-using DelimitedFiles
-
 # Abstract type to serve as supertype for 7 different crystal systems
 abstract type Crystal end
 

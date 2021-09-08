@@ -1,0 +1,11 @@
+[deps]
+BackgroundSubtraction = "9977cdcb-3521-4027-9f3f-3caff6505f42"
+CompressedSensing = "adc28fdd-7b77-41a2-89a7-a1a193b336a0"
+CovarianceFunctions = "b3329135-7958-41d4-bb02-e084c5a526bf"
+KroneckerProducts = "1b19e153-50d3-4699-8064-93bcb9fb4fba"
+LazyInverse = "d0afe1cb-6484-4949-b9e9-61bc645ed6c7"
+LazyLinearAlgebra = "2243f6fe-7ec1-4b08-8ffc-03329353bf89"
+LinearAlgebraExtensions = "cb114d4a-f1bd-499c-ad9e-7f2ed74575b9"
+OptimizationAlgorithms = "5eef6961-c6df-46a7-ba44-0f01c6045f8f"
+PhaseMapping = "82f33ccb-cd31-4690-8856-89c050ee4e49"
+WoodburyIdentity = "49563772-d9e4-48b4-a8b6-4cbe661ead9f"
