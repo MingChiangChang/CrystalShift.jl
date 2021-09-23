@@ -37,33 +37,20 @@ end
 
 # Create a new CP object with the new parameters
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
-    crystal = typeof(CP.cl)
-    θ_temp = θ[1:get_param_nums(CP)]
-    params = get_six_params(crystal, θ_temp)
-    #println(isCubic(params...))
-    #println(params, get_crystal(params, false))
+    @view θ_temp = θ[1:get_param_nums(CP)]
+    params = get_six_params(CP.cl, θ_temp)
     c = CrystalPhase(get_crystal(params, false), CP.peaks, CP.id, CP.name,
-                θ_temp[end-1], θ_temp[end], CP.profile)
+                     θ_temp[end-1], θ_temp[end], CP.profile)
     return c
 end
 
-function get_six_params(crystal::Type, θ::AbstractVector)
-    if crystal <: Cubic
-        return [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2]
-    elseif crystal <: Tetragonal
-        return [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2]
-    elseif crystal <: Orthorhombic
-        return [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2]
-    elseif crystal <: Rhombohedral
-        return [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2]]
-    elseif crystal <: Hexagonal
-        return [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3]
-    elseif crystal <: Monoclinic
-        return [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2]
-    elseif crystal <: Triclinic
-        return θ
-    end
-end
+get_six_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2]
+get_six_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2]
+get_six_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2]
+get_six_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2]]
+get_six_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3]
+get_six_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2]
+get_six_params(crystal::Triclinic, θ::AbstractVector) = θ
 
 function get_peaks(lines)
     peaks = Vector{Peak}()
@@ -80,7 +67,7 @@ end
 function get_parameters(CPs::AbstractVector{<:CrystalPhase})
     p = Vector{Float64}()
     for cp in CPs
-        push!(p, get_parameters(cp)...)
+        push!(p, get_parameters(cp)...) # Preallocation?
     end
     p
 end
@@ -102,17 +89,17 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     end
     y
 end
-
+# Put y as an input
 function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
     # Pop the first (# free param of CP) and create a new phase
     # reconstruction
     num_of_param = get_param_nums(CP)
     #println(θ[1:num_of_param])
     y = CrystalPhase(CP, θ[1:num_of_param]).(x)
-    deleteat!(θ, collect(1:num_of_param))
+    deleteat!(θ, collect(1:num_of_param)) #### HERE
     return y
 end
-
+# Index
 function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
                       θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
