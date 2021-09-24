@@ -37,10 +37,9 @@ end
 
 # Create a new CP object with the new parameters
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
-    @view θ_temp = θ[1:get_param_nums(CP)]
-    params = get_six_params(CP.cl, θ_temp)
+    params = get_six_params(CP.cl, θ)
     c = CrystalPhase(get_crystal(params, false), CP.peaks, CP.id, CP.name,
-                     θ_temp[end-1], θ_temp[end], CP.profile)
+                     θ[end-1], θ[end], CP.profile)
     return c
 end
 
@@ -53,9 +52,9 @@ get_six_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], 
 get_six_params(crystal::Triclinic, θ::AbstractVector) = θ
 
 function get_peaks(lines)
-    peaks = Vector{Peak}()
-    for line in lines
-        push!(peaks, Peak(String(line)))
+    peaks = Vector{Peak}(undef, size(lines))
+    for i in eachindex(lines)
+        peaks[i] = Peak(String(lines[i]))
     end
     peaks
 end
@@ -72,7 +71,74 @@ function get_parameters(CPs::AbstractVector{<:CrystalPhase})
     p
 end
 
-# Reconstruct spectrum
+# Preallocating
+function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
+    @simd for i in eachindex(CP.peaks)
+        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+    end
+    y
+end
+
+function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector, 
+                                               y::AbstractVector)
+    @simd for i in eachindex(CPs)
+        CPs[i](x, y)
+    end
+    y
+end
+
+function reconstruct!(CP::CrystalPhase, θ::AbstractVector, 
+                      x::AbstractVector, y::AbstractVector)
+    CrystalPhase(CP, θ)(x, y)
+end
+
+function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
+    θ::AbstractVector, x::AbstractVector, y::AbstractVector)
+    s = 1
+    for i in eachindex(CPs)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s:s+num_of_param-1]
+        reconstruct!(CPs[i], θ_temp, x, y)
+        s += num_of_param
+    end
+    y
+end
+
+function res!(CP::CrystalPhase, θ::AbstractVector, 
+              x::AbstractVector, r::AbstractVector)
+    res!(CrystalPhase(CP, θ), x, r)
+end
+
+function res!(CPs::AbstractVector{<:CrystalPhase},
+              x::AbstractVector, r::AbstractVector)
+    @simd for i in eachindex(CPs)
+        res!(CPs[i], x, r)
+    end
+    r
+end
+
+function res!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
+    @simd for i in eachindex(CP.peaks)
+        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+    end
+    r
+end
+
+function res!(CPs::AbstractVector{<:CrystalPhase},
+             θ::AbstractVector, x::AbstractVector, r::AbstractVector)
+    s = 1
+    for i in eachindex(CPs)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s:s+num_of_param-1]
+        res!(CPs[i], θ_temp, x, r)
+        s += num_of_param
+    end
+    y
+end
+
+# Without preallocation, useful at times....
 function (CP::CrystalPhase)(x::Real)
     y = zero(x)
     @simd for i in eachindex(CP.peaks)
@@ -89,24 +155,22 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     end
     y
 end
-# Put y as an input
-function reconstruct!(CP::CrystalPhase, θ::AbstractVector, x::AbstractVector)
-    # Pop the first (# free param of CP) and create a new phase
-    # reconstruction
-    num_of_param = get_param_nums(CP)
-    #println(θ[1:num_of_param])
-    y = CrystalPhase(CP, θ[1:num_of_param]).(x)
-    deleteat!(θ, collect(1:num_of_param)) #### HERE
-    return y
+
+function reconstruct!(CP::CrystalPhase, θ::AbstractVector, 
+                      x::AbstractVector)
+    CrystalPhase(CP, θ).(x)
 end
+
 # Index
 function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
                       θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
+    s = 1
     for i in eachindex(CPs)
-        y += reconstruct!(CPs[i], θ, x)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s:s+num_of_param-1]
+        y += reconstruct!(CPs[i], θ_temp, x)
+        s += num_of_param
     end
-    #plt = plot(x, y)
-    #savefig("recon$(sum(y)).png")
     y
 end
