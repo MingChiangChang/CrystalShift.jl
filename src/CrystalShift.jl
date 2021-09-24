@@ -1,5 +1,4 @@
 module CrystalShift
-
 using Base.Threads
 
 using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings

@@ -1,14 +1,11 @@
-include("../src/util.jl")
-include("../src/peak.jl")
-include("../src/Crystal.jl")
-include("../src/crystalphase.jl")
+include("../src/CrystalShift.jl")
 
 using Plots
 using PhaseMapping
 
 test_path = "data/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n")
+s = split(read(f, String), "#\n")
 println(s[2])
 cs = Vector{CrystalPhase}()
 
@@ -18,6 +15,12 @@ delta = CrystalPhase(String(s[2]))
 push!(cs, pyro)
 push!(cs, delta)
 x = collect(8:.1:60)
+y = zero(x)
 
-plot(collect(8:.1:60),cs(collect(8:.1:60)))
-plot!(collect(8:.1:60), reconstruct!(pyro, [10., 1., .1], collect(8:.1:60)))
+# plot(collect(8:.1:60),cs(collect(8:.1:60)))
+# plot!(collect(8:.1:60), reconstruct!(pyro, [10., 1., .1], collect(8:.1:60)))
+@time a = reconstruct!(pyro, [10., 1., .1], x)
+@time a = reconstruct!(delta, [5.3, 1., .1], x)
+@time reconstruct!(pyro, [10., 1., .1], x, y)
+@time reconstruct!(delta, [5.3, 1., .1], x, y)
+plot(x, y)

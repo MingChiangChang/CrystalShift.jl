@@ -4,16 +4,17 @@ using PhaseMapping: xray
 using BackgroundSubtraction: mcbl
 
 include("../src/CrystalShift.jl")
+#using CrystalShift: CrystalPhase, optimize!
 
-path = "/Users/mingchiang/Desktop/github/Crystallography_based_shifting/data/"
-path = "/Users/r2121/Desktop/Code/Crystallography_based_shifting/data/"
+path = "/Users/mingchiang/Desktop/github/CrystalShift/data/"
+#path = "/Users/r2121/Desktop/Code/Crystallography_based_shifting/data/"
 Q = npzread(path * "Test_Ta2O5_Q.npy")
 data = npzread(path * "Test_Ta2O5_XRD_map.npy")
 
 # CrystalPhas object creation
 phase_path = path * "Ta-Sn-O/sticks.csv"
 f = open(phase_path, "r")
-s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\n") # Windows: #\r\n ...
 if s[end] == ""
     pop!(s)
 end
@@ -25,7 +26,7 @@ end
 x = collect(12:.01:40)
 h = heatmap(data)
 display(h)
-readline()
+
 # plot(x, cs[6](x), label="ICSD", linewidth=1.4)
 # plot!(x, reconstruct!(cs[6], [6.24, 3.62, 7.7, 1., .1], x), label="Modified", linewidth=1.4)
 # xlabel!("Q (1/nm)")
@@ -36,7 +37,6 @@ readline()
 W, H, K = xray(data, 4)
 nmf = plot(Q, W)
 display(nmf)
-readline()
 
 for i in eachcol(W)
     plt = plot()
@@ -45,13 +45,13 @@ for i in eachcol(W)
     @. new = max(new, 0)
     plot!(Q, new)
 
-    phase = optimize!(cs[6], Q, new; regularization=true)
+    #@time phase = optimize!(cs[6], Q, new; regularization=true)
+    @time phase = fit_phases(cs, Q, new; regularization=true)
     rec = phase.(Q)
     plot!(Q, rec)
     xlabel!("Q (1/nm)")
     ylabel!("a. u.")
     display(plt)
     # println(norm(rec.-new)/max.(rec...)) why is this so slow?
-    println(phase[1].cl)
-    readline()
+    println(phase.cl)
 end

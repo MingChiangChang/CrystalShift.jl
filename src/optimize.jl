@@ -3,17 +3,18 @@ function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
                    std_θ::AbstractVector = [1., .1, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
-	optimized_phases = Vector{CrystalPhase}()
-    @threads for phase in phases
-        push!(optimized_phases, optimize!(phase, x, y, std_noise, mean_θ, std_θ,
-	                        maxiter=maxiter, regularization=regularization)[1] )
+	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
+    @threads for i in eachindex(phases)
+        optimized_phases[i] = optimize!(phases[i], x, y, std_noise, mean_θ, std_θ,
+	                        maxiter=maxiter, regularization=regularization)[1]
     end
 	return optimized_phases[get_min_index(optimized_phases, x, y)]
 end
 
 function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
 	                   x::AbstractVector, y::AbstractVector)
-    argmin([norm(p.(x)-y) for p in optimized_phases])
+	# Preallocate or parrellel
+   argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
 """
@@ -99,8 +100,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    regularization::Bool = true)
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = exp.(θ) # make a copy
+		#temp = zero(r)
         @. r = y
-		r .-= reconstruct!(phases, params, x)
+		res!(phases, params, x, r) # Avoid allocation, put everything in here??
+		# r -= reconstruct!((phases,), (params,), x, temp)
 		r ./= sqrt(2) * std_noise # ???
         return r
 	end
