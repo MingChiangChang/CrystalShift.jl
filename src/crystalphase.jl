@@ -37,19 +37,19 @@ end
 
 # Create a new CP object with the new parameters
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
-    params = get_six_params(CP.cl, θ)
+    params = get_eight_params(CP.cl, θ)[1:6]
     c = CrystalPhase(get_crystal(params, false), CP.peaks, CP.id, CP.name,
                      θ[end-1], θ[end], CP.profile)
     return c
 end
 
-get_six_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2]
-get_six_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2]
-get_six_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2]
-get_six_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2]]
-get_six_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3]
-get_six_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2]
-get_six_params(crystal::Triclinic, θ::AbstractVector) = θ
+get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
+get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
+get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
+get_eight_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2], θ[3], θ[4]]
+get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3, θ[3], θ[4]]
+get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[4], θ[5]]
+get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
 
 function get_peaks(lines)
     peaks = Vector{Peak}(undef, size(lines))
