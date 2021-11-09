@@ -80,7 +80,7 @@ function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
     y
 end
 
-function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector, 
+function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
                                                y::AbstractVector)
     @simd for i in eachindex(CPs)
         CPs[i](x, y)
@@ -88,7 +88,7 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
     y
 end
 
-function reconstruct!(CP::CrystalPhase, θ::AbstractVector, 
+function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
                       x::AbstractVector, y::AbstractVector)
     CrystalPhase(CP, θ)(x, y)
 end
@@ -105,7 +105,7 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     y
 end
 
-function res!(CP::CrystalPhase, θ::AbstractVector, 
+function res!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
     res!(CrystalPhase(CP, θ), x, r)
 end
@@ -135,7 +135,7 @@ function res!(CPs::AbstractVector{<:CrystalPhase},
         res!(CPs[i], θ_temp, x, r)
         s += num_of_param
     end
-    y
+    r
 end
 
 # Without preallocation, useful at times....
@@ -156,7 +156,7 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     y
 end
 
-function reconstruct!(CP::CrystalPhase, θ::AbstractVector, 
+function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
                       x::AbstractVector)
     CrystalPhase(CP, θ).(x)
 end
