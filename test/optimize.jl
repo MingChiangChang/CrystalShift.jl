@@ -1,7 +1,7 @@
 # TODO A lot more test should be written
 include("../src/util.jl")
 include("../src/peak.jl")
-include("../src/Crystal.jl")
+include("../src/crystal.jl")
 include("../src/crystalphase.jl")
 include("../src/optimize.jl")
 
@@ -30,6 +30,6 @@ y /= max(y...)
 # Compare old phase mapping and current ones
 #
 cs = optimize!(cs, x, y; regularization=true)
-println("Res:$(norm(cs(x)-y))")
-plot(x, cs(x)) # This should give the fitted spectrum
+println("Res:$(norm(cs.(x)-y))")
+plot(x, cs.(x)) # This should give the fitted spectrum
 plot!(x, y)
