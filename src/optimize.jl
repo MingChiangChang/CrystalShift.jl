@@ -1,6 +1,6 @@
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
+                   std_noise::Real = .1, mean_θ::AbstractVector = [1., 1.,.2],
                    std_θ::AbstractVector = [1., .1, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
 	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
@@ -26,8 +26,8 @@ end
 """
 function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [1., .1, 1.];
+                   std_noise::Real = .001, mean_θ::AbstractVector = [1., 1.,.2],
+                   std_θ::AbstractVector = [1., .5, 5.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
     #println(θ)
@@ -113,7 +113,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, θ::AbstractVector)
-		μ = log.(mean_θ) # [0, 0, 0]
+		μ = mean_θ # [0, 0, 0]
 		σ² = std_θ.^2 # var_a, var_α, var_σ
 		@. p = (θ - μ) / 2σ²
 	end
@@ -124,6 +124,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     	residual!(r, θ)
     	p = @view rp[length(y)+1:end] # prior term
     	prior!(p, θ)
+		println("Norm: $(norm(r)) Prior:$(norm(p))")
     	return rp
     end
 
