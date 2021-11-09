@@ -21,3 +21,7 @@
 * Each spectrum takes ~4 secs
 * Speedup needed
 * Want result object
+
+### 11/9
+* Bug fixes
+* Still need to find proper values for regularization
