@@ -124,7 +124,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     	residual!(r, θ)
     	p = @view rp[length(y)+1:end] # prior term
     	prior!(p, θ)
-		println("Norm: $(norm(r)) Prior:$(norm(p))")
+		# println("Norm: $(norm(r)) Prior:$(norm(p))")
     	return rp
     end
 
