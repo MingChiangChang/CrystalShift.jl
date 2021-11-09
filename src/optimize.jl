@@ -42,11 +42,9 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	          maxiter = maxiter, regularization = regularization)
 
     for (i, cp) in enumerate(phases)
-		println(θ)
         phases[i] = CrystalPhase(cp, θ)
 		deleteat!(θ, collect(1:get_param_nums(phases[i])))
 	end
-	println(phases)
 	return phases
 end
 
