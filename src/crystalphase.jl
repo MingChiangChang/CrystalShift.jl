@@ -48,8 +48,14 @@ get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
 get_eight_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2], θ[3], θ[4]]
 get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3, θ[3], θ[4]]
-get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[4], θ[5]]
+get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[5], θ[6]]
 get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
+
+get_free_params(CP::CrystalPhase) = get_free_params(CP.cl)
+
+function get_eight_params(CP::CrystalPhase, θ::AbstractVector)
+    get_eight_params(CP.cl, θ)
+end
 
 function get_peaks(lines)
     peaks = Vector{Peak}(undef, size(lines))
@@ -99,6 +105,7 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s:s+num_of_param-1]
+        println(θ_temp)
         reconstruct!(CPs[i], θ_temp, x, y)
         s += num_of_param
     end
