@@ -30,7 +30,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [1., .5, 5.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
-    #println(θ)
+    
 	if length(mean_θ) == 3
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
@@ -61,8 +61,8 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	for phase in phases
 		n = phase.cl.free_param
 		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase.cl)
-		full_std_θ[start:start+n-1] = repeat(std_θ[1, :], n)
-		full_mean_θ[start + n: start + n + 1] = mean_θ[2:3]
+		full_std_θ[start:start+n-1] = std_θ[1].*get_free_params(phase.cl)#repeat(std_θ[1, :], n)
+		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
 		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
 		start += (n+2)
     end
@@ -100,19 +100,20 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    regularization::Bool = true)
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = exp.(θ) # make a copy
-		#temp = zero(r)
+		
         @. r = y
 		res!(phases, params, x, r) # Avoid allocation, put everything in here??
 		# r -= reconstruct!((phases,), (params,), x, temp)
-		r ./= sqrt(2) * std_noise # ???
+		r ./= sqrt(2) * std_noise # trade-off between prior and 
+		                          # actual residual
         return r
 	end
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, θ::AbstractVector)
-		μ = mean_θ # [0, 0, 0]
-		σ² = std_θ.^2 # var_a, var_α, var_σ
+		μ = log.(mean_θ) 
+		σ² = std_θ.^2
 		@. p = (θ - μ) / 2σ²
 	end
 
@@ -127,7 +128,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     end
 
     θ = initialize_activation!(θ, phases, x, y)
-    # println(θ)
+    
     @. θ = log(θ) # tramsform to log space for better conditioning
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
@@ -142,7 +143,6 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 						min_decrease = 1e-8, max_iter = maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = 1.0)
 	λ = 1e-6
-	#t, J = update_jacobian!(LM, θ)
 
 	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(false))
 	@. θ = exp(θ) # transform back
