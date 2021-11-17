@@ -1,9 +1,9 @@
 # Abstract type to serve as supertype for 7 different crystal systems
-abstract type Crystal end
+abstract type Crystal{T} end
 
 # Unit in angstrom and radians
 # TODO use Base.getproperty to make things easier
-struct Triclinic{T}<:Crystal
+struct Triclinic{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -21,7 +21,7 @@ struct Triclinic{T}<:Crystal
     end
 end
 
-struct Monoclinic{T}<:Crystal
+struct Monoclinic{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -39,7 +39,7 @@ struct Monoclinic{T}<:Crystal
     end
 end
 
-struct Orthorhombic{T}<:Crystal
+struct Orthorhombic{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -56,7 +56,7 @@ struct Orthorhombic{T}<:Crystal
     end
 end
 
-struct Tetragonal{T}<:Crystal
+struct Tetragonal{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -73,7 +73,7 @@ struct Tetragonal{T}<:Crystal
     end
 end
 
-struct Rhombohedral{T}<:Crystal
+struct Rhombohedral{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -89,7 +89,7 @@ struct Rhombohedral{T}<:Crystal
     end
 end
 
-struct Hexagonal{T}<:Crystal
+struct Hexagonal{T}<:Crystal{T}
     a::T
     b::T
     c::T
@@ -106,7 +106,7 @@ struct Hexagonal{T}<:Crystal
     end
 end
 
-struct Cubic{T}<:Crystal
+struct Cubic{T}<:Crystal{T}
     a::T
     b::T
     c::T
