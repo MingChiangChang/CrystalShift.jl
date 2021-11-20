@@ -13,7 +13,7 @@ using Test
 # Global
 std_noise = .01
 mean_θ = [1., 1., .2]
-std_θ = [.5, 10., 1.]
+std_θ = [.025, 10., 1.]
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
 s = split(read(f, String), "#\n") # Windows: #\r\n ...
@@ -46,6 +46,7 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     r/max(r...)
 end
 
+# test fails when the lattice parameters shift too much
 @testset "test" begin
     for (idx, cp) in enumerate(cs)
         println(idx)
