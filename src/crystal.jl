@@ -15,8 +15,8 @@ struct Triclinic{T}<:Crystal{T}
     free_param::Int8
 
     function Triclinic{T}(a::T, b::T, c::T, α::T, β::T, γ::T) where {T<:Real}
-        check_not_equal(a, b, c) ||  error("a,b,c should be different for triclinic")
-        check_not_equal(α, β, γ, pi/2) || error("α, β, γ, pi/2 should be different for triclinic")
+        #check_not_equal(a, b, c) ||  error("a,b,c should be different for triclinic")
+        #check_not_equal(α, β, γ, pi/2) || error("α, β, γ, pi/2 should be different for triclinic")
         new{T}(a, b, c, α, β, γ, 6)
     end
 end
@@ -33,8 +33,8 @@ struct Monoclinic{T}<:Crystal{T}
     free_param::Int8
 
     function Monoclinic{T}(a::T, b::T, c::T, β::T) where {T<:Real}
-        check_not_equal(a, b, c) || error("a,c should be different for monoclinic")
-        check_not_equal(β, pi/2) || error("β, pi/2 should be different for monoclinic")
+        #check_not_equal(a, b, c) || error("a,c should be different for monoclinic")
+        #check_not_equal(β, pi/2) || error("β, pi/2 should be different for monoclinic")
         new{T}(a, b, c, pi/2, β, pi/2, 4)
     end
 end
@@ -51,7 +51,7 @@ struct Orthorhombic{T}<:Crystal{T}
     free_param::Int8
 
     function Orthorhombic{T}(a::T, b::T, c::T) where {T<:Real}
-        check_not_equal(a, b, c) || error("a, b, c should be different for orthhombic")
+        #check_not_equal(a, b, c) || error("a, b, c should be different for orthhombic")
         new{T}(a, b, c, pi/2, pi/2, pi/2, 3)
     end
 end
@@ -68,7 +68,7 @@ struct Tetragonal{T}<:Crystal{T}
     free_param::Int8
 
     function Tetragonal{T}(a::T, c::T) where {T<:Real}
-        check_not_equal(a, c) || error("a, c should be different for tetragonal")
+        #check_not_equal(a, c) || error("a, c should be different for tetragonal")
         new{T}(a, a, c, pi/2, pi/2, pi/2, 2)
     end
 end
@@ -101,7 +101,7 @@ struct Hexagonal{T}<:Crystal{T}
     free_param::Int8
 
     function Hexagonal{T}(a::T, c::T) where {T<:Real}
-        check_not_equal(a, c) || error("a, c should be different for hexagonal")
+        #check_not_equal(a, c) || error("a, c should be different for hexagonal")
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3, 2)
     end
 end
