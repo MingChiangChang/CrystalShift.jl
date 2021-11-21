@@ -150,8 +150,8 @@ end
 
 function isRhombohedral(a::Real, b::Real, c::Real,
                        α::Real, β::Real, γ::Real)
-    return check_equal(a, b, c) && check_equal(α, β, pi/2) &&\
-           check_equal(γ, 2*pi/3)
+    return check_equal(a, b, c) && check_equal(α, β, γ) &&
+           check_not_equal(α, pi/2)
 end
 
 function isOrthohombic(a::Real, b::Real, c::Real,
