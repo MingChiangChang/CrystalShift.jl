@@ -36,11 +36,37 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
 end
 
 # Create a new CP object with the new parameters
+# function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
+#     params = get_eight_params(CP.cl, θ)
+#     c = CrystalPhase(get_crystal(params[1:6], false), CP.peaks, CP.id, CP.name,
+#                      params[7], params[8], CP.profile)
+#     return c
+# end
+
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
-    params = get_eight_params(CP.cl, θ)
-    c = CrystalPhase(get_crystal(params[1:6], false), CP.peaks, CP.id, CP.name,
-                     params[7], params[8], CP.profile)
+    cl = get_intrinsic_crystal_type(typeof(CP.cl))
+    t = eltype(θ)
+    c = CrystalPhase(cl{t}(θ[1:end-2]...), CP.peaks, CP.id, CP.name,
+                     θ[end-1], θ[end], CP.profile)
     return c
+end
+
+function get_intrinsic_crystal_type(cl::Type)
+    if cl <: Cubic
+        return Cubic
+    elseif cl <: Tetragonal
+        return Tetragonal
+    elseif cl <: Monoclinic
+        return Monoclinic
+    elseif cl <: Hexagonal
+        return Hexagonal
+    elseif cl <: Orthorhombic
+        return Orthorhombic
+    elseif cl <: Rhombohedral
+        return Rhombohedral
+    elseif cl <: Triclinic
+        return Triclinic
+    end
 end
 
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
@@ -50,6 +76,14 @@ get_eight_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[
 get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3, θ[3], θ[4]]
 get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[5], θ[6]]
 get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
+
+get_free_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
+get_free_params(cl::Tetragonal, θ::AbstractVector) = [θ[1], θ[3]]
+get_free_params(cl::Hexagonal, θ::AbstractVector) = [θ[1], θ[3]]
+get_free_params(cl::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3]]
+get_free_params(cl::Rhombohedral, θ::AbstractVector) = [θ[1], θ[4]]
+get_free_params(cl::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], θ[5]]
+get_free_params(cl::Triclinic, θ::AbstractVector) = θ
 
 get_free_params(CP::CrystalPhase) = get_free_params(CP.cl)
 
