@@ -1,5 +1,6 @@
-struct CrystalPhase{T, V<:AbstractVector{T}, C, P, K, M}
+struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M}
     cl::C # crystal object
+    origin_cl::CL # save for later comparison
     peaks::V # Vector of peak object
 
     id::Int # Just index
@@ -32,7 +33,7 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     name = String(lattice_info[2])
     act = 1.0
 
-    CrystalPhase(crystal, peaks, id, name, act, wid_init, profile)
+    CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile)
 end
 
 # Create a new CP object with the new parameters
@@ -47,7 +48,7 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     fp = CP.cl.free_param
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     t = eltype(θ)
-    c = CrystalPhase(cl{t}(θ[1:fp]...), CP.peaks, CP.id, CP.name,
+    c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
                      θ[fp+1], θ[fp+2], CP.profile)
     return c
 end
