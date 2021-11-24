@@ -31,7 +31,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
 
-	if length(mean_θ) == 3
+	if length(mean_θ) == 2
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
@@ -49,7 +49,25 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 end
 
 function length_check(phases::AbstractVector, mean_θ::AbstractVector, std_θ::AbstractVector)
-    (sum([get_param_nums(phase) for phase in phases]) == length(mean_θ) == length(std_θ) )
+	# println("sum: $(sum([phase.cl.free_param + 1 for phase in phases]))")
+	# println("")
+    (sum([phase.cl.free_param + 1 for phase in phases]) == length(mean_θ) == length(std_θ) )
+end
+
+function remove_act_from_θ(θ::AbstractVector,
+	                      phases::AbstractVector{<:Crystal})
+	θ_c = copy(θ)
+    cursor = 0
+	for phase in phases
+	    deleteat!(θ_c, cursor + phase.free_param + 1)
+        cursor += phase.free_param + 1
+	end
+	θ_c
+end
+
+function remove_act_from_θ(θ::AbstractVector,
+	                      phases::AbstractVector{<:CrystalPhase})
+	remove_act_from_θ(θ, collect_crystals(phases))
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
@@ -59,7 +77,7 @@ end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	                    phases::AbstractVector{<:Crystal})
-	totl_params = sum([(phase.free_param + 2) for phase in phases])
+	totl_params = sum([(phase.free_param + 1) for phase in phases])
 	full_mean_θ = zeros(totl_params)
 	full_std_θ = zeros(totl_params)
 	start = 1
@@ -67,9 +85,9 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 		n = phase.free_param
 		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase)
 		full_std_θ[start:start+n-1] = std_θ[1].*get_free_params(phase)#repeat(std_θ[1, :], n)
-		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
-		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
-		start += (n+2)
+		full_mean_θ[start + n:start + n] = mean_θ[2:2]
+		full_std_θ[start + n:start + n] = std_θ[2:2]
+		start += (n+1)
     end
 	return full_mean_θ, full_std_θ
 end
@@ -117,9 +135,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, θ::AbstractVector)
+		θ_c = remove_act_from_θ(θ, phases)
 		μ = log.(mean_θ)
 		σ² = std_θ.^2
-		@. p = (θ - μ) / 2σ²
+		@. p = (θ_c - μ) / 2σ²
 	end
 
 	# Regularized cost function
@@ -138,7 +157,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
     if regularization
-		r = zeros(eltype(θ), length(y) + length(θ)) # Reason??
+		r = zeros(eltype(θ), length(y) + length(θ) - 1) # Reason??
         LM = LevenbergMarquart(f, θ, r)
 	else
 		r = zeros(eltype(θ), size(y))

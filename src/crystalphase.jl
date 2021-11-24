@@ -113,6 +113,8 @@ function get_parameters(CPs::AbstractVector{<:CrystalPhase})
     p
 end
 
+collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
+
 # Preallocating
 function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
     @simd for i in eachindex(CP.peaks)
