@@ -157,7 +157,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
     if regularization
-		r = zeros(eltype(θ), length(y) + length(θ) - 1) # Reason??
+		r = zeros(eltype(θ), length(y) + length(θ) - size(phases, 1)) # Reason??
         LM = LevenbergMarquart(f, θ, r)
 	else
 		r = zeros(eltype(θ), size(y))
