@@ -12,8 +12,9 @@ using Test
 
 # Global
 std_noise = .01
-mean_θ = [1., 1., .2]
+mean_θ = [1., 0.001, .2]
 std_θ = [.025, 10., 1.]
+
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
 s = split(read(f, String), "#\n") # Windows: #\r\n ...
@@ -25,9 +26,50 @@ cs = CrystalPhase.(String.(s[1:end-1]))
 # push!(cs, delta)
 x = collect(8:.1:60)
 
-function test_reconstruct(cp::CrystalPhase, x::AbstractVector, plt=false)
+function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
     y = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ; maxiter=32, regularization=true)
+
+    if plt
+        p = plot(x, c.(x), label="Reconstructed")
+        plot!(x, y, label="Original")
+        display(p)
+    end
+    println(c[1].cl)
+    println(c[1].origin_cl)
+    norm(c.(x).-y)
+end
+
+function synthesize_data(cp::CrystalPhase, x::AbstractVector)
+    params = get_free_params(cp)
+    scaling = (0.05.*rand(size(params, 1)).-0.01).+1
+    @. params = params*scaling
+    params = [params..., 1., 0.2]
+    r = reconstruct!(cp, params, x)
+    r/max(r...)
+end
+
+function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
+                                   x::AbstractVector)
+    r = zero(x)
+    full_params = Float64[]
+    for cp in cps
+        params = get_free_params(cp)
+        scaling = (0.005.*rand(size(params, 1)).-0.01).+1
+        @. params = params*scaling
+        params = vcat(params, 0.5.+3rand(1), 0.1.+0.5(rand(1)))
+        full_params = vcat(full_params, params)
+        # println(full_params)
+    end
+    r = reconstruct!(cps, full_params, x)
+    r/max(r...)
+end
+
+function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
+                                   x::AbstractVector, num_phase::Int, plt=false)
+    phase = rand(1:size(cps, 1), num_phase)
+    y = synthesize_multiphase_data(cps[phase], x)
+    c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ; maxiter=32, regularization=true)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
@@ -37,20 +79,16 @@ function test_reconstruct(cp::CrystalPhase, x::AbstractVector, plt=false)
     norm(c.(x).-y)
 end
 
-function synthesize_data(cp::CrystalPhase, x::AbstractVector)
-    params = get_free_params(cp)
-    scaling = (0.02.*rand(size(params)[1]).-0.01).+1
-    @. params = params*scaling
-    params = [params..., 1., 0.2]
-    r = reconstruct!(cp, params, x)
-    r/max(r...)
+# test fails when the lattice parameters shift too much
+@testset "Single phase with shift test" begin
+    for (idx, cp) in enumerate(cs)
+        @test test_optimize(cp, x, true) < 0.1
+    end
 end
 
-# test fails when the lattice parameters shift too much
-@testset "test" begin
-    for (idx, cp) in enumerate(cs)
-        println(idx)
-        @test test_reconstruct(cp, x, true) < 0.1
+@testset "Multiple phases with shift test" begin
+    for _ in 1:10
+        @test test_multiphase_optimize(cs, x, 2, true) < 0.1
     end
 end
 
