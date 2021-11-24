@@ -30,7 +30,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [1., .5, 5.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
-    
+
 	if length(mean_θ) == 3
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
@@ -54,14 +54,19 @@ end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	                    phases::AbstractVector{<:CrystalPhase})
-	totl_params = sum([get_param_nums(phase) for phase in phases])
+	extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
+end
+
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+	                    phases::AbstractVector{<:Crystal})
+	totl_params = sum([(phase.free_param + 2) for phase in phases])
 	full_mean_θ = zeros(totl_params)
 	full_std_θ = zeros(totl_params)
 	start = 1
 	for phase in phases
-		n = phase.cl.free_param
-		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase.cl)
-		full_std_θ[start:start+n-1] = std_θ[1].*get_free_params(phase.cl)#repeat(std_θ[1, :], n)
+		n = phase.free_param
+		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase)
+		full_std_θ[start:start+n-1] = std_θ[1].*get_free_params(phase)#repeat(std_θ[1, :], n)
 		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
 		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
 		start += (n+2)
@@ -100,11 +105,11 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    regularization::Bool = true)
     function residual!(r::AbstractVector, θ::AbstractVector)
         params = exp.(θ) # make a copy
-		
+
         @. r = y
 		res!(phases, params, x, r) # Avoid allocation, put everything in here??
 		# r -= reconstruct!((phases,), (params,), x, temp)
-		r ./= sqrt(2) * std_noise # trade-off between prior and 
+		r ./= sqrt(2) * std_noise # trade-off between prior and
 		                          # actual residual
         return r
 	end
@@ -112,7 +117,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, θ::AbstractVector)
-		μ = log.(mean_θ) 
+		μ = log.(mean_θ)
 		σ² = std_θ.^2
 		@. p = (θ - μ) / 2σ²
 	end
@@ -128,7 +133,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     end
 
     θ = initialize_activation!(θ, phases, x, y)
-    
+
     @. θ = log(θ) # tramsform to log space for better conditioning
     (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
