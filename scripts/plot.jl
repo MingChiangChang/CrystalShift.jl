@@ -26,9 +26,11 @@ function get_center(stripe_dict)
     end
 end
 
-path = "/Users/r2121/Desktop/Code/Crystallography_based_shifting/data/"
-path = path * "TaSnO.json"
+# path = "/Users/r2121/Desktop/Code/Crystallography_based_shifting/data/Ta-Sn-O/"
+# path = path * "TaSnO.json"
 
+path = "/Users/r2121/Desktop/Code/CrystalTree.jl/data/"
+path = path * "TaSnO.json"
 results = JSON.parsefile(path)
 names = get_unique_phase_names(results)
 

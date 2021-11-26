@@ -1,11 +1,11 @@
-include("../src/CrystalShift.jl")
+# include("../src/CrystalShift.jl")
 
 using Plots
 using PhaseMapping
 
 test_path = "data/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\n")
+s = split(read(f, String), "#\r\n")
 println(s[2])
 cs = Vector{CrystalPhase}()
 

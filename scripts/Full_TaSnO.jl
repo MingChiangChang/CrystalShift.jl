@@ -20,10 +20,12 @@ const THRESH = 0.3
 include("../src/CrystalShift.jl")
 # dl = "/Users/mingchiang/Downloads/"
 dl = "/Users/r2121/Downloads/"
-data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
-q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
+# data = npzread(dl * "12_20F16_Ta-Sn-O_integrated.npy")
+# q = npzread(dl * "12_20F16_Ta-Sn-O_Q.npy")
+data = npzread(dl * "TaSnO_data.npy")
+q = npzread(dl * "TaSnO_Q.npy")
 
-f = open(dl * "12_20F16_Ta-Sn-O_cond.json", "r")
+f = open(dl * "TaSnO_conds.json", "r")
 cond = JSON.parse(f)
 conds = parse_cond.(cond, Float64) # [x, y, tpeak, dwell]
 

@@ -1,7 +1,7 @@
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .1, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [1., .1, 1.];
+                   std_noise::Real = .1, mean_θ::AbstractVector = [1. ,.2],
+                   std_θ::AbstractVector = [1., 1.];
                    maxiter::Int = 32, regularization::Bool = true)
 	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
     @threads for i in eachindex(phases)
@@ -26,8 +26,8 @@ end
 """
 function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .001, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [1., .5, 5.];
+                   std_noise::Real = .001, mean_θ::AbstractVector = [1., .2],
+                   std_θ::AbstractVector = [1., 5.];
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
 
@@ -94,8 +94,8 @@ end
 
 # Single phase situation. Put phase into [phase].
 function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .01, mean_θ::AbstractVector = [1., 1.,.2],
-                   std_θ::AbstractVector = [.1, .5, 1.];
+                   std_noise::Real = .01, mean_θ::AbstractVector = [1., .2],
+                   std_θ::AbstractVector = [.1, 1.];
                    maxiter::Int = 32, regularization::Bool = true)
 	optimize!([phase], x, y, std_noise, mean_θ, std_θ,
 	          maxiter=maxiter, regularization=regularization)
