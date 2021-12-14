@@ -13,11 +13,11 @@ using Test
 # Global
 std_noise = .01
 mean_θ = [1., .2]
-std_θ = [.025, 1.]
+std_θ = [.05, .1]
 
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\n") # Windows: #\r\n ...
 #s = Vector{CrystalPhase}()
 cs = CrystalPhase.(String.(s[1:end-1]))
 # pyro = CrystalPhase(String(s[1]))
@@ -42,9 +42,11 @@ end
 
 function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     params = get_free_params(cp)
-    scaling = (0.05.*rand(size(params, 1)).-0.01).+1
+    interval_size = 0.025
+    scaling = (interval_size.*rand(size(params, 1),).-interval_size/2).+1
     @. params = params*scaling
     params = [params..., 1., 0.2]
+    println(params)
     r = reconstruct!(cp, params, x)
     r/max(r...)
 end
@@ -53,9 +55,11 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
                                    x::AbstractVector)
     r = zero(x)
     full_params = Float64[]
+    interval_size = 0.025
     for cp in cps
         params = get_free_params(cp)
-        scaling = (0.005.*rand(size(params, 1)).-0.01).+1
+        
+        scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
         params = vcat(params, 0.5.+3rand(1), 0.1.+0.5(rand(1)))
         full_params = vcat(full_params, params)
@@ -82,15 +86,16 @@ end
 # test fails when the lattice parameters shift too much
 @testset "Single phase with shift test" begin
     for (idx, cp) in enumerate(cs)
+        println(idx)
         @test test_optimize(cp, x, true) < 0.1
     end
 end
 
-@testset "Multiple phases with shift test" begin
-    for _ in 1:10
-        @test test_multiphase_optimize(cs, x, 2, true) < 0.1
-    end
-end
+# @testset "Multiple phases with shift test" begin
+#     for _ in 1:10
+#         @test test_multiphase_optimize(cs, x, 2, true) < 0.1
+#     end
+# end
 
 # test_reconstruct(cs[8], x, true)#
 
