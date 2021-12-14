@@ -123,8 +123,9 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real, mean_θ::AbstractVector,
                    std_θ::AbstractVector; maxiter::Int = 32,
                    regularization::Bool = true)
-    function residual!(r::AbstractVector, θ::AbstractVector)
-        params = exp.(θ) # make a copy
+	param = copy(θ)
+    function residual!(r::AbstractVector, log_θ::AbstractVector)
+        @. params = exp(log_θ) # make a copy
 
         @. r = y
 		res!(phases, params, x, r) # Avoid allocation, put everything in here??
@@ -136,19 +137,18 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
-    function prior!(p::AbstractVector, θ::AbstractVector)
-		θ_c = remove_act_from_θ(θ, phases)
+    function prior!(p::AbstractVector, log_θ::AbstractVector)
+		θ_c = remove_act_from_θ(log_θ, phases)
 		μ = log.(mean_θ)
-		σ² = std_θ.^2
-		@. p = (θ_c - μ) / 2σ²
+		@. p = (θ_c - μ) / (sqrt(2)*std_θ)
 	end
 
 	# Regularized cost function
-    function f(rp::AbstractVector, θ::AbstractVector)
+    function f(rp::AbstractVector, log_θ::AbstractVector)
     	r = @view rp[1:length(y)] # residual term
-    	residual!(r, θ)
+    	residual!(r, log_θ)
     	p = @view rp[length(y)+1:end] # prior term
-    	prior!(p, θ)
+    	prior!(p, log_θ)
 		#println("Norm: $(norm(r)) Prior:$(norm(p))")
     	return rp
     end
@@ -156,21 +156,22 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     θ = initialize_activation!(θ, phases, x, y)
 
     @. θ = log(θ) # tramsform to log space for better conditioning
-    (any(isnan, θ) || any(isinf, θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+	log_θ = θ
+    (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
     if regularization
-		r = zeros(eltype(θ), length(y) + length(θ) - size(phases, 1)) # Reason??
-        LM = LevenbergMarquart(f, θ, r)
+		r = zeros(eltype(log_θ), length(y) + length(log_θ) - size(phases, 1)) # Reason??
+        LM = LevenbergMarquart(f, log_θ, r)
 	else
-		r = zeros(eltype(θ), size(y))
-        LM = LevenbergMarquart(residual!, θ, r)
+		r = zeros(eltype(log_θ), size(y))
+        LM = LevenbergMarquart(residual!, log_θ, r)
 	end
     stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-8, max_iter = maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 	λ = 1e-6
 
-	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(true))
-	@. θ = exp(θ) # transform back
+	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(true))
+	@. θ = exp(log_θ) # transform back
 	return θ
 end
