@@ -116,6 +116,8 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 end
 
 # TODO create prior for each crystal phases
+# TODO rename variables that are in log space
+
 function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector,
@@ -165,10 +167,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	end
     stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-8, max_iter = maxiter,
-						decrease_factor = 7, increase_factor = 10, max_step = 1.0)
+						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 	λ = 1e-6
 
-	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(false))
+	OptimizationAlgorithms.optimize!(LM, θ, copy(r), stn, λ, Val(true))
 	@. θ = exp(θ) # transform back
 	return θ
 end
