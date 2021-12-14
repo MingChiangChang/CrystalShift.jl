@@ -123,7 +123,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real, mean_θ::AbstractVector,
                    std_θ::AbstractVector; maxiter::Int = 32,
                    regularization::Bool = true)
-	param = copy(θ)
+	params = copy(θ)
     function residual!(r::AbstractVector, log_θ::AbstractVector)
         @. params = exp(log_θ) # make a copy
 
