@@ -12,12 +12,12 @@ using Test
 
 # Global
 std_noise = .01
-mean_θ = [1., .2]
-std_θ = [.05, .1]
+mean_θ = [1., 1., .2]
+std_θ = [.05, Inf, .1]
 
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\n") # Windows: #\r\n ...
+s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
 #s = Vector{CrystalPhase}()
 cs = CrystalPhase.(String.(s[1:end-1]))
 # pyro = CrystalPhase(String(s[1]))
