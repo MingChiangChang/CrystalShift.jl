@@ -102,7 +102,12 @@ function get_peaks(lines)
 end
 
 function get_parameters(CP::CrystalPhase)
-    return [get_free_params(CP.cl)..., CP.act, CP.σ]
+    # p = Vector{Real}()
+    # push!(p, get_free_params(CP.cl)...)
+    # push!(p, CP.act)
+    # push!(p, CP.σ)
+    # return p
+    return [ get_free_params(CP.cl)..., CP.act, CP.σ]
 end
 
 function get_parameters(CPs::AbstractVector{<:CrystalPhase})

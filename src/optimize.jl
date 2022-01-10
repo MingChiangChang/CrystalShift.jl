@@ -120,6 +120,29 @@ end
 # TODO create prior for each crystal phases
 # TODO rename variables that are in log space
 
+function _residual!(phases::AbstractVector{<:CrystalPhase},
+	              log_θ::AbstractVector,
+				  x::AbstractVector, y::AbstractVector,
+				  r::AbstractVector,
+				  std_noise::Real)
+    params = exp.(log_θ) # make a copy
+
+	@. r = y
+	res!(phases, params, x, r) # Avoid allocation, put everything in here??
+	# r -= reconstruct!((phases,), (params,), x, temp)
+	r ./= sqrt(2) * std_noise # trade-off between prior and
+								# actual residual
+	return r
+end
+
+function _prior(p::AbstractVector, log_θ::AbstractVector,
+	            mean_θ::AbstractVector, std_θ::AbstractVector)
+    μ = log.(mean_θ)
+		# @. p = (θ_c - μ) / (sqrt(2)*std_θ)
+	@. p = (log_θ - μ) / (sqrt(2)*std_θ)
+	return p
+end
+
 function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector,
@@ -127,23 +150,24 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    regularization::Bool = true)
 	# params = copy(θ)
     function residual!(r::AbstractVector, log_θ::AbstractVector)
-        params = exp.(log_θ) # make a copy
+        # params = exp.(log_θ) # make a copy
 
-        @. r = y
-		res!(phases, params, x, r) # Avoid allocation, put everything in here??
+        # @. r = y
+		# res!(phases, params, x, r) # Avoid allocation, put everything in here??
 		# r -= reconstruct!((phases,), (params,), x, temp)
-		r ./= sqrt(2) * std_noise # trade-off between prior and
+		# r ./= sqrt(2) * std_noise # trade-off between prior and
 		                          # actual residual
-        return r
+        return _residual!(phases, log_θ, x, y, r, std_noise)
 	end
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, log_θ::AbstractVector)
 		# θ_c = remove_act_from_θ(log_θ, phases)
-		μ = log.(mean_θ)
-		# @. p = (θ_c - μ) / (sqrt(2)*std_θ)
-		@. p = (log_θ - μ) / (sqrt(2)*std_θ)
+		# μ = log.(mean_θ)
+		# # @. p = (θ_c - μ) / (sqrt(2)*std_θ)
+		# @. p = (log_θ - μ) / (sqrt(2)*std_θ)
+		_prior(p, log_θ, mean_θ, std_θ)
 	end
 
 	# Regularized cost function
@@ -161,7 +185,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     @. θ = log(θ) # tramsform to log space for better conditioning
 	log_θ = θ
     (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
-    println(log_θ)
+    
     if regularization
 		r = zeros(eltype(log_θ), length(y) + length(log_θ) ) # Reason?? - size(phases, 1)
         LM = LevenbergMarquart(f, log_θ, r)
