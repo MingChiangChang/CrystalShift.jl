@@ -1,8 +1,8 @@
 # TODO A lot more test should be written
-using CrystalShift
+using CrystalShift: CrystalPhase, optimize!, reconstruct!, get_free_params
 
+using LinearAlgebra
 using Plots
-using PhaseMapping
 using Random: rand
 using Test
 
@@ -13,18 +13,19 @@ std_θ = [.05, Inf, .1]
 
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
-#s = Vector{CrystalPhase}()
+
+if Sys.iswindows()
+    s = split(read(f, String), "#\r\n")
+else
+    s = split(read(f, String), "#\n")
+end
+
 cs = CrystalPhase.(String.(s[1:end-1]))
-# pyro = CrystalPhase(String(s[1]))
-# delta = CrystalPhase(String(s[2]))
-# push!(cs, pyro)
-# push!(cs, delta)
 x = collect(8:.1:60)
 
 function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
     y = synthesize_data(cp, x)
-    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ; maxiter=32, regularization=true)
+    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ; maxiter=64, regularization=true)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
