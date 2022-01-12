@@ -203,3 +203,46 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	@. θ = exp(log_θ) # transform back
 	return θ
 end
+
+# optimization based on SaddleFreeNewton method
+function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
+                 x::AbstractVector, y::AbstractVector,
+				 mean_θ::AbstractVector, std_θ::AbstractVector;
+				 maxiter::Int = 128, verbose::Bool = false)
+
+	# The lower symmetry phases have better fitting power and thus
+	# should be punished more by the prior
+	μ = log.(mean_θ)
+    function prior(log_θ::AbstractVector)
+		p = zero(eltype(log_θ))
+		@inbounds @simd for i in eachindex(log_θ)
+			p += (log_θ[i] - μ[i]) / (sqrt(2)*std_θ[i])
+		end
+		return p
+	end
+
+	# Regularized cost function
+	# NOTE on order of inputs in KL divergence:
+	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
+	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
+	λ = 1 # coefficient weighing prior against kl
+    function objective(log_θ::AbstractVector)
+		θ = exp.(log_θ)
+		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result
+		kl(r_θ, y) + λ * prior(log_θ)
+    end
+
+    θ = initialize_activation!(θ, phases, x, y)
+
+    @. θ = log(θ) # tramsform to log space for better conditioning
+	log_θ = θ
+    (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+
+	N = OptimizationAlgorithms.SaddleFreeNewton(objective, log_θ)
+	D = OptimizationAlgorithms.DecreasingStep(N, log_θ)
+	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = 1e-6, rx = 1e-6,
+											maxiter = maxiter, verbose = verbose)
+	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
+	@. θ = exp(log_θ) # transform back
+	return θ
+end

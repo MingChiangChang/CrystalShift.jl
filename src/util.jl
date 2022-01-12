@@ -21,3 +21,19 @@ function get_weighted_center(H::AbstractMatrix)
     end
     avg
 end
+
+########################## objective functions #################################
+# Kullback-Leibler divergence
+function kl(p::Real, q::Real)
+    (p > 0 && q > 0) || throw(DomainError("kl divergence undefined for negative inputs"))
+    iszero(p) ? zero(p) : p*log(p/q) # is equal to -p*log(q/p)
+end
+
+function kl(P::AbstractArray, Q::AbstractArray)
+    length(P) == length(Q) || throw(DimensionMismatch("Lengths of inputs arrays do not match"))
+    val = zero(promote_type(eltype(P), eltype(Q)))
+    @inbounds @simd for i in eachindex(P)
+        val += kl(P[i], Q[i])
+    end
+    return val
+end

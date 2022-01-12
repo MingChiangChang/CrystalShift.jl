@@ -107,7 +107,7 @@ function get_parameters(CP::CrystalPhase)
     # push!(p, CP.act)
     # push!(p, CP.σ)
     # return p
-    return [ get_free_params(CP.cl)..., CP.act, CP.σ]
+    return [get_free_params(CP.cl)..., CP.act, CP.σ]
 end
 
 function get_parameters(CPs::AbstractVector{<:CrystalPhase})
