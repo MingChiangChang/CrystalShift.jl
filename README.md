@@ -1,4 +1,6 @@
 # Crystallography_based_shifting
+[![CI](https://github.com/MingChiangChang/CrystalShift.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/MingChiangChang/CrystalShift.jl/actions/workflows/CI.yml)
+
 ## TODOs
 - [x] Data Structure (7/30)
 - [ ] Test cases for optimization
