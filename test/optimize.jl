@@ -1,9 +1,5 @@
 # TODO A lot more test should be written
-include("../src/util.jl")
-include("../src/peak.jl")
-include("../src/crystal.jl")
-include("../src/crystalphase.jl")
-include("../src/optimize.jl")
+using CrystalShift
 
 using Plots
 using PhaseMapping
@@ -58,7 +54,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
     interval_size = 0.025
     for cp in cps
         params = get_free_params(cp)
-        
+
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
         params = vcat(params, 0.5.+3rand(1), 0.1.+0.5(rand(1)))

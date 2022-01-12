@@ -10,7 +10,7 @@ end
 function Peak(s::String)
     info = split(s, ',')
     length(info) == 5 || throw("info must has length of 5")
-    h, k, l = cast(info[1:3], Int8)
-    q, I = cast(info[4:5], Float64)
+    h, k, l = parse.(Int, info[1:3])
+    q, I = parse.(Float64, info[4:5])
     Peak(h, k, l, q, I)
 end
