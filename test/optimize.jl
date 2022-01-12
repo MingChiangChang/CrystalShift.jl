@@ -1,8 +1,12 @@
 # TODO A lot more test should be written
-using CrystalShift
+using Revise
 
+using CrystalShift
+using CrystalShift: CrystalPhase, optimize!, reconstruct!, get_free_params
+using CrystalShift: newton!
+
+using LinearAlgebra
 using Plots
-using PhaseMapping
 using Random: rand
 using Test
 
@@ -13,24 +17,45 @@ std_θ = [.05, Inf, .1]
 
 test_path = "data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
-s = split(read(f, String), "#\r\n") # Windows: #\r\n ...
-#s = Vector{CrystalPhase}()
+
+if Sys.iswindows()
+    s = split(read(f, String), "#\r\n")
+else
+    s = split(read(f, String), "#\n")
+end
+
 cs = CrystalPhase.(String.(s[1:end-1]))
-# pyro = CrystalPhase(String(s[1]))
-# delta = CrystalPhase(String(s[2]))
-# push!(cs, pyro)
-# push!(cs, delta)
 x = collect(8:.1:60)
 
 function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
     y = synthesize_data(cp, x)
-    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ; maxiter=32, regularization=true)
+    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
+                  method = LM,
+                  maxiter = 64, regularization = true)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
         plot!(x, y, label="Original")
         display(p)
     end
+
+    println(c[1].cl)
+    println(c[1].origin_cl)
+    norm(c.(x).-y)
+end
+
+function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false)
+    y = synthesize_data(cp, x)
+    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
+                  method = Newton,
+                  maxiter = 5, regularization = true, verbose = true)
+
+    if plt
+        p = plot(x, c.(x), label="Reconstructed")
+        plot!(x, y, label="Original")
+        display(p)
+    end
+
     println(c[1].cl)
     println(c[1].origin_cl)
     norm(c.(x).-y)
@@ -80,10 +105,17 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
 end
 
 # test fails when the lattice parameters shift too much
-@testset "Single phase with shift test" begin
+# @testset "Single phase with shift LM test" begin
+#     for (idx, cp) in enumerate(cs)
+#         println(idx)
+#         @test test_optimize(cp, x, false) < 0.1
+#     end
+# end
+
+@testset "Single phase with shift newton test" begin
     for (idx, cp) in enumerate(cs)
         println(idx)
-        @test test_optimize(cp, x, true) < 0.1
+        @test test_newton(cp, x, true) < 0.1
     end
 end
 

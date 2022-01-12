@@ -22,9 +22,19 @@ function get_weighted_center(H::AbstractMatrix)
     avg
 end
 
+## convenient macros
+macro exported_enum(name, args...)
+    esc(quote
+        @enum($name, $(args...))
+        export $name
+        $([:(export $arg) for arg in args]...)
+        end)
+end
+
 ########################## objective functions #################################
 # Kullback-Leibler divergence
 function kl(p::Real, q::Real)
+    !(isnan(p) || isinf(p) || isnan(q) || isinf(q)) || throw(DomainError("Nan or inf input"))
     (p > 0 && q > 0) || throw(DomainError("kl divergence undefined for negative inputs"))
     iszero(p) ? zero(p) : p*log(p/q) # is equal to -p*log(q/p)
 end
