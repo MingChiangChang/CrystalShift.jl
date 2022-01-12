@@ -1,5 +1,5 @@
 # include("../src/CrystalShift.jl")
-
+# TODO: if this should be in the testing suite, add tests and remove plots and @time macros
 using Plots
 using PhaseMapping
 
@@ -8,7 +8,6 @@ f = open(test_path, "r")
 s = split(read(f, String), "#\r\n")
 println(s[2])
 cs = Vector{CrystalPhase}()
-
 
 pyro = CrystalPhase(String(s[1]))
 delta = CrystalPhase(String(s[2]))
