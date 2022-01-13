@@ -1,21 +1,23 @@
 # TODO A lot more test should be written
-using Revise
-
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, reconstruct!, get_free_params
 using CrystalShift: newton!
 
 using LinearAlgebra
-using Plots
+# using Plots # let's only load this when debugging locally
 using Random: rand
 using Test
+
+verbose = false
 
 # Global
 std_noise = .01
 mean_θ = [1., 1., .2]
 std_θ = [.05, Inf, .1]
 
-test_path = "data/Ta-Sn-O/sticks.csv"
+test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+# test_path = "data/Ta-Sn-O/sticks.csv"
+# test_path = "CrystalShift.jl/data/Ta-Sn-O/sticks.csv"
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -27,7 +29,7 @@ end
 cs = CrystalPhase.(String.(s[1:end-1]))
 x = collect(8:.1:60)
 
-function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
+function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false, verbose = verbose)
     y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = LM,
@@ -38,18 +40,19 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
         plot!(x, y, label="Original")
         display(p)
     end
-
-    println(c[1].cl)
-    println("sol: $(sol)")
-    println(c[1].origin_cl)  
+    if verbose
+        println(c[1].cl)
+        println("sol: $(sol)")
+        println(c[1].origin_cl)
+    end
     norm(c.(x).-y)
 end
 
-function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false)
+function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false, verbose = verbose)
     y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = Newton,
-                  maxiter = 64, regularization = true, verbose = false)
+                  maxiter = 64, regularization = true, verbose = verbose)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
@@ -57,9 +60,11 @@ function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false)
         display(p)
     end
 
-    println(c)
-    println("sol: $(sol)")
-    println(c[1].origin_cl)
+    if verbose
+        println(c)
+        println("sol: $(sol)")
+        println(c[1].origin_cl)
+    end
     norm(c.(x).-y)
 end
 
@@ -69,10 +74,13 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
     @. params = params*scaling
     params = [params..., 1., 0.2]
-    println(params)
     r = reconstruct!(cp, params, x)
-    params[end-1] /= maximum(r)
-    return r/maximum(r), params
+    normalization = maximum(r)
+    params[end-1] /= normalization
+    if verbose
+        println("synthesize_data: ", params)
+    end
+    return r/normalization, params
 end
 
 function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
@@ -110,15 +118,15 @@ end
 # test fails when the lattice parameters shift too much
 @testset "Single phase with shift LM test" begin
     for (idx, cp) in enumerate(cs)
-        println(idx)
+        verbose && println(idx)
         @test test_optimize(cp, x, false) < 0.1
     end
 end
 
 @testset "Single phase with shift newton test" begin
     for (idx, cp) in enumerate(cs)
-        println(idx)
-        c = @test test_newton(cp, x, true) < 0.1
+        verbose && println(idx)
+        c = @test test_newton(cp, x, false) < 0.1
     end
 end
 

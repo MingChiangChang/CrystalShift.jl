@@ -30,7 +30,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .001, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
-                   method::OptimizationMethods, maxiter::Int = 32, 
+                   method::OptimizationMethods, maxiter::Int = 32,
 				   regularization::Bool = true, verbose::Bool = false)
     θ = get_parameters(phases)
 
@@ -40,7 +40,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	end
 
 	length_check(phases, mean_θ, std_θ) || error("number of parameter must match number of terms in the prior")
-    
+
 	if method == LM
 		θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
 				maxiter = maxiter, regularization = regularization)
@@ -223,15 +223,16 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# NOTE on order of inputs in KL divergence:
 	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
-	λ = 0.025 # coefficient weighing prior against kl
+	λ = 0 # 0.025 # coefficient weighing prior against kl
     function objective(log_θ::AbstractVector)
 		θ = exp.(log_θ)
-		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result
+		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
+		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		kl(r_θ, y) + λ * prior(log_θ)
     end
 
     θ = initialize_activation!(θ, phases, x, y)
-    
+
     @. θ = log(θ) # tramsform to log space for better conditioning
 	log_θ = θ
     (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
