@@ -28,7 +28,7 @@ cs = CrystalPhase.(String.(s[1:end-1]))
 x = collect(8:.1:60)
 
 function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
-    y = synthesize_data(cp, x)
+    y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = LM,
                   maxiter = 64, regularization = true)
@@ -40,15 +40,16 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector, plt=false)
     end
 
     println(c[1].cl)
-    println(c[1].origin_cl)
+    println("sol: $(sol)")
+    println(c[1].origin_cl)  
     norm(c.(x).-y)
 end
 
 function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false)
-    y = synthesize_data(cp, x)
+    y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = Newton,
-                  maxiter = 5, regularization = true, verbose = true)
+                  maxiter = 64, regularization = true, verbose = false)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
@@ -56,7 +57,8 @@ function test_newton(cp::CrystalPhase, x::AbstractVector, plt=false)
         display(p)
     end
 
-    println(c[1].cl)
+    println(c)
+    println("sol: $(sol)")
     println(c[1].origin_cl)
     norm(c.(x).-y)
 end
@@ -64,12 +66,13 @@ end
 function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     params = get_free_params(cp)
     interval_size = 0.025
-    scaling = (interval_size.*rand(size(params, 1),).-interval_size/2).+1
+    scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
     @. params = params*scaling
     params = [params..., 1., 0.2]
     println(params)
     r = reconstruct!(cp, params, x)
-    r/max(r...)
+    params[end-1] /= maximum(r)
+    return r/maximum(r), params
 end
 
 function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
@@ -87,7 +90,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
         # println(full_params)
     end
     r = reconstruct!(cps, full_params, x)
-    r/max(r...)
+    r/maximum(r)
 end
 
 function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
@@ -105,17 +108,17 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
 end
 
 # test fails when the lattice parameters shift too much
-# @testset "Single phase with shift LM test" begin
-#     for (idx, cp) in enumerate(cs)
-#         println(idx)
-#         @test test_optimize(cp, x, false) < 0.1
-#     end
-# end
+@testset "Single phase with shift LM test" begin
+    for (idx, cp) in enumerate(cs)
+        println(idx)
+        @test test_optimize(cp, x, false) < 0.1
+    end
+end
 
 @testset "Single phase with shift newton test" begin
     for (idx, cp) in enumerate(cs)
         println(idx)
-        @test test_newton(cp, x, true) < 0.1
+        c = @test test_newton(cp, x, true) < 0.1
     end
 end
 
