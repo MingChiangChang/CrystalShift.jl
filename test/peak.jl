@@ -1,9 +1,8 @@
 # test peak construction
 using Test
+using CrystalShift: Peak
 
-include("../src/peak.jl")
-
-Base.Bool(p::Peak) = true
+Base.Bool(p::Peak) = true # For ease of testing
 
 @testset "Peak creation" begin
     @test Bool(Peak(1, 0, 0, 10., 10.))

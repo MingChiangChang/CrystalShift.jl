@@ -105,7 +105,8 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
                                    x::AbstractVector, num_phase::Int, plt=false)
     phase = rand(1:size(cps, 1), num_phase)
     y = synthesize_multiphase_data(cps[phase], x)
-    c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ; maxiter=32, regularization=true)
+    c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ;
+                  method = LM, maxiter=32, regularization=true)
 
     if plt
         p = plot(x, c.(x), label="Reconstructed")
@@ -130,11 +131,11 @@ end
     end
 end
 
-# @testset "Multiple phases with shift test" begin
-#     for _ in 1:10
-#         @test test_multiphase_optimize(cs, x, 2, true) < 0.1
-#     end
-# end
+@testset "Multiple phases with shift test" begin
+    for _ in 1:10
+        @test test_multiphase_optimize(cs, x, 2, true) < 0.1
+    end
+end
 
 # test_reconstruct(cs[8], x, true)#
 

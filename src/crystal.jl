@@ -181,14 +181,16 @@ function volume(cl::Union{Orthorhombic, Tetragonal, Cubic})
     cl.a * cl.b * cl.c
 end
 
-deg_to_rad(deg::Real) = deg/180*pi
+# deg_to_rad(deg::Real) = deg/180*pi
 
 function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
     length(lattice_param) == 6 || error("There should be 6 lattice parameters!")
     a, b, c, α, β, γ = lattice_param
+
     if deg
-        α, β, γ = deg_to_rad.((α, β, γ))
+        α, β, γ = deg2rad.((α, β, γ))
     end
+
     t = typeof(a)
     if isCubic(a, b, c, α, β, γ)
        return Cubic{t}(a)
@@ -197,7 +199,7 @@ function get_crystal(lattice_param::AbstractVector, deg::Bool=true)
     elseif isHexagonal(a, b, c, α, β, γ)
        return Hexagonal{t}(a, c)
     elseif isRhombohedral(a, b, c, α, β, γ)
-       return Rhombohedral{t}(a, c)
+       return Rhombohedral{t}(a, α)
     elseif isOrthohombic(a, b, c, α, β, γ)
        return Orthorhombic{t}(a, b, c)
     elseif isMonoclinic(a, b, c, α, β, γ)

@@ -8,8 +8,8 @@ using OptimizationAlgorithms
 using PhaseMapping: Lorentz
 
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
-export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic
-export OptimizationMethods
+export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
+export OptimizationMethods, Peak
 
 include("util.jl")
 include("peak.jl")
