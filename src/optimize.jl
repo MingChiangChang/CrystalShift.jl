@@ -239,7 +239,7 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
 	N = OptimizationAlgorithms.SaddleFreeNewton(objective, log_θ)
 	D = OptimizationAlgorithms.DecreasingStep(N, log_θ)
-	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = 1e-6, rx = 1e-6,
+	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = 1e-7, rx = 1e-7,
 											maxiter = maxiter, verbose = verbose)
 	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
 	@. θ = exp(log_θ) # transform back

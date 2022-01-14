@@ -12,7 +12,7 @@ verbose = false
 # Global
 std_noise = .01
 mean_θ = [1., 1e-4, .2]
-std_θ = [.05, 10, .2]
+std_θ = [.05, 100, 1.]
 
 test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
@@ -109,13 +109,13 @@ end
 end
 
 @testset "Multiple phases with shift test" begin
-    for _ in 1:10
+    for _ in 1:5
         @test test_multiphase_optimize(cs, x, 2, LM, false) < 0.1
     end
 end
 
 @testset "Multiple phases with shift newton test" begin
-    for _ in 1:10
+    for _ in 1:5
         @test test_multiphase_optimize(cs, x, 2, Newton, false) < 0.1
     end
 end
