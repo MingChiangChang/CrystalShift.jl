@@ -1,3 +1,4 @@
+module Testcrystal
 using Test
 using CrystalShift
 using CrystalShift: check_equal, check_not_equal
@@ -126,3 +127,5 @@ end
     cl = Triclinic{Float64}(1., 2., 3., 4., 5., 6.)
     @test get_free_params(cl) == [1., 2., 3., 4., 5., 6.]
 end
+
+end # module

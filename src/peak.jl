@@ -15,4 +15,4 @@ function Peak(s::String)
     Peak(h, k, l, q, I)
 end
 
-twoθ2q(twoθ::Float64, λ::Float64=1.54) = 4*pi*sin(deg2rad(twoθ/2)) / λ
+twoθ2q(twoθ::Float64, λ::Float64=1.5406) = 4*pi*sin(deg2rad(twoθ/2)) / λ
