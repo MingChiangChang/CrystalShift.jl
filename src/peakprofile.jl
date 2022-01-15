@@ -85,20 +85,4 @@ end
    dμ = yξ
    dσ = yξ*ξ
    return y, (dc, dμ, dσ)
-<<<<<<< HEAD
 end
-=======
-end
-
-# (P::PseudoVoigt)(x::Real, α::Real) = α * Lorentz()(x) + (1-α) * Gauss()(x)
-# (P::PseudoVoigt)(x::Real, μ::Real, σ::Real, α::Real) = locationscale(P, x, μ, σ, α)
-# (P::PseudoVoigt)(x::Real, c::Real, μ::Real, σ::Real, α::Real) = c*P(x, μ, σ, α)
-
-# @inline function gradient(::PseudoVoigt, x::Real, c::Real, μ::Real, σ::Real, α::Real)
-#    yl, ∇l = gradient(Lorentz(), x, c, μ, σ)
-#    yg, ∇g = gradient(Gauss(), x, c, μ, σ)
-#    y = α * yl + (α-1) * yg
-#    ∇ = (begin @. α * ∇l + (α-1) * ∇g end, (yl+yg)/2)
-#    return y, ∇
-# end
->>>>>>> 3dd472ce3efb45689bc27950c1ecf0b34366d49f
