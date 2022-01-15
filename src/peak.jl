@@ -14,3 +14,5 @@ function Peak(s::String)
     q, I = parse.(Float64, info[4:5])
     Peak(h, k, l, q, I)
 end
+
+twoθ2q(twoθ::Float64, λ::Float64=1.5406) = 4*pi*sin(deg2rad(twoθ/2)) / λ

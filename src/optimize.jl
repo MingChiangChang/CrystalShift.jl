@@ -1,3 +1,5 @@
+@exported_enum OptimizationMethods LM Newton
+
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real = .1, mean_θ::AbstractVector = [1. ,.2],
@@ -26,28 +28,44 @@ end
 """
 function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .001, mean_θ::AbstractVector = [1., .2],
-                   std_θ::AbstractVector = [1., 5.];
-                   maxiter::Int = 32, regularization::Bool = true)
+                   std_noise::Real = .001, mean_θ::AbstractVector = [1., 1., .2],
+                   std_θ::AbstractVector = [1., Inf, 5.];
+                   method::OptimizationMethods, maxiter::Int = 32,
+				   regularization::Bool = true, verbose::Bool = false)
     θ = get_parameters(phases)
 
 	if length(mean_θ) == 3 #2
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
-	println("mean_θ = $(mean_θ)")
-	println("std_θ = $(std_θ)")
 
 	length_check(phases, mean_θ, std_θ) || error("number of parameter must match number of terms in the prior")
 
-    θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
-	          maxiter = maxiter, regularization = regularization)
+	if method == LM
+		θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
+				maxiter = maxiter, regularization = regularization)
+	elseif method == Newton
+		θ = newton!(θ, phases, x, y, mean_θ, std_θ,
+				maxiter = maxiter, verbose = verbose)
+    end
 
     for (i, cp) in enumerate(phases)
         phases[i] = CrystalPhase(cp, θ)
 		deleteat!(θ, collect(1:get_param_nums(phases[i])))
 	end
 	return phases
+end
+
+# Single phase situation. Put phase into [phase].
+function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
+	std_noise::Real = .01, mean_θ::AbstractVector = [1., .2],
+	std_θ::AbstractVector = [.1, 1.];
+	method::OptimizationMethods, maxiter::Int = 32, regularization::Bool = true,
+	verbose::Bool = false)
+
+    optimize!([phase], x, y, std_noise, mean_θ, std_θ,
+               method=method, maxiter=maxiter, regularization=regularization,
+			   verbose=verbose)
 end
 
 function length_check(phases::AbstractVector, mean_θ::AbstractVector, std_θ::AbstractVector)
@@ -92,15 +110,6 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 		start += (n+2)
     end
 	return full_mean_θ, full_std_θ
-end
-
-# Single phase situation. Put phase into [phase].
-function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .01, mean_θ::AbstractVector = [1., .2],
-                   std_θ::AbstractVector = [.1, 1.];
-                   maxiter::Int = 32, regularization::Bool = true)
-	optimize!([phase], x, y, std_noise, mean_θ, std_θ,
-	          maxiter=maxiter, regularization=regularization)
 end
 
 function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
@@ -150,23 +159,12 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    regularization::Bool = true)
 	# params = copy(θ)
     function residual!(r::AbstractVector, log_θ::AbstractVector)
-        # params = exp.(log_θ) # make a copy
-
-        # @. r = y
-		# res!(phases, params, x, r) # Avoid allocation, put everything in here??
-		# r -= reconstruct!((phases,), (params,), x, temp)
-		# r ./= sqrt(2) * std_noise # trade-off between prior and
-		                          # actual residual
         return _residual!(phases, log_θ, x, y, r, std_noise)
 	end
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
     function prior!(p::AbstractVector, log_θ::AbstractVector)
-		# θ_c = remove_act_from_θ(log_θ, phases)
-		# μ = log.(mean_θ)
-		# # @. p = (θ_c - μ) / (sqrt(2)*std_θ)
-		# @. p = (log_θ - μ) / (sqrt(2)*std_θ)
 		_prior(p, log_θ, mean_θ, std_θ)
 	end
 
@@ -200,6 +198,50 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	λ = 1e-6
 
 	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(false))
+	@. θ = exp(log_θ) # transform back
+	return θ
+end
+
+# optimization based on SaddleFreeNewton method
+function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
+                 x::AbstractVector, y::AbstractVector,
+				 mean_θ::AbstractVector, std_θ::AbstractVector;
+				 maxiter::Int = 128, verbose::Bool = false)
+
+	# The lower symmetry phases have better fitting power and thus
+	# should be punished more by the prior
+	μ = log.(mean_θ)
+    function prior(log_θ::AbstractVector)
+		p = zero(eltype(log_θ))
+		@inbounds @simd for i in eachindex(log_θ)
+			p += (log_θ[i] - μ[i]) / (sqrt(2)*std_θ[i])
+		end
+		return p
+	end
+
+	# Regularized cost function
+	# NOTE on order of inputs in KL divergence:
+	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
+	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
+	λ = 0 # 0.025 # coefficient weighing prior against kl
+    function objective(log_θ::AbstractVector)
+		θ = exp.(log_θ)
+		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
+		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
+		kl(r_θ, y) + λ * prior(log_θ)
+    end
+
+    θ = initialize_activation!(θ, phases, x, y)
+
+    @. θ = log(θ) # tramsform to log space for better conditioning
+	log_θ = θ
+    (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+
+	N = OptimizationAlgorithms.SaddleFreeNewton(objective, log_θ)
+	D = OptimizationAlgorithms.DecreasingStep(N, log_θ)
+	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = 1e-7, rx = 1e-7,
+											maxiter = maxiter, verbose = verbose)
+	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
 	@. θ = exp(log_θ) # transform back
 	return θ
 end

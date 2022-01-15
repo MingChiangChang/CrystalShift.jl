@@ -1,3 +1,7 @@
+##################
+# This code is taken from https://github.com/SebastianAment/PhaseMapping.jl
+# With author's permission so remove the dependency of this module on PhaseMapping.jl
+##################
 abstract type PeakProfile{T} end
 
 @inline locationscale(f, x, μ, σ) = f((x-μ)/σ)
@@ -82,15 +86,3 @@ end
    dσ = yξ*ξ
    return y, (dc, dμ, dσ)
 end
-
-# (P::PseudoVoigt)(x::Real, α::Real) = α * Lorentz()(x) + (1-α) * Gauss()(x)
-# (P::PseudoVoigt)(x::Real, μ::Real, σ::Real, α::Real) = locationscale(P, x, μ, σ, α)
-# (P::PseudoVoigt)(x::Real, c::Real, μ::Real, σ::Real, α::Real) = c*P(x, μ, σ, α)
-
-# @inline function gradient(::PseudoVoigt, x::Real, c::Real, μ::Real, σ::Real, α::Real)
-#    yl, ∇l = gradient(Lorentz(), x, c, μ, σ)
-#    yg, ∇g = gradient(Gauss(), x, c, μ, σ)
-#    y = α * yl + (α-1) * yg
-#    ∇ = (begin @. α * ∇l + (α-1) * ∇g end, (yl+yg)/2)
-#    return y, ∇
-# end

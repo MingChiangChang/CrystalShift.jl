@@ -36,14 +36,6 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile)
 end
 
-# Create a new CP object with the new parameters
-# function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
-#     params = get_eight_params(CP.cl, θ)
-#     c = CrystalPhase(get_crystal(params[1:6], false), CP.peaks, CP.id, CP.name,
-#                      params[7], params[8], CP.profile)
-#     return c
-# end
-
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     fp = CP.cl.free_param
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
@@ -102,12 +94,7 @@ function get_peaks(lines)
 end
 
 function get_parameters(CP::CrystalPhase)
-    # p = Vector{Real}()
-    # push!(p, get_free_params(CP.cl)...)
-    # push!(p, CP.act)
-    # push!(p, CP.σ)
-    # return p
-    return [ get_free_params(CP.cl)..., CP.act, CP.σ]
+    return [get_free_params(CP.cl)..., CP.act, CP.σ]
 end
 
 function get_parameters(CPs::AbstractVector{<:CrystalPhase})
