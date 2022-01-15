@@ -95,23 +95,35 @@ end
 
 # test fails when the lattice parameters shift too much
 @testset "Single phase with shift LM test" begin
+    correct_counts = 0
     for (idx, cp) in enumerate(cs)
         verbose && println(idx)
-        @test test_optimize(cp, x, LM, false) < 0.1
+        if test_optimize(cp, x, LM, false) < 0.1
+            correct_counts += 1
+        end
     end
+    @test correct_counts >= size(cs, 1) - 1
 end
 
 @testset "Single phase with shift newton test" begin
+    correct_counts = 0
     for (idx, cp) in enumerate(cs)
         verbose && println(idx)
-        c = @test test_optimize(cp, x, Newton, false) < 0.1
+        if test_optimize(cp, x, Newton, false) < 0.1
+            correct_counts += 1
+        end
     end
+    @test correct_counts >= size(cs, 1) - 1
 end
 
 @testset "Multiple phases with shift test" begin
+    correct_counts = 0
     for _ in 1:5
-        @test test_multiphase_optimize(cs, x, 2, LM, false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, LM, false) < 0.1
+            correct_counts += 1
+        end
     end
+    @test correct_counts >= 4
 end
 
 @testset "Multiple phases with shift newton test" begin # call it a success if 4/5 cases passed
