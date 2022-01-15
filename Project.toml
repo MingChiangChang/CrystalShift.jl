@@ -1,6 +1,6 @@
 name = "CrystalShift"
-uuid = "bd08b025-496e-41a7-bb0b-8ec7e5300520"
-authors = ["Ming-Chiang Chang <mc2663@cornell.edu>"]
+uuid = "fb120844-f04e-4a6b-a6eb-278194263097"
+authors = ["Ming-Chiang Chang <mc2663@cornell.edu"]
 version = "0.1.0"
 
 [deps]
@@ -14,4 +14,3 @@ OptimizationAlgorithms = "5eef6961-c6df-46a7-ba44-0f01c6045f8f"
 ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"

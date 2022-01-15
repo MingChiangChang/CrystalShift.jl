@@ -13,6 +13,7 @@ export OptimizationMethods, Peak
 include("util.jl")
 include("peakprofile.jl")
 include("peak.jl")
+include("peakprofile.jl")
 include("crystal.jl")
 include("crystalphase.jl")
 include("phaseresult.jl")

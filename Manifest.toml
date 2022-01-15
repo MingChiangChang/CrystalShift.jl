@@ -23,9 +23,7 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.BackgroundSubtraction]]
 deps = ["CovarianceFunctions", "Distributions", "KroneckerProducts", "LazyInverses", "LinearAlgebra", "SpecialFunctions", "Statistics", "Test"]
-git-tree-sha1 = "372182b0eaafe802950b197ccd05fcd37c27ee78"
-repo-rev = "master"
-repo-url = "git@github.com:SebastianAment/BackgroundSubtraction.jl.git"
+git-tree-sha1 = "8358b788042ce647fecdf236a1eaffdae86c502b"
 uuid = "9977cdcb-3521-4027-9f3f-3caff6505f42"
 version = "1.0.0"
 
@@ -196,9 +194,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "6a8dc9f82e5ce28279b6e3e2cea9421154f5bd0d"
+git-tree-sha1 = "ab9e8f6b00c0584b103b7a8d4a221075a781845c"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.37"
+version = "0.25.39"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -221,11 +219,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "5f84034ddd642cf595e57d46ea2f085321c260e4"
 uuid = "c2c64177-6a8e-5dca-99a7-64895ad7445f"
 version = "200.0.800+0"
-
-[[deps.ExprTools]]
-git-tree-sha1 = "24565044e60bc48a7562e75bcf14f084901dc0b6"
-uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
-version = "0.1.7"
 
 [[deps.FilePathsBase]]
 deps = ["Compat", "Dates", "Mmap", "Printf", "Test", "UUIDs"]
@@ -452,9 +445,6 @@ version = "0.5.5+0"
 
 [[deps.OptimizationAlgorithms]]
 deps = ["BenchmarkTools", "Clp", "DataStructures", "DiffResults", "ECOS", "ForwardDiff", "JuMP", "LinearAlgebra", "SCS", "SparseArrays", "StaticArrays", "StatsBase", "Test"]
-git-tree-sha1 = "e2597dfac32297db20892cfa494274468b6e8e32"
-repo-rev = "master"
-repo-url = "git@github.com:SebastianAment/OptimizationAlgorithms.jl.git"
 uuid = "5eef6961-c6df-46a7-ba44-0f01c6045f8f"
 version = "0.1.0"
 
@@ -477,9 +467,9 @@ version = "0.11.5"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "d7fa6237da8004be601e19bd6666083056649918"
+git-tree-sha1 = "92f91ba9e5941fc781fecf5494ac1da87bdac775"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.1.3"
+version = "2.2.0"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -582,9 +572,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[deps.SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "244586bc07462d22aed0113af9c731f2a518c93e"
+git-tree-sha1 = "15dfe6b103c2a993be24404124b8791a09460983"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.10"
+version = "1.3.11"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -665,19 +655,13 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 
 [[deps.TaylorSeries]]
 deps = ["LinearAlgebra", "Markdown", "Requires", "SparseArrays"]
-git-tree-sha1 = "e59006471450151223b59921bc6582a687d61c23"
+git-tree-sha1 = "4baa57538d07edb0d209469a0ff27e40234a91cc"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
-version = "0.11.4"
+version = "0.11.5"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[[deps.TimerOutputs]]
-deps = ["ExprTools", "Printf"]
-git-tree-sha1 = "a5aed757f65c8a1c64503bc4035f704d24c749bf"
-uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-version = "0.5.14"
 
 [[deps.ToeplitzMatrices]]
 deps = ["AbstractFFTs", "LinearAlgebra", "StatsBase"]
