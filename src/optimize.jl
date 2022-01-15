@@ -31,7 +31,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    maxiter::Int = 32, regularization::Bool = true)
     θ = get_parameters(phases)
 
-	if length(mean_θ) == 3 #2 
+	if length(mean_θ) == 3 #2
 		# Different prior for different crystals?
 	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
 	end
@@ -185,7 +185,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     @. θ = log(θ) # tramsform to log space for better conditioning
 	log_θ = θ
     (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
-    
+
     if regularization
 		r = zeros(eltype(log_θ), length(y) + length(log_θ) ) # Reason?? - size(phases, 1)
         LM = LevenbergMarquart(f, log_θ, r)
@@ -193,7 +193,7 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 		r = zeros(eltype(log_θ), size(y))
         LM = LevenbergMarquart(residual!, log_θ, r)
 	end
-	
+
     stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-8, max_iter = maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
