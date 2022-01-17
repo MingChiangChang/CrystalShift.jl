@@ -26,6 +26,8 @@ struct PseudoVoigtProfile{T} <: PeakProfile{T}
 end
 const PseudoVoigt = PseudoVoigtProfile
 (P::PseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+get_param_nums(P::PseudoVoigtProfile) = length(P.α)
+get_free_params(P::PseudoVoigtProfile) = P.α
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)
