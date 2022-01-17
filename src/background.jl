@@ -31,7 +31,7 @@ LinearAlgebra.svd(G::Gramian) = svd(Matrix(G))
 function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAULT_RANK_TOL)
     K = gramian(k, x)
     U, S, V = svd(K)
-    i = findfirst(>(rank_tol), S)
+    i = findfirst(<(rank_tol), S)
     Ui = @view U[:, 1:i]
     Si = @view S[:, 1:i]
     return K, Ui, Si
@@ -50,6 +50,7 @@ end
 function prior(B::BackgroundModel, c::AbstractVector)
     p = zero(c)
     lm_prior!(p, B, c)
+    sum(abs2, p)
 end
 
 # least-squares prior for background model to be used in conjunction with LevenbergMarquart
