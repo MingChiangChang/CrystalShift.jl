@@ -1,7 +1,7 @@
 module Testoptimize
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, reconstruct!, get_free_params
-using CrystalShift: newton!
+using CrystalShift: newton!, get_free_lattice_params
 
 using LinearAlgebra
 using Random: rand
@@ -65,7 +65,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
     interval_size = 0.01
 
     for cp in cps
-        params = get_free_params(cp)
+        params = get_free_lattice_params(cp)
 
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling

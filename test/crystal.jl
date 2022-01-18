@@ -2,7 +2,7 @@ module Testcrystal
 using Test
 using CrystalShift
 using CrystalShift: check_equal, check_not_equal
-using CrystalShift: get_crystal, volume, twoθ2q, get_free_params
+using CrystalShift: get_crystal, volume, twoθ2q, get_free_lattice_params
 
 @testset "Utilities" begin
     @test check_not_equal(1,2,3)
@@ -107,25 +107,25 @@ end
 
 @testset "Parameter getters" begin
     cl = Cubic{Float64}(1.)
-    @test get_free_params(cl) == [1.]
+    @test get_free_lattice_params(cl) == [1.]
 
     cl = Tetragonal{Float64}(1., 3.)
-    @test get_free_params(cl) == [1., 3.]
+    @test get_free_lattice_params(cl) == [1., 3.]
 
     cl = Hexagonal{Float64}(1., 3.)
-    @test get_free_params(cl) == [1., 3.]
+    @test get_free_lattice_params(cl) == [1., 3.]
 
     cl = Orthorhombic{Float64}(1., 2., 3.)
-    @test get_free_params(cl) == [1., 2., 3.]
+    @test get_free_lattice_params(cl) == [1., 2., 3.]
 
     cl = Rhombohedral{Float64}(1., 2.)
-    @test get_free_params(cl) == [1., 2.]
+    @test get_free_lattice_params(cl) == [1., 2.]
 
     cl = Monoclinic{Float64}(1., 2., 3., 2.5)
-    @test get_free_params(cl) == [1., 2., 3., 2.5]
+    @test get_free_lattice_params(cl) == [1., 2., 3., 2.5]
 
     cl = Triclinic{Float64}(1., 2., 3., 4., 5., 6.)
-    @test get_free_params(cl) == [1., 2., 3., 4., 5., 6.]
+    @test get_free_lattice_params(cl) == [1., 2., 3., 4., 5., 6.]
 end
 
 end # module

@@ -32,7 +32,7 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_θ::AbstractVector = [1., Inf, 5.];
                    method::OptimizationMethods, maxiter::Int = 32,
 				   regularization::Bool = true, verbose::Bool = false)
-    θ = get_parameters(phases)
+    θ = get_free_params(phases)
 
 	if length(mean_θ) == 3 #2
 		# Different prior for different crystals?
@@ -103,8 +103,8 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 	start = 1
 	for phase in phases
 		n = phase.free_param
-		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_params(phase)
-		full_std_θ[start:start+n-1] = std_θ[1].*get_free_params(phase)#repeat(std_θ[1, :], n)
+		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
+		full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
 		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
 		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
 		start += (n+2)

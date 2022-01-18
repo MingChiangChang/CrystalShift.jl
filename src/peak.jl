@@ -15,4 +15,12 @@ function Peak(s::String)
     Peak(h, k, l, q, I)
 end
 
+function get_peaks(lines)
+    peaks = Vector{Peak}(undef, size(lines))
+    for i in eachindex(lines)
+        peaks[i] = Peak(String(lines[i]))
+    end
+    peaks
+end
+
 twoθ2q(twoθ::Float64, λ::Float64=1.5406) = 4*pi*sin(deg2rad(twoθ/2)) / λ

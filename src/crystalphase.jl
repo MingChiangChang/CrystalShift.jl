@@ -21,6 +21,8 @@ function Base.show(io::IO, CP::CrystalPhase)
     println(CP.cl)
 end
 
+Base.Bool(CP::CrystalPhase) = true
+Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
@@ -63,6 +65,20 @@ function get_intrinsic_crystal_type(cl::Type)
     end
 end
 
+function get_free_params(CP::CrystalPhase)
+    return [get_free_lattice_params(CP.cl)..., CP.act, CP.σ]
+end
+
+function get_free_params(CPs::AbstractVector{<:CrystalPhase})
+    p = Vector{Float64}()
+    for cp in CPs
+        push!(p, get_free_params(cp)...) # Preallocation?
+    end
+    p
+end
+
+get_eight_params(CP::CrystalPhase) = [CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ]
+get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
 get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
@@ -71,50 +87,41 @@ get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2],
 get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[5], θ[6]]
 get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
 
-get_free_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
-get_free_params(cl::Tetragonal, θ::AbstractVector) = [θ[1], θ[3]]
-get_free_params(cl::Hexagonal, θ::AbstractVector) = [θ[1], θ[3]]
-get_free_params(cl::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3]]
-get_free_params(cl::Rhombohedral, θ::AbstractVector) = [θ[1], θ[4]]
-get_free_params(cl::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], θ[5]]
-get_free_params(cl::Triclinic, θ::AbstractVector) = θ
-
-get_free_params(CP::CrystalPhase) = get_free_params(CP.cl)
+function get_free_lattice_params(CPs::AbstractVector{<:CrystalPhase})
+    p = Vector{Float64}()
+    for cp in CPs
+        push!(p, get_free_lattice_params(cp)...) # Preallocation?
+    end
+    p
+end
+get_free_lattice_params(CP::CrystalPhase) = get_free_lattice_params(CP.cl)
+get_free_lattice_params(CP::CrystalPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
+get_free_lattice_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
+get_free_lattice_params(cl::Tetragonal, θ::AbstractVector) = [θ[1], θ[3]]
+get_free_lattice_params(cl::Hexagonal, θ::AbstractVector) = [θ[1], θ[3]]
+get_free_lattice_params(cl::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3]]
+get_free_lattice_params(cl::Rhombohedral, θ::AbstractVector) = [θ[1], θ[4]]
+get_free_lattice_params(cl::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], θ[5]]
+get_free_lattice_params(cl::Triclinic, θ::AbstractVector) = θ
 
 function get_eight_params(CP::CrystalPhase, θ::AbstractVector)
     get_eight_params(CP.cl, θ)
-end
-
-function get_peaks(lines)
-    peaks = Vector{Peak}(undef, size(lines))
-    for i in eachindex(lines)
-        peaks[i] = Peak(String(lines[i]))
-    end
-    peaks
-end
-
-function get_parameters(CP::CrystalPhase)
-    return [get_free_params(CP.cl)..., CP.act, CP.σ]
-end
-
-function get_parameters(CPs::AbstractVector{<:CrystalPhase})
-    p = Vector{Float64}()
-    for cp in CPs
-        push!(p, get_parameters(cp)...) # Preallocation?
-    end
-    p
 end
 
 collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
 # Preallocating
 function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
-    @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
-    end
-    y
+    evaluate!(CP, x, y)
 end
+
+# function evaluate!(CP, x, y)
+#     @simd for i in eachindex(CP.peaks)
+#         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+#         @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+#     end
+#     y
+# end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
                                                y::AbstractVector)
@@ -129,6 +136,7 @@ function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
     CrystalPhase(CP, θ)(x, y)
 end
 
+# TODO put parameter
 function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     θ::AbstractVector, x::AbstractVector, y::AbstractVector)
     s = 1
@@ -187,11 +195,26 @@ end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     y = zero(x)
-    @simd for i in eachindex(CPs)
+    @simd for i in eachindex(CPs) #  
         y += CPs[i](x)
     end
     y
 end
+function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+    @simd for i in eachindex(CP.peaks)
+        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+    end
+    y
+end
+
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
+    for CP in CPs
+        evaluate!(y, CP, x)
+    end
+    y
+end
+
 
 function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
                       x::AbstractVector)

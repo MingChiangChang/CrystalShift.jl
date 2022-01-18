@@ -260,10 +260,10 @@ function (cl::Monoclinic)(P::Peak)
     + P.l^2 * cl.a^2 * cl.b^2))
 end
 
-get_free_params(cl::Cubic) = [cl.a]
-get_free_params(cl::Tetragonal) = [cl.a, cl.c]
-get_free_params(cl::Hexagonal) = [cl.a, cl.c]
-get_free_params(cl::Orthorhombic) = [cl.a, cl.b, cl.c]
-get_free_params(cl::Rhombohedral) = [cl.a, cl.α]
-get_free_params(cl::Monoclinic) = [cl.a, cl.b, cl.c, cl.β]
-get_free_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]
+get_free_lattice_params(cl::Cubic) = [cl.a]
+get_free_lattice_params(cl::Tetragonal) = [cl.a, cl.c]
+get_free_lattice_params(cl::Hexagonal) = [cl.a, cl.c]
+get_free_lattice_params(cl::Orthorhombic) = [cl.a, cl.b, cl.c]
+get_free_lattice_params(cl::Rhombohedral) = [cl.a, cl.α]
+get_free_lattice_params(cl::Monoclinic) = [cl.a, cl.b, cl.c, cl.β]
+get_free_lattice_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]
