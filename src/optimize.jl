@@ -1,8 +1,9 @@
 @exported_enum OptimizationMethods LM Newton
+const DEFAULT_TOL = 1e-8
 
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .1, mean_θ::AbstractVector = [1. ,.2],
+                   std_noise::Real, mean_θ::AbstractVector = [1. ,.2],
                    std_θ::AbstractVector = [1., 1.];
                    maxiter::Int = 32, regularization::Bool = true)
 	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
@@ -28,7 +29,7 @@ end
 """
 function optimize!(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real = .001, mean_θ::AbstractVector = [1., 1., .2],
+                   std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
                    method::OptimizationMethods, maxiter::Int = 32,
 				   regularization::Bool = true, verbose::Bool = false)
@@ -58,7 +59,7 @@ end
 
 # Single phase situation. Put phase into [phase].
 function optimize!(phase::CrystalPhase, x::AbstractVector, y::AbstractVector,
-	std_noise::Real = .01, mean_θ::AbstractVector = [1., .2],
+	std_noise::Real, mean_θ::AbstractVector = [1., .2],
 	std_θ::AbstractVector = [.1, 1.];
 	method::OptimizationMethods, maxiter::Int = 32, regularization::Bool = true,
 	verbose::Bool = false)
@@ -205,8 +206,8 @@ end
 # optimization based on SaddleFreeNewton method
 function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                  x::AbstractVector, y::AbstractVector,
-				 mean_θ::AbstractVector, std_θ::AbstractVector;
-				 maxiter::Int = 128, verbose::Bool = false)
+				 mean_θ::AbstractVector, std_θ::AbstractVector, λ::Real = 0;
+				 maxiter::Int = 128, verbose::Bool = false, tol::Real = DEFAULT_TOL)
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
@@ -214,7 +215,7 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
     function prior(log_θ::AbstractVector)
 		p = zero(eltype(log_θ))
 		@inbounds @simd for i in eachindex(log_θ)
-			p += (log_θ[i] - μ[i]) / (sqrt(2)*std_θ[i])
+			p += ((log_θ[i] - μ[i]) / (sqrt(2)*std_θ[i]))^2
 		end
 		return p
 	end
@@ -223,7 +224,6 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# NOTE on order of inputs in KL divergence:
 	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
-	λ = 0 # 0.025 # coefficient weighing prior against kl
     function objective(log_θ::AbstractVector)
 		θ = exp.(log_θ)
 		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
@@ -239,7 +239,7 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
 	N = OptimizationAlgorithms.SaddleFreeNewton(objective, log_θ)
 	D = OptimizationAlgorithms.DecreasingStep(N, log_θ)
-	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = 1e-7, rx = 1e-7,
+	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = tol, rx = tol,
 											maxiter = maxiter, verbose = verbose)
 	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
 	@. θ = exp(log_θ) # transform back
