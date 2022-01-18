@@ -32,7 +32,8 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
                    method::OptimizationMethods, maxiter::Int = 32,
-				   regularization::Bool = true, verbose::Bool = false)
+				   regularization::Bool = true,
+				   verbose::Bool = false)
     θ = get_free_params(phases)
 
 	if length(mean_θ) == 3 #2
@@ -75,53 +76,15 @@ function length_check(phases::AbstractVector, mean_θ::AbstractVector, std_θ::A
     (sum([phase.cl.free_param + 2 for phase in phases]) == length(mean_θ) == length(std_θ) )
 end
 
-function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector{<:Crystal})
-	θ_c = copy(θ)
-    cursor = 0
-	for phase in phases
-	    deleteat!(θ_c, cursor + phase.free_param + 1)
-        cursor += phase.free_param + 1
-	end
-	θ_c
-end
-
-function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector{<:CrystalPhase})
-	remove_act_from_θ(θ, collect_crystals(phases))
-end
-
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-	                    phases::AbstractVector{<:CrystalPhase})
-	extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
-end
-
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-	                    phases::AbstractVector{<:Crystal})
-	totl_params = sum([(phase.free_param + 2) for phase in phases])
-	full_mean_θ = zeros(totl_params)
-	full_std_θ = zeros(totl_params)
-	start = 1
-	for phase in phases
-		n = phase.free_param
-		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
-		full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
-		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
-		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
-		start += (n+2)
-    end
-	return full_mean_θ, full_std_θ
-end
-
 function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
-	                 x::AbstractVector, y::AbstractVector)
+	                 x::AbstractVector, y::AbstractVector, min_activation::Real = 1e-4)
 	# Use inner product to set initial activation
 	new_θ = copy(θ) # make a copy
 	start = 1
 	for phase in phases
         param_num = get_param_nums(phase)
 		p = reconstruct!(phase, θ, x)
-		new_θ[start + param_num - 2] =  dot(p, y) / sum(abs2, p)
+		new_θ[start + param_num - 2] = dot(p, y) / sum(abs2, p)
         start += param_num
 	end
 	return new_θ
@@ -129,7 +92,6 @@ end
 
 # TODO create prior for each crystal phases
 # TODO rename variables that are in log space
-
 function _residual!(phases::AbstractVector{<:CrystalPhase},
 	              log_θ::AbstractVector,
 				  x::AbstractVector, y::AbstractVector,
@@ -139,7 +101,6 @@ function _residual!(phases::AbstractVector{<:CrystalPhase},
 
 	@. r = y
 	res!(phases, params, x, r) # Avoid allocation, put everything in here??
-	# r -= reconstruct!((phases,), (params,), x, temp)
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 								# actual residual
 	return r
@@ -147,9 +108,8 @@ end
 
 function _prior(p::AbstractVector, log_θ::AbstractVector,
 	            mean_θ::AbstractVector, std_θ::AbstractVector)
-    μ = log.(mean_θ)
-		# @. p = (θ_c - μ) / (sqrt(2)*std_θ)
-	@. p = (log_θ - μ) / (sqrt(2)*std_θ)
+    mean_log_θ = log.(mean_θ)
+	@. p = (log_θ - mean_log_θ) / (sqrt(2)*std_θ)
 	return p
 end
 
@@ -157,7 +117,10 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector,
                    std_θ::AbstractVector; maxiter::Int = 32,
-                   regularization::Bool = true)
+                   regularization::Bool = true,
+				   stn = LevenbergMarquartSettings(min_resnorm = 0, min_res = 0,
+			   						min_decrease = DEFAULT_TOL, max_iter = maxiter,
+			   						decrease_factor = 7, increase_factor = 10, max_step = Inf))
 	# params = copy(θ)
     function residual!(r::AbstractVector, log_θ::AbstractVector)
         return _residual!(phases, log_θ, x, y, r, std_noise)
@@ -193,12 +156,9 @@ function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
         LM = LevenbergMarquart(residual!, log_θ, r)
 	end
 
-    stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
-						min_decrease = 1e-8, max_iter = maxiter,
-						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 	λ = 1e-6
-
-	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(false))
+	verbose = Val(false)
+	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, verbose)
 	@. θ = exp(log_θ) # transform back
 	return θ
 end
@@ -211,11 +171,11 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
 	# The lower symmetry phases have better fitting power and thus
 	# should be punished more by the prior
-	μ = log.(mean_θ)
+	mean_log_θ = log.(mean_θ)
     function prior(log_θ::AbstractVector)
 		p = zero(eltype(log_θ))
 		@inbounds @simd for i in eachindex(log_θ)
-			p += ((log_θ[i] - μ[i]) / (sqrt(2)*std_θ[i]))^2
+			p += ((log_θ[i] - mean_log_θ[i]) / (sqrt(2)*std_θ[i]))^2
 		end
 		return p
 	end
@@ -228,7 +188,8 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 		θ = exp.(log_θ)
 		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
-		kl(r_θ, y) + λ * prior(log_θ)
+		p_θ = prior(log_θ)
+		kl(r_θ, y) + λ * p_θ
     end
 
     θ = initialize_activation!(θ, phases, x, y)
@@ -239,9 +200,52 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 
 	N = OptimizationAlgorithms.SaddleFreeNewton(objective, log_θ)
 	D = OptimizationAlgorithms.DecreasingStep(N, log_θ)
+	# maxnorm = 1
+	# maxentry = 1
+	# IDEA: D = OptimizationAlgorithms.TrustedDirection(D, maxnorm, maxentry)
 	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = tol, rx = tol,
 											maxiter = maxiter, verbose = verbose)
 	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
 	@. θ = exp(log_θ) # transform back
 	return θ
+end
+
+########################### parameter helpers ##################################
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+	                    phases::AbstractVector{<:CrystalPhase})
+	extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
+end
+
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+	                    phases::AbstractVector{<:Crystal})
+	totl_params = sum([(phase.free_param + 2) for phase in phases])
+	full_mean_θ = zeros(totl_params)
+	full_std_θ = zeros(totl_params)
+	start = 1
+	for phase in phases
+		n = phase.free_param
+		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
+		full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
+		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
+		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
+		start += (n+2)
+    end
+	return full_mean_θ, full_std_θ
+end
+
+# NOTE: candidates for removal?
+function remove_act_from_θ(θ::AbstractVector,
+	                      phases::AbstractVector{<:Crystal})
+	θ_c = copy(θ)
+    cursor = 0
+	for phase in phases
+	    deleteat!(θ_c, cursor + phase.free_param + 1)
+        cursor += phase.free_param + 1
+	end
+	θ_c
+end
+
+function remove_act_from_θ(θ::AbstractVector,
+	                      phases::AbstractVector{<:CrystalPhase})
+	remove_act_from_θ(θ, collect_crystals(phases))
 end

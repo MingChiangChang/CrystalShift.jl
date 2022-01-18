@@ -8,11 +8,14 @@ using Random: rand
 using Test
 
 verbose = false
+residual_tol = 0.1 # tolerance for residual norm after optimization
+maxiter = 128 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = .01
+std_noise = 1e-3
 mean_θ = [1., 1e-4, .2]
-std_θ = [.05, 100, 1.]
+std_θ = [.02, 100, 1.]
+# newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
 test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
@@ -31,14 +34,13 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector,
     y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = method,
-                  maxiter = 256, regularization = true)
+                  maxiter = maxiter, regularization = true)
 
     if verbose
         println(c[1].cl)
         println("sol: $(sol)")
         println(c[1].origin_cl)
     end
-
     norm(c.(x).-y)
 end
 
@@ -83,13 +85,13 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
     phase = rand(1:size(cps, 1), num_phase)
     y = synthesize_multiphase_data(cps[phase], x)
     c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ;
-                  method = method, maxiter = 256,
+                  method = method, maxiter = maxiter,
                   regularization = true, verbose = verbose)
 
     if verbose
         println(c)
     end
-    
+
     norm(c.(x).-y)
 end
 
