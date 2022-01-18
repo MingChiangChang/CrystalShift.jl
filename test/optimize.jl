@@ -81,11 +81,12 @@ end
 
 function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
                                    x::AbstractVector, num_phase::Int,
-                                   method::OptimizationMethods, verbose = false)
+                                   method::OptimizationMethods, objective::String = "LS", 
+                                   verbose = false)
     phase = rand(1:size(cps, 1), num_phase)
     y = synthesize_multiphase_data(cps[phase], x)
     c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ;
-                  method = method, maxiter = maxiter,
+                  objective = objective, method = method, maxiter = maxiter,
                   regularization = true, verbose = verbose)
 
     if verbose
@@ -121,17 +122,27 @@ end
 @testset "Multiple phases with shift test" begin
     correct_counts = 0
     for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, LM, false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, LM, "LS", false) < 0.1
             correct_counts += 1
         end
     end
     @test correct_counts >= 4
 end
 
-@testset "Multiple phases with shift newton test" begin # call it a success if 4/5 cases passed
+@testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
     correct_counts = 0
     for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, Newton, false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, Newton, "KL", false) < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= 4
+end
+
+@testset "Multiple phases with shift newton least sqaure test" begin # call it a success if 4/5 cases passed
+    correct_counts = 0
+    for _ in 1:5
+        if test_multiphase_optimize(cs, x, 2, Newton, "LS", false) < 0.1
             correct_counts += 1
         end
     end
