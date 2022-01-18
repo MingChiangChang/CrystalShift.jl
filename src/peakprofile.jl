@@ -8,6 +8,9 @@ abstract type PeakProfile{T} end
 (P::PeakProfile)(x::Real, μ::Real, σ::Real) = locationscale(P, x, μ, σ)
 (P::PeakProfile)(x::Real, c::Real, μ::Real, σ::Real) = c*P(x, μ, σ)
 
+get_param_nums(P::PeakProfile) = 0
+get_free_params(P::PeakProfile) = []
+
 ############################### Lorentzian function ##############################
 struct LorentzianProfile{T} <: PeakProfile{T} end
 const Lorentz = LorentzianProfile
@@ -20,12 +23,15 @@ const Gauss = GaussianProfile
 Gauss() = Gauss{Float64}()
 (P::Gauss)(x::Real) = exp(-x^2/2)
 
+
 ############################# pseudo-voigt function ############################
 struct PseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
 end
 const PseudoVoigt = PseudoVoigtProfile
 (P::PseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+get_param_nums(P::PseudoVoigtProfile) = length(P.α)
+get_free_params(P::PseudoVoigtProfile) = P.α
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)
