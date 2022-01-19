@@ -143,7 +143,6 @@ function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s:s+num_of_param-1]
-        println(θ_temp)
         reconstruct!(CPs[i], θ_temp, x, y)
         s += num_of_param
     end
