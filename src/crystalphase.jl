@@ -112,7 +112,7 @@ collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
 # Preallocating
 function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
-    evaluate!(CP, x, y)
+    evaluate!(y, CP, x)
 end
 
 # function evaluate!(CP, x, y)
@@ -195,7 +195,7 @@ end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     y = zero(x)
-    @simd for i in eachindex(CPs) #  
+    @simd for i in eachindex(CPs) #
         y += CPs[i](x)
     end
     y
