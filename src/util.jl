@@ -48,9 +48,10 @@ function kl(P::AbstractArray, Q::AbstractArray)
     return val
 end
 
+
 # negative Poisson likelihood, generalized for real (not just integer k)
 function negative_log_poisson(λ::Real, k::Real)
-    λ + gamma(k) - k*log(λ)
+    λ + loggamma(k) - k*log(λ)
 end
 
 # if we are optimizating w.r.t. λ, gamma(k) is irrelevant, so we remove it for this function

@@ -5,11 +5,13 @@ using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
 using OptimizationAlgorithms: update_jacobian!
 using LinearAlgebra
 using OptimizationAlgorithms
+using SpecialFunctions
 
 export CrystalPhase
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
 export OptimizationMethods, Peak
+
 
 include("util.jl")
 include("peakprofile.jl")
