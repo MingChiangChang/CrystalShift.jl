@@ -2,7 +2,8 @@ module CrystalShift
 using Base.Threads
 
 using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
-using OptimizationAlgorithms: update_jacobian!
+using OptimizationAlgorithms: SaddleFreeNewton, DecreasingStep
+using OptimizationAlgorithms: StoppingCriterion, fixedpoint!
 using LinearAlgebra
 using OptimizationAlgorithms
 using SpecialFunctions
@@ -19,6 +20,7 @@ include("peak.jl")
 include("crystal.jl")
 include("crystalphase.jl")
 include("phaseresult.jl")
+include("optimizationsettings.jl")
 include("optimize.jl")
 
 end
