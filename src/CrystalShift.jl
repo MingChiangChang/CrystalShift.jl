@@ -19,6 +19,7 @@ include("peak.jl")
 include("crystal.jl")
 include("crystalphase.jl")
 include("phaseresult.jl")
+include("optimizationsettings.jl")
 include("optimize.jl")
 
 end

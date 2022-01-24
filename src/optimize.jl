@@ -1,6 +1,4 @@
-@exported_enum OptimizationMethods LM Newton
-const DEFAULT_TOL = 1e-8
-const ALLOWED_OBJECTIVE = ["LS", "KL"]
+
 
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
@@ -35,33 +33,41 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
                    method::OptimizationMethods, objective::String = "LS",
 				   maxiter::Int = 32,
 				   regularization::Bool = true,
-				   verbose::Bool = false)
-    θ = get_free_params(phases)
+				   verbose::Bool = false, tol::Float64 =DEFAULT_TOL)  
+    opt_stn = OptimizationSettings{Float64}(phases, std_noise, mean_θ, std_θ, 
+										    maxiter, regularization, 
+										    method, objective, verbose, tol)
 
-	if length(mean_θ) == 3 #2
-		# Different prior for different crystals?
-	    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
+    θ = optimize!(phases, x, y, opt_stn)
+
+	for (i, cp) in enumerate(phases)
+		phases[i] = CrystalPhase(cp, θ)
+		deleteat!(θ, collect(1:get_param_nums(phases[i]))) #TODO: This is slow. Fix it.
 	end
-    
-	check_objective(objective) || error("objective $(objecitve) is not a valid objective string")
-	length_check(phases, mean_θ, std_θ) || error("number of parameter must match number of terms in the prior")
+	# if method == LM
+	# 	if objective == "KL"
+    #         println("Warning: Optimization method LM only works with least square objective.")
+	# 	end
+	# 	θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
+	# 			maxiter = maxiter, regularization = regularization)
+	# elseif method == Newton
+	# 	θ = newton!(θ, phases, x, y, std_noise, mean_θ, std_θ,
+	# 			objective=objective, maxiter = maxiter, verbose = verbose)
+    # end
 
-	if method == LM
-		if objective == "KL"
-            println("Warning: Optimization method LM only works with least square objective.")
-		end
-		θ = optimize!(θ, phases, x, y, std_noise, mean_θ, std_θ,
-				maxiter = maxiter, regularization = regularization)
-	elseif method == Newton
-		θ = newton!(θ, phases, x, y, std_noise, mean_θ, std_θ,
-				objective=objective, maxiter = maxiter, verbose = verbose)
-    end
-
-    for (i, cp) in enumerate(phases)
-        phases[i] = CrystalPhase(cp, θ)
-		deleteat!(θ, collect(1:get_param_nums(phases[i])))
-	end
+    # for (i, cp) in enumerate(phases)
+    #     phases[i] = CrystalPhase(cp, θ)
+	# 	deleteat!(θ, collect(1:get_param_nums(phases[i])))
+	# end
 	return phases
+end
+
+function optimize!(phases::AbstractVector{<:CrystalPhase},
+	               x::AbstractVector, y::AbstractVector,
+                   opt_stn::OptimizationSettings)
+	θ = get_free_params(phases)
+
+	optimize!(θ, phases, x, y, opt_stn)
 end
 
 # Single phase situation. Put phase into [phase].
@@ -94,8 +100,67 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	return new_θ
 end
 
-# TODO create prior for each crystal phases
-# TODO rename variables that are in log space
+function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
+	               x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+    θ = initialize_activation!(θ, phases, x, y)
+
+    @. θ = log(θ) # tramsform to log space for better conditioning
+	log_θ = θ
+    (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+
+	# TODO use Match.jl
+    if opt_stn.method == LM
+        log_θ = lm_optimize!(log_θ, phases, x, y, opt_stn)
+	elseif opt_stn.method == Newton
+        log_θ = newton!(log_θ, phases, x, y, opt_stn)
+	end
+	
+    @. θ = exp(log_θ)
+	return θ
+end
+
+function lm_optimize!(log_θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
+	                  x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+    opt_stn.objective == "LS" || error("LM only work with LS for now")
+	pr = opt_stn.priors
+	# TODO: use get_objective_func to retrieve objective function
+    function residual!(r::AbstractVector, log_θ::AbstractVector)
+        _residual!(phases, log_θ, x, y, r, pr.std_noise)
+	end
+
+    function prior!(p::AbstractVector, log_θ::AbstractVector)
+		_prior(p, log_θ, pr.mean_θ, pr.std_θ)
+	end
+
+	# Regularized cost function
+    function f(rp::AbstractVector, log_θ::AbstractVector)
+    	r = @view rp[1:length(y)] # residual term
+    	residual!(r, log_θ)
+    	p = @view rp[length(y)+1:end] # prior term
+    	prior!(p, log_θ)
+    	return rp
+    end
+
+	if opt_stn.regularization
+		r = zeros(eltype(log_θ), length(y) + length(log_θ) ) # Reason?? - size(phases, 1)
+        LM = LevenbergMarquart(f, log_θ, r)
+	else
+		r = zeros(eltype(log_θ), size(y))
+        LM = LevenbergMarquart(residual!, log_θ, r)
+	end
+
+	stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
+						min_decrease = 1e-8, max_iter = opt_stn.maxiter,
+						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
+
+	λ = 1e-6
+	verbose = Val(false)
+	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))
+	return log_θ
+end
+
+function get_objective_func() end # TODO: implement this
+
 function _residual!(phases::AbstractVector{<:CrystalPhase},
 	              log_θ::AbstractVector,
 				  x::AbstractVector, y::AbstractVector,
@@ -117,69 +182,17 @@ function _prior(p::AbstractVector, log_θ::AbstractVector,
 	return p
 end
 
-function optimize!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
-                   x::AbstractVector, y::AbstractVector,
-                   std_noise::Real, mean_θ::AbstractVector,
-                   std_θ::AbstractVector; maxiter::Int = 32,
-                   regularization::Bool = true,
-				   stn = LevenbergMarquartSettings(min_resnorm = 0, min_res = 0,
-			   						min_decrease = DEFAULT_TOL, max_iter = maxiter,
-			   						decrease_factor = 7, increase_factor = 10, max_step = Inf))
-	# params = copy(θ)
-    function residual!(r::AbstractVector, log_θ::AbstractVector)
-        _residual!(phases, log_θ, x, y, r, std_noise)
-	end
-
-	# The lower symmetry phases have better fitting power and thus
-	# should be punished more by the prior
-    function prior!(p::AbstractVector, log_θ::AbstractVector)
-		_prior(p, log_θ, mean_θ, std_θ)
-	end
-
-	# Regularized cost function
-    function f(rp::AbstractVector, log_θ::AbstractVector)
-    	r = @view rp[1:length(y)] # residual term
-    	residual!(r, log_θ)
-    	p = @view rp[length(y)+1:end] # prior term
-    	prior!(p, log_θ)
-		#println("Norm: $(norm(r)) Prior:$(norm(p))")
-    	return rp
-    end
-
-    θ = initialize_activation!(θ, phases, x, y)
-
-    @. θ = log(θ) # tramsform to log space for better conditioning
-	log_θ = θ
-    (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
-
-    if regularization
-		r = zeros(eltype(log_θ), length(y) + length(log_θ) ) # Reason?? - size(phases, 1)
-        LM = LevenbergMarquart(f, log_θ, r)
-	else
-		r = zeros(eltype(log_θ), size(y))
-        LM = LevenbergMarquart(residual!, log_θ, r)
-	end
-
-	λ = 1e-6
-	verbose = Val(false)
-	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, verbose)
-	@. θ = exp(log_θ) # transform back
-	return θ
-end
 
 # optimization based on SaddleFreeNewton method
-function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
+function newton!(log_θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
                  x::AbstractVector, y::AbstractVector,
-				 std_noise::Real, mean_θ::AbstractVector, std_θ::AbstractVector, λ::Real = 0;
-				 objective::String="KL", maxiter::Int = 128, verbose::Bool = false, tol::Real = DEFAULT_TOL)
-
-	# The lower symmetry phases have better fitting power and thus
-	# should be punished more by the prior
-	mean_log_θ = log.(mean_θ)
+				 opt_stn::OptimizationSettings)
+	pr = opt_stn.priors
+	mean_log_θ = log.(pr.mean_θ)
     function prior(log_θ::AbstractVector)
 		p = zero(eltype(log_θ))
 		@inbounds @simd for i in eachindex(log_θ)
-			p += ((log_θ[i] - mean_log_θ[i]) / (sqrt(2)*std_θ[i]))^2
+			p += ((log_θ[i] - mean_log_θ[i]) / (sqrt(2)*pr.std_θ[i]))^2
 		end
 		return p
 	end
@@ -193,33 +206,30 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		p_θ = prior(log_θ)
+		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
 		kl(r_θ, y) + λ * p_θ
     end
 
 	function ls_residual(log_θ::AbstractVector)
 		r = zeros(promote_type(eltype(log_θ), eltype(x), eltype(y)), length(x))
-		r = _residual!(phases, log_θ, x, y, r, std_noise)
+		r = _residual!(phases, log_θ, x, y, r, pr.std_noise)
 		return sum(abs2, r)
 	end
 	
 	function ls_prior(log_θ::AbstractVector)
 		p = zero(log_θ)
-		sum(abs2, _prior(p, log_θ, mean_θ, std_θ))
+		sum(abs2, _prior(p, log_θ, pr.mean_θ, pr.std_θ))
 	end
 
 	function ls_objective(log_θ::AbstractVector)
 		ls_residual(log_θ) + ls_prior(log_θ)
 	end
 
-    θ = initialize_activation!(θ, phases, x, y)
-
-    @. θ = log(θ) # tramsform to log space for better conditioning
-	log_θ = θ
     (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
-	if objective == "KL"
+	if opt_stn.objective == "KL"
 		N = OptimizationAlgorithms.SaddleFreeNewton(kl_objective, log_θ)
-	else objective == "LS"
+	else opt_stn.objective == "LS"
 		N = OptimizationAlgorithms.SaddleFreeNewton(ls_objective, log_θ)
 	end
 
@@ -227,38 +237,17 @@ function newton!(θ::AbstractVector, phases::AbstractVector{<:CrystalPhase},
 	# maxnorm = 1
 	# maxentry = 1
 	# IDEA: D = OptimizationAlgorithms.TrustedDirection(D, maxnorm, maxentry)
+	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 	S = OptimizationAlgorithms.StoppingCriterion(log_θ, dx = tol, rx = tol,
-											maxiter = maxiter, verbose = verbose)
+								maxiter = maxiter, verbose = verbose)
 	OptimizationAlgorithms.fixedpoint!(D, log_θ, S)
-	@. θ = exp(log_θ) # transform back
-	return θ
+
+	return log_θ
 end
 
 ########################### parameter helpers ##################################
 function check_objective(objective::String)
 	objective in ALLOWED_OBJECTIVE || error("objective $(objective) not a allowed objective string")
-end
-
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-	                    phases::AbstractVector{<:CrystalPhase})
-	extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
-end
-
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-	                    phases::AbstractVector{<:Crystal})
-	totl_params = sum([(phase.free_param + 2) for phase in phases])
-	full_mean_θ = zeros(totl_params)
-	full_std_θ = zeros(totl_params)
-	start = 1
-	for phase in phases
-		n = phase.free_param
-		full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
-		full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
-		full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
-		full_std_θ[start + n:start + n + 1] = std_θ[2:3]
-		start += (n+2)
-    end
-	return full_mean_θ, full_std_θ
 end
 
 # NOTE: candidates for removal?
