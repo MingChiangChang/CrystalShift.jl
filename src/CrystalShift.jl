@@ -2,7 +2,8 @@ module CrystalShift
 using Base.Threads
 
 using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
-using OptimizationAlgorithms: update_jacobian!
+using OptimizationAlgorithms: SaddleFreeNewton, DecreasingStep
+using OptimizationAlgorithms: StoppingCriterion, fixedpoint!
 using LinearAlgebra
 using OptimizationAlgorithms
 using SpecialFunctions
