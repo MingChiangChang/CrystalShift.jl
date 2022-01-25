@@ -21,8 +21,6 @@ end
 
 cs = CrystalPhase.(String.(s[1:end-1]))
 x = collect(8:.1:60)
-
-x = collect(8:.1:60)
 y = zero(x)
 
 @testset "Helper functions" begin
@@ -57,7 +55,10 @@ end
     pn = [1,2,5,6,10]
     for i in eachindex(pn)
         e = zero(x)
-        @test sol[i,:] ≈ evaluate!(e, cs[pn[i]], x)
+        sol[i,:] ./= maximum(sol[i,:])
+        evaluate!(e, cs[pn[i]], x)
+        e ./= maximum(e)
+        @test sol[i,:] ≈ e
     end
 end
 
@@ -65,7 +66,10 @@ end
     pn = [[1,2], [1,5], [2,5], [5,6], [6,10]]
     for i in eachindex(pn)
         e = zero(x)
-        @test multi_sol[i,:] ≈ evaluate!(e, cs[pn[i]], x)
+        multi_sol[i,:] ./= maximum(multi_sol[i,:])
+        evaluate!(e, cs[pn[i]], x)
+        e ./= maximum(e)
+        @test multi_sol[i,:] ≈ e
     end
 end
 

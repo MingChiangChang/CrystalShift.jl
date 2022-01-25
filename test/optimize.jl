@@ -13,8 +13,8 @@ maxiter = 128 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
-mean_θ = [1., 1e-4, .2]
-std_θ = [.02, 100, 1.]
+mean_θ = [1., 1, .2]
+std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
 test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test

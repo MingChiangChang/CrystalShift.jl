@@ -1,4 +1,4 @@
-struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M}
+struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N}
     cl::C # crystal object
     origin_cl::CL # save for later comparison
     peaks::V # Vector of peak object
@@ -11,12 +11,14 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M}
     profile::P # Peak profile
                # Do import from PhaseMapping if
                # other peak profiles are needed
+    norm_constant::N
 end
 
 function Base.show(io::IO, CP::CrystalPhase)
     println("Phase name: $(CP.name), ID: $(CP.id)")
     println("Optimization parameters:")
     println("Activation: $(CP.act), Peak width: $(CP.σ)")
+    println("Normalization: $(CP.norm_constant)")
     println("Lattice information:")
     println(CP.cl)
 end
@@ -31,11 +33,11 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     lattice_info = split(f[1], ',')
     id = parse(Int64, lattice_info[1])
     crystal = get_crystal(cast(lattice_info[4:end], Float64))
-    peaks = get_peaks(f[2:end])
+    peaks, norm_constant = get_peaks(f[2:end])
     name = String(lattice_info[2])
     act = 1.0
 
-    CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile)
+    CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile, norm_constant)
 end
 
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
@@ -43,7 +45,7 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     t = eltype(θ)
     c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
-                     θ[fp+1], θ[fp+2], CP.profile)
+                     θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     return c
 end
 

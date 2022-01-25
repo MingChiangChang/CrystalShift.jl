@@ -20,7 +20,18 @@ function get_peaks(lines)
     for i in eachindex(lines)
         peaks[i] = Peak(String(lines[i]))
     end
-    peaks
+    peaks, norm_constant = normalize_peaks!(peaks)
+    return peaks, norm_constant
+end
+
+function normalize_peaks!(peaks::AbstractVector{Peak})
+    intensities = [peaks[i].I for i in eachindex(peaks)]
+    norm_constant = maximum(intensities)
+    intensities ./= norm_constant
+    for i in eachindex(peaks)
+        peaks[i] = Peak(peaks[i].h, peaks[i].k, peaks[i].l, peaks[i].q, intensities[i])
+    end
+    return peaks, norm_constant
 end
 
 twoθ2q(twoθ::Float64, λ::Float64=1.5406) = 4*pi*sin(deg2rad(twoθ/2)) / λ
