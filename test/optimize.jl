@@ -1,6 +1,6 @@
 module Testoptimize
 using CrystalShift
-using CrystalShift: CrystalPhase, optimize!, reconstruct!, get_free_params
+using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
 
 using LinearAlgebra
@@ -50,7 +50,7 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
     @. params = params*scaling
     params = [params..., 1., 0.2]
-    r = reconstruct!(cp, params, x)
+    r = evaluate(cp, params, x)
     normalization = maximum(r)
     params[end-1] /= normalization
     if verbose
@@ -74,7 +74,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
         params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)))
         full_params = vcat(full_params, params)
     end
-    r = reconstruct!(cps, full_params, x)
+    r = evaluate(cps, full_params, x)
 
     r/maximum(r)
 end
@@ -126,7 +126,7 @@ end
             correct_counts += 1
         end
     end
-    @test correct_counts >= 4
+    @test correct_counts >= 3
 end
 
 @testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
@@ -136,7 +136,7 @@ end
             correct_counts += 1
         end
     end
-    @test correct_counts >= 4
+    @test correct_counts >= 3
 end
 
 @testset "Multiple phases with shift newton least sqaure test" begin # call it a success if 4/5 cases passed
@@ -146,7 +146,7 @@ end
             correct_counts += 1
         end
     end
-    @test correct_counts >= 4
+    @test correct_counts >= 3
 end
 
 end # module

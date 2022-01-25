@@ -113,17 +113,10 @@ end
 collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
 # Preallocating
+# Functor comes in handy but use evaluate! when you can to be clear
 function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
     evaluate!(y, CP, x)
 end
-
-# function evaluate!(CP, x, y)
-#     @simd for i in eachindex(CP.peaks)
-#         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-#         @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
-#     end
-#     y
-# end
 
 function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
                                                y::AbstractVector)
@@ -133,38 +126,52 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
     y
 end
 
-function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
-                      x::AbstractVector, y::AbstractVector)
+function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+    @simd for i in eachindex(CP.peaks)
+        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+    end
+    y
+end
+
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
+    for CP in CPs
+        evaluate!(y, CP, x)
+    end
+    y
+end
+
+function evaluate!(CP::CrystalPhase, θ::AbstractVector,
+                   x::AbstractVector, y::AbstractVector)
     CrystalPhase(CP, θ)(x, y)
 end
 
-# TODO put parameter
-function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
-    θ::AbstractVector, x::AbstractVector, y::AbstractVector)
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:Crystal},
+                   θ::AbstractVector, x::AbstractVector)
     s = 1
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
-        θ_temp = @view θ[s:s+num_of_param-1]
-        reconstruct!(CPs[i], θ_temp, x, y)
+        θ_temp = @view θ[s : s+num_of_param-1]
+        evalute!(y, CPs[i], θ_temp, x)
         s += num_of_param
     end
     y
 end
 
-function res!(CP::CrystalPhase, θ::AbstractVector,
+function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
-    res!(CrystalPhase(CP, θ), x, r)
+    evaluate_residual!(CrystalPhase(CP, θ), x, r)
 end
 
-function res!(CPs::AbstractVector{<:CrystalPhase},
+function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
               x::AbstractVector, r::AbstractVector)
     @simd for i in eachindex(CPs)
-        res!(CPs[i], x, r)
+        evaluate_residual!(CPs[i], x, r)
     end
     r
 end
 
-function res!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
+function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
     @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
         @. r -= CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
@@ -172,13 +179,13 @@ function res!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
     r
 end
 
-function res!(CPs::AbstractVector{<:CrystalPhase},
+function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
              θ::AbstractVector, x::AbstractVector, r::AbstractVector)
     s = 1
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
-        θ_temp = @view θ[s:s+num_of_param-1]
-        res!(CPs[i], θ_temp, x, r)
+        θ_temp = @view θ[s : s+num_of_param-1]
+        evaluate_residual!(CPs[i], θ_temp, x, r)
         s += num_of_param
     end
     r
@@ -201,36 +208,21 @@ function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
     end
     y
 end
-function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
-    @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
-    end
-    y
-end
-
-function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
-    for CP in CPs
-        evaluate!(y, CP, x)
-    end
-    y
-end
 
 
-function reconstruct!(CP::CrystalPhase, θ::AbstractVector,
+function evaluate(CP::CrystalPhase, θ::AbstractVector,
                       x::AbstractVector)
     CrystalPhase(CP, θ).(x)
 end
 
-# Index
-function reconstruct!(CPs::AbstractVector{<:CrystalPhase},
-                      θ::AbstractVector, x::AbstractVector)
+function evaluate(CPs::AbstractVector{<:CrystalPhase},
+                  θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
     s = 1
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s:s+num_of_param-1]
-        y += reconstruct!(CPs[i], θ_temp, x)
+        y += evaluate(CPs[i], θ_temp, x)
         s += num_of_param
     end
     y

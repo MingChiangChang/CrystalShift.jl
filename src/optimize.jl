@@ -81,7 +81,7 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	start = 1
 	for phase in phases
         param_num = get_param_nums(phase)
-		p = reconstruct!(phase, θ, x)
+		p = evaluate(phase, θ, x)
 		new_θ[start + param_num - 2] = dot(p, y) / sum(abs2, p)
         start += param_num
 	end
@@ -190,7 +190,7 @@ function get_newton_objective_func(phases::AbstractVector{<:CrystalPhase},
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
     function kl_objective(log_θ::AbstractVector)
 		θ = exp.(log_θ)
-		r_θ = reconstruct!(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
+		r_θ = evaluate(phases, θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		p_θ = prior(log_θ)
 		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
@@ -227,7 +227,7 @@ function _residual!(phases::AbstractVector{<:CrystalPhase},
 					std_noise::Real)
 	params = exp.(log_θ) # make a copy
 	@. r = y
-	res!(phases, params, x, r) # Avoid allocation, put everything in here??
+	evaluate_residual!(phases, params, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 					# actual residual
 	return r

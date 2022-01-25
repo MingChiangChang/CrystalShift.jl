@@ -1,6 +1,6 @@
 module TestPeakProfile
 using Test
-using PhaseMapping: PeakProfile, Lorentz, Gauss, PseudoVoigt
+using CrystalShift: PeakProfile, Lorentz, Gauss, PseudoVoigt
 
 @testset "PeakProfile" begin
     l = Lorentz()

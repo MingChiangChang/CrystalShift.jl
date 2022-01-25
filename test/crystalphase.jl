@@ -73,25 +73,4 @@ end
     end
 end
 
-# @test "Single phase evaluation with modified parameters" begin
-#     # take a phase then multiply its lattice params by 1.002
-
-# end
-
-# function synthesize_data(cp::CrystalPhase, x::AbstractVector)
-#     params = get_free_params(cp)
-#     interval_size = 0.025
-#     scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
-#     @. params = params*scaling
-#     params = [params..., 1., 0.2]
-#     r = reconstruct!(cp, params, x)
-#     normalization = maximum(r)
-#     params[end-1] /= normalization
-#     if verbose
-#         println("synthesize_data: ", params)
-#     end
-
-#     return r/normalization, params
-# end
-
 end # modules
