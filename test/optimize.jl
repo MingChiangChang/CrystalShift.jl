@@ -9,7 +9,7 @@ using Test
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 128 # appears to be required for phase combinations in particular
+maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
@@ -41,15 +41,16 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector,
         println("sol: $(sol)")
         println(c[1].origin_cl)
     end
+    
     norm(c.(x).-y)
 end
 
 function synthesize_data(cp::CrystalPhase, x::AbstractVector)
-    params = get_free_params(cp)
+    params = get_free_lattice_params(cp)
     interval_size = 0.025
     scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
     @. params = params*scaling
-    params = [params..., 1., 0.2]
+    params = [params..., 1., 0.2, 0.5]
     r = evaluate(cp, params, x)
     normalization = maximum(r)
     params[end-1] /= normalization
@@ -71,7 +72,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
 
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
-        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)))
+        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), 0.1.+0.1(rand(1)))
         full_params = vcat(full_params, params)
     end
     r = evaluate(cps, full_params, x)
@@ -101,7 +102,7 @@ end
     correct_counts = 0
     for (idx, cp) in enumerate(cs)
         verbose && println(idx)
-        if test_optimize(cp, x, LM, false) < 0.1
+        if test_optimize(cp, x, LM, verbose) < 0.1
             correct_counts += 1
         end
     end
@@ -122,7 +123,7 @@ end
 @testset "Multiple phases with shift test" begin
     correct_counts = 0
     for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, LM, "LS", false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, LM, "LS", verbose) < 0.1
             correct_counts += 1
         end
     end
@@ -132,7 +133,7 @@ end
 @testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
     correct_counts = 0
     for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, Newton, "KL", false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, Newton, "KL", verbose) < 0.1
             correct_counts += 1
         end
     end
@@ -142,7 +143,7 @@ end
 @testset "Multiple phases with shift newton least sqaure test" begin # call it a success if 4/5 cases passed
     correct_counts = 0
     for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, Newton, "LS", false) < 0.1
+        if test_multiphase_optimize(cs, x, 2, Newton, "LS", verbose) < 0.1
             correct_counts += 1
         end
     end

@@ -25,10 +25,10 @@ end
 
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
-get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2
+get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
-                      profile=Lorentz())
+                      profile::PeakProfile=PseudoVoigt(0.5))
     f = split(_stn, '\n')
     lattice_info = split(f[1], ',')
     id = parse(Int64, lattice_info[1])
@@ -68,7 +68,7 @@ function get_intrinsic_crystal_type(cl::Type)
 end
 
 function get_free_params(CP::CrystalPhase)
-    return [get_free_lattice_params(CP.cl)..., CP.act, CP.σ]
+    return vcat(get_free_lattice_params(CP.cl), [CP.act, CP.σ], get_free_params(CP.profile))
 end
 
 function get_free_params(CPs::AbstractVector{<:CrystalPhase})
@@ -79,8 +79,11 @@ function get_free_params(CPs::AbstractVector{<:CrystalPhase})
     p
 end
 
-get_eight_params(CP::CrystalPhase) = [CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ]
-get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
+function get_eight_params(CP::CrystalPhase)
+    vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
+end
+
+get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_parmams(CrystalPhase(CP, θ))
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
 get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
