@@ -41,7 +41,7 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector,
         println("sol: $(sol)")
         println(c[1].origin_cl)
     end
-    
+
     norm(c.(x).-y)
 end
 
@@ -72,7 +72,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
 
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
-        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), 0.1.+0.1(rand(1)))
+        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), (rand(1)))
         full_params = vcat(full_params, params)
     end
     r = evaluate(cps, full_params, x)
