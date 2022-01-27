@@ -4,7 +4,7 @@ module Testcrystalshift
 using Test
 using CrystalShift
 using CrystalShift: evaluate!, get_param_nums, get_eight_params, get_free_lattice_params
-using CrystalShift: collect_crystals
+using CrystalShift: collect_crystals, Lorentz, PseudoVoigt
 using NPZ
 
 path = "../data/"
@@ -19,7 +19,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
 y = zero(x)
 
@@ -72,5 +72,55 @@ end
         @test multi_sol[i,:] ≈ e
     end
 end
+
+# cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt(0.5),))
+# x = collect(8:.1:60)
+# y = zero(x)
+
+# @testset "Helper functions Voigt" begin
+#     @test Bool(cs[1]) == true 
+#     @test Bool(cs) == true
+#     @test get_param_nums(cs[1]) == 7
+# end
+
+# @testset "Getters Voigt" begin
+#     @test get_eight_params(cs[1]) ≈ [17.11299, 4.872, 5.548, deg2rad(90.0), deg2rad(90.59), deg2rad(90.0), 1.0, 0.1, 0.5]
+#     @test get_eight_params(cs[1], [1., 2., 3., 4., 5., 6.]) == [1., 2., 3., pi/2, 4., pi/2, 5., 6., 0.5]
+#     @test get_eight_params(cs[2], [1., 2., 3.]) == [1., 1., 1., pi/2, pi/2, pi/2, 2., 3., 0.5]
+#     @test get_eight_params(cs[6], [1., 2., 3., 4., 5.]) == [1., 2., 3., pi/2, pi/2, pi/2, 4., 5., 0.5]
+#     @test get_eight_params(cs[10], [1., 2., 3., 4.]) == [1., 1., 2., pi/2, pi/2, pi/2, 3., 4., 0.5]
+
+#     @test get_free_lattice_params(cs[1]) ≈ [17.11299, 4.872, 5.548, deg2rad(90.59)]
+#     @test get_free_lattice_params(cs[1], [1., 2., 3., 4., 5., 6.]) == [1., 2., 3., 5.]
+#     @test get_free_lattice_params(cs[2], [1., 2., 3., 4., 5., 6.]) == [1.]
+#     @test get_free_lattice_params(cs[6], [1., 2., 3., 4., 5., 6.]) == [1., 2., 3.]
+#     @test get_free_lattice_params(cs[10], [1., 2., 3., 4., 5., 6.]) == [1., 3.]
+
+#     @test collect_crystals(cs[1:3]) == [cs[1].cl, cs[2].cl, cs[3].cl]
+# end
+
+# # Test construction with 5 phases from different crystal family
+# @testset "Single phase evaluation Voigt" begin
+#     pn = [1,2,5,6,10]
+#     for i in eachindex(pn)
+#         e = zero(x)
+#         sol[i,:] ./= maximum(sol[i,:])
+#         evaluate!(e, cs[pn[i]], x)
+#         e ./= maximum(e)
+#         @test sol[i,:] ≈ e
+#     end
+# end
+
+# @testset "Multiphase evaluation Voigt" begin
+#     pn = [[1,2], [1,5], [2,5], [5,6], [6,10]]
+#     for i in eachindex(pn)
+#         e = zero(x)
+#         multi_sol[i,:] ./= maximum(multi_sol[i,:])
+#         evaluate!(e, cs[pn[i]], x)
+#         e ./= maximum(e)
+#         @test multi_sol[i,:] ≈ e
+#     end
+# end
+
 
 end # modules

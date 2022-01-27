@@ -9,18 +9,24 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-    phases::AbstractVector{<:Crystal})
-    totl_params = sum([(phase.free_param + 2) for phase in phases])
+    phases::AbstractVector{<:CrystalPhase})
+    totl_params = sum([get_param_nums(phase) for phase in phases])
     full_mean_θ = zeros(totl_params)
     full_std_θ = zeros(totl_params)
     start = 1
     for phase in phases
-        n = phase.free_param
+        n = phase.cl.free_param
         full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
         full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
         full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
         full_std_θ[start + n:start + n + 1] = std_θ[2:3]
-        start += (n+2)
+        if phase.profile isa PseudoVoigt
+            full_mean_θ[start + n + 2] = 0.5
+            full_std_θ[start + n + 2] = Inf
+            start += (n+3)
+        else
+            start += (n+2)
+        end
     end
     return full_mean_θ, full_std_θ
 end

@@ -51,7 +51,6 @@ function optimize!(phases::AbstractVector{<:CrystalPhase},
 	               x::AbstractVector, y::AbstractVector,
                    opt_stn::OptimizationSettings)
 	θ = get_free_params(phases)
-
 	optimize!(θ, phases, x, y, opt_stn)
 end
 
@@ -82,7 +81,7 @@ function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
 	for phase in phases
         param_num = get_param_nums(phase)
 		p = evaluate(phase, θ, x)
-		new_θ[start + param_num - 2] = dot(p, y) / sum(abs2, p)
+		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = dot(p, y) / sum(abs2, p)
         start += param_num
 	end
 	return new_θ

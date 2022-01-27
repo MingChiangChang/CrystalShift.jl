@@ -1,4 +1,5 @@
 using CovarianceFunctions
+using LinearAlgebra
 const DEFAULT_RANK_TOL = 1e-6
 
 struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:AbstractVector, LT, CT}
@@ -10,7 +11,7 @@ struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:Abs
     c::CT # temporary storage for model parameters
 end
 
-get_param_nums(B::BackgroundModel) = length(S)
+get_param_nums(B::BackgroundModel) = length(B.S)
 get_free_params(B::BackgroundModel) = B.c
 
 function BackgroundModel(x::AbstractVector, k, l::Real, λ::Real = 1; rank_tol::Real = DEFAULT_RANK_TOL)
@@ -56,7 +57,7 @@ end
 # least-squares prior for background model to be used in conjunction with LevenbergMarquart
 # computes
 function lm_prior!(p::AbstractVector, B::BackgroundModel, c::AbstractVector)
-    if isnothing(U)
+    if isnothing(B.U)
         @. p = B.λ * c
     else
         @. p = B.λ * c / B.S
