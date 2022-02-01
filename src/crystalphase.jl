@@ -67,6 +67,16 @@ function get_intrinsic_crystal_type(cl::Type)
     end
 end
 
+function get_moles(CP::CrystalPhase)
+    CP.act/CP.norm_constant
+end
+
+function get_fraction(CPs::AbstractVector{<:CrystalPhase})
+    moles = zeros(size(CPs, 1))
+    @. moles = get_moles(CPs)
+    return moles./sum(moles)
+end
+
 function get_free_params(CP::CrystalPhase)
     return vcat(get_free_lattice_params(CP.cl), [CP.act, CP.σ], get_free_params(CP.profile))
 end

@@ -1,7 +1,7 @@
 module Testoptimize
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
-using CrystalShift: newton!, get_free_lattice_params
+using CrystalShift: newton!, get_free_lattice_params, get_fraction
 
 using LinearAlgebra
 using Random: rand
