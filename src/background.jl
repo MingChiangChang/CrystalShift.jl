@@ -34,7 +34,7 @@ function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAUL
     U, S, V = svd(K)
     i = findfirst(<(rank_tol), S)
     Ui = @view U[:, 1:i]
-    Si = @view S[:, 1:i]
+    Si = @view S[1:i]
     return K, Ui, Si
 end
 
