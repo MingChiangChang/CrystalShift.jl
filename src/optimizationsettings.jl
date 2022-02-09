@@ -9,7 +9,7 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-    phases::AbstractVector{<:CrystalPhase})
+                        phases::AbstractVector{<:CrystalPhase})
     totl_params = sum([get_param_nums(phase) for phase in phases])
     full_mean_θ = zeros(totl_params)
     full_std_θ = zeros(totl_params)
@@ -72,5 +72,13 @@ function OptimizationSettings{V}(phases::AbstractVector{<:CrystalPhase},
                                  maxiter::Int, regularization::Bool, method::OptimizationMethods, 
                                  objective::String, verbose::Bool, tol::Float64) where V<:Real
     pr = Priors{V}(phases, std_noise, mean_θ, std_θ)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, verbose, tol)
+end
+
+function OptimizationSettings{V}(pm::PhaseModel,
+                                std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}, 
+                                maxiter::Int, regularization::Bool, method::OptimizationMethods, 
+                                objective::String, verbose::Bool, tol::Float64) where V<:Real
+    pr = Priors{V}(pm.CPs, std_noise, mean_θ, std_θ)
     OptimizationSettings{V}(pr, maxiter, regularization, method, objective, verbose, tol)
 end

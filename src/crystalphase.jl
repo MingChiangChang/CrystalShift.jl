@@ -26,6 +26,7 @@ end
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
+get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile::PeakProfile=PseudoVoigt(0.5))
@@ -47,6 +48,16 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
                      θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     return c
+end
+
+function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:CrystalPhase})
+    start = 1
+    new_CPs = Vector{CrystalPhase}(undef, length(CPs))
+    for i in eachindex(CPs)
+		new_CPs[i] = CrystalPhase(CPs[i], θ[start:start + get_param_nums(CPs[i])-1])
+		start += get_param_nums(CPs[i])
+	end
+    θ[start:end], new_CPs
 end
 
 function get_intrinsic_crystal_type(cl::Type)

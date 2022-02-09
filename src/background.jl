@@ -23,8 +23,8 @@ end
 
 function reconstruct_BG!(θ::AbstractVector, B::BackgroundModel)
     param_num = get_param_nums(B)
-    @. B.c = θ[1:param_num]
-    return θ[param_num+1:end], B
+    new_B = BackgroundModel(B.k, B.K, B.U, B.S, B.λ, θ[1:param_num])
+    return θ[param_num+1:end], new_B
 end
 # function BackgroundModel(BG::BackgroundModel,  c::)
 
@@ -45,14 +45,43 @@ function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAUL
     return K, Ui, Si
 end
 
-function evaluate(B::BackgroundModel, c::AbstractVector)
-    y = zeros(eltype(c), size(B.K, 1))
-    evaluate!(y, B, c)
+# function evaluate(B::BackgroundModel, c::AbstractVector)
+#     y = zeros(eltype(c), size(B.K, 1))
+#     evaluate!(y, B, c)
+# end
+
+
+# function evaluate!(y::AbstractVector, B::BackgroundModel, c::AbstractVector)
+#     A = isnothing(B.U) ? B.K : B.U
+#     mul!(y, A, c)
+# end
+
+function evaluate!(y::AbstractVector, B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
+    reconstruct_BG!(B, θ)
+    evaluate!(y, B, x)
 end
 
-function evaluate!(y::AbstractVector, B::BackgroundModel, c::AbstractVector)
+function evaluate!(y::AbstractVector, B::BackgroundModel, x::AbstractVector)
     A = isnothing(B.U) ? B.K : B.U
-    mul!(y, A, c)
+    mul!(y, A, B.c)
+end
+
+function evaluate_residual!(BG::BackgroundModel, θ::AbstractVector,
+                            x::AbstractVector, r::AbstractVector)
+    evaluate_residual!(reconstruct_BG(BG, θ), x, r)
+end
+
+function evaluate_residual!(B::BackgroundModel, x::AbstractVector, r::AbstractVector)
+    A = isnothing(B.U) ? B.K : B.U
+    y = zero(r)
+    println("dims: A: $(eltype(A)), B.c: $(eltype(B.c)), y: $(eltype(y)), r: $(eltype(r))")
+    r .-= mul!(y, A, B.c)
+    r
+end
+
+function evaluate_residual!(B::BackgroundModel, θ::AbstractVector,
+                            x::AbstractVector, r::AbstractVector)
+    evaluate_residual!(reconstruct_BG!(B, θ), x, r)
 end
 
 function prior(B::BackgroundModel, c::AbstractVector)
@@ -68,5 +97,13 @@ function lm_prior!(p::AbstractVector, B::BackgroundModel, c::AbstractVector)
         @. p = B.λ * c
     else
         @. p = B.λ * c / B.S
+    end
+end
+
+function lm_prior!(p::AbstractVector, B::BackgroundModel)
+    if isnothing(B.U)
+        @. p = B.λ * B.c
+    else
+        @. p = B.λ * B.c / B.S
     end
 end
