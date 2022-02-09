@@ -63,7 +63,8 @@ end
 
 function evaluate!(y::AbstractVector, B::BackgroundModel, x::AbstractVector)
     A = isnothing(B.U) ? B.K : B.U
-    mul!(y, A, B.c)
+    y .+= mul!(zero(x), A, B.c)
+    y
 end
 
 function evaluate_residual!(BG::BackgroundModel, θ::AbstractVector,
