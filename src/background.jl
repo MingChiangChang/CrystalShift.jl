@@ -21,6 +21,13 @@ function BackgroundModel(x::AbstractVector, k, l::Real, λ::Real = 1; rank_tol::
     BackgroundModel(k, K, U, S, λ, c)
 end
 
+function reconstruct_BG!(θ::AbstractVector, B::BackgroundModel)
+    param_num = get_param_nums(B)
+    @. B.c = θ[1:param_num]
+    return θ[param_num+1:end], B
+end
+# function BackgroundModel(BG::BackgroundModel,  c::)
+
 LinearAlgebra.svd(G::Gramian) = svd(Matrix(G))
 
 # x is vector of q values in case of XRD
@@ -44,7 +51,7 @@ function evaluate(B::BackgroundModel, c::AbstractVector)
 end
 
 function evaluate!(y::AbstractVector, B::BackgroundModel, c::AbstractVector)
-    A = isnothing(U) ? B.K : B.U
+    A = isnothing(B.U) ? B.K : B.U
     mul!(y, A, c)
 end
 
