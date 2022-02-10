@@ -48,8 +48,9 @@ end
 function optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 	θ = initialize_activation!(θ, pm, x, y)
-
-	@. θ = log(θ) # tramsform to log space for better conditioning
+    
+	# TODO: do not take log on the background so that it can be properly optimized
+	θ[1:get_param_nums(pm.CPs)]= log.(θ[1:get_param_nums(pm.CPs)]) # tramsform to log space for better conditioning
 	log_θ = θ
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
@@ -60,7 +61,8 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
 	end
 
-	@. θ = exp(log_θ)
+	log_θ[1:get_param_nums(pm.CPs)]= exp.(log_θ[1:get_param_nums(pm.CPs)])
+	θ = log_θ
 	return θ
 end
 
@@ -74,11 +76,11 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
         start += param_num
 	end
 
-	for i in eachindex(new_θ)
-		if new_θ[i] == 0
-            new_θ[i] = 0.0001
-		end
-	end
+	# for i in eachindex(new_θ)
+	# 	if new_θ[i] == 0
+    #         new_θ[i] = 0.0001
+	# 	end
+	# end
 	return new_θ
 end
 
@@ -362,14 +364,15 @@ function _prior(p::AbstractVector, log_θ::AbstractVector,
 	return p
 end
 
-function _residual!(PM::PhaseModel,
+function _residual!(pm::PhaseModel,
 					log_θ::AbstractVector,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	params = exp.(log_θ) # make a copy
+	params = copy(log_θ)
+	params[1:get_param_nums(pm.CPs)] .= exp.(params[1:get_param_nums(pm.CPs)])
 	@. r = y
-	evaluate_residual!(PM, params, x, r) # Avoid allocation, put everything in here??
+	evaluate_residual!(pm, params, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
 	return r

@@ -54,7 +54,7 @@ data, params = synthesize_data(cs[1], x)
 noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
 noisy_data = noise .+ data
-bg = BackgroundModel(x, EQ(), 100)
+bg = BackgroundModel(x, EQ(), 20)
 
 PM = PhaseModel(cs[1:1], bg)
 noisy_data = convert(Vector{Real}, noisy_data)

@@ -58,11 +58,6 @@ end
 #     mul!(y, A, c)
 # end
 
-evaluate!(y::AbstractVector, B::Nothing, θ::AbstractVector, x::AbstractVector) = y
-evaluate!(y::AbstractVector, B::Nothing, x::AbstractVector) = y
-evaluate_residual!(B::Nothing, θ::AbstractVector, x::AbstractVector, r::AbstractVector) = r
-evaluate_residual!(B::Nothing, x::AbstractVector, r::AbstractVector) = r
-
 function evaluate!(y::AbstractVector, B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
     reconstruct_BG!(θ, B)
     evaluate!(y, B, x)
@@ -108,7 +103,7 @@ function lm_prior!(p::AbstractVector, B::BackgroundModel, c::AbstractVector)
     if isnothing(B.U)
         @. p = B.λ * c
     else
-        @. p = B.λ * c # / B.S
+        @. p = B.λ * c / B.S
     end
 end
 
@@ -116,7 +111,7 @@ function lm_prior!(p::AbstractVector, B::BackgroundModel)
     if isnothing(B.U)
         @. p = B.λ * B.c
     else
-        @. p = B.λ * B.c #/ B.S
+        @. p = B.λ * B.c / B.S
     end
 end
 

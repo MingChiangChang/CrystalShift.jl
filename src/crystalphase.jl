@@ -94,7 +94,7 @@ function get_eight_params(CP::CrystalPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
 
-get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_parmams(CrystalPhase(CP, θ))
+get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
 get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
@@ -120,9 +120,6 @@ get_free_lattice_params(cl::Rhombohedral, θ::AbstractVector) = [θ[1], θ[4]]
 get_free_lattice_params(cl::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], θ[5]]
 get_free_lattice_params(cl::Triclinic, θ::AbstractVector) = θ
 
-function get_eight_params(CP::CrystalPhase, θ::AbstractVector)
-    get_eight_params(CP.cl, θ)
-end
 
 collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
