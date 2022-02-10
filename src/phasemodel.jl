@@ -1,8 +1,8 @@
 const Background = Union{BackgroundModel, Nothing}
 
-struct PhaseModel
-    CPs::AbstractVector{<:CrystalPhase}
-    background::Background
+struct PhaseModel{A<:AbstractVector{CrystalPhase}, B<:Background} 
+    CPs::A
+    background::B
 end
 
 """
@@ -35,7 +35,7 @@ end
 
 Nothing(n::Nothing, a::Any) = nothing
 get_param_nums(B::Nothing) = 0
-get_free_params(B::Nothing) = []
+get_free_params(B::Nothing) = Float64[]
 evaluate!(y::AbstractVector, BG::Nothing, x::AbstractVector) = y
 evaluate_residual!(y::AbstractVector, BG::Nothing, x::AbstractVector) = y
 
@@ -61,16 +61,19 @@ end
 function evaluate_residual!(PM::PhaseModel, θ::AbstractVector,
                             x::AbstractVector, r::AbstractVector)
     evaluate_residual!(PhaseModel(PM, θ), x, r)
+    r
 end
 
 function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector)
     evaluate_residual!(PM.CPs, x, r)
     evaluate_residual!(PM.background, x, r)
+    r
 end
 
 function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
     evaluate_residual!(CrystalPhase(CP, θ), x, r)
+    r
 end
 
 function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},

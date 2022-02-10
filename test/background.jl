@@ -12,7 +12,7 @@ using Plots
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 128 # appears to be required for phase combinations in particular
+maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
@@ -54,7 +54,7 @@ data, params = synthesize_data(cs[1], x)
 noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
 noisy_data = noise .+ data
-bg = BackgroundModel(noisy_data, EQ(), 5)
+bg = BackgroundModel(x, EQ(), 100)
 
 PM = PhaseModel(cs[1:1], bg)
 noisy_data = convert(Vector{Real}, noisy_data)

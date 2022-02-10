@@ -23,12 +23,12 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
-	if isnothing(pm.background) # For now, should be able to use just one function
-		return optimize!(pm.CPs, x, y, std_noise, mean_θ, std_θ;
-						method=method, objective=objective,
-						maxiter=maxiter, regularization=regularization,
-						verbose=verbose, tol=tol)
-	else
+	# if isnothing(pm.background) # For now, should be able to use just one function
+	# 	return optimize!(pm.CPs, x, y, std_noise, mean_θ, std_θ;
+	# 					method=method, objective=objective,
+	# 					maxiter=maxiter, regularization=regularization,
+	# 					verbose=verbose, tol=tol)
+	# else
 		opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ, 
 								maxiter, regularization, 
 								method, objective, verbose, tol)
@@ -37,7 +37,7 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 
 		pm = reconstruct!(pm, θ)
 		return pm
-	end
+	# end
 end
 
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
@@ -76,7 +76,7 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 
 	for i in eachindex(new_θ)
 		if new_θ[i] == 0
-            new_θ[i] = 1E-5
+            new_θ[i] = 0.0001
 		end
 	end
 	return new_θ
@@ -88,7 +88,7 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 
 	f = get_lm_objective_func(pm, x, y, opt_stn)
 	if opt_stn.regularization
-		r = zeros(eltype(log_θ), length(y) + length(log_θ) ) # Reason?? - size(phases, 1)
+		r = zeros(eltype(log_θ), length(y) + length(log_θ) )
 		LM = LevenbergMarquart(f, log_θ, r)
 	else
 		r = zeros(eltype(log_θ), size(y))
@@ -100,7 +100,7 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 
 	λ = 1e-6
-	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))
+	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(true))
 	return log_θ
 end 
 
@@ -247,7 +247,7 @@ function lm_optimize!(log_θ::AbstractVector, phases::AbstractVector{<:CrystalPh
 						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 
 	λ = 1e-6
-	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))
+	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(true))#)Val(opt_stn.verbose))
 	return log_θ
 end
 
