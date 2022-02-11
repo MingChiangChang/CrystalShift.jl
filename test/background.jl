@@ -8,11 +8,10 @@ using CovarianceFunctions: EQ
 using LinearAlgebra
 using Random: rand
 using Test
-using Plots
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 512 # appears to be required for phase combinations in particular
+maxiter = 128 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
@@ -20,7 +19,7 @@ mean_θ = [1., 1, .2]
 std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -62,3 +61,6 @@ noisy_data = convert(Vector{Real}, noisy_data)
 c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
             objective = "LS", method = LM, maxiter = maxiter,
             regularization = true, verbose = verbose)
+
+y = zero(x)
+@test norm(evaluate!(y, c, x) .- noisy_data) < 0.1

@@ -91,11 +91,13 @@ function evaluate_residual!(B::BackgroundModel, x::AbstractVector, r::AbstractVe
     r
 end
 
-function prior(B::BackgroundModel, c::AbstractVector)
+function _prior(B::BackgroundModel, c::AbstractVector)
     p = zero(c)
     lm_prior!(p, B, c)
     sum(abs2, p)
 end
+
+_prior(B::Nothing, c::AbstractVector) = 0
 
 # least-squares prior for background model to be used in conjunction with LevenbergMarquart
 # computes
