@@ -34,7 +34,7 @@ end
 ########################## objective functions #################################
 # Kullback-Leibler divergence
 function kl(p::Real, q::Real)
-    !(isnan(p) || isinf(p) || isnan(q) || isinf(q)) || throw(DomainError("Nan or inf input"))
+    !(isnan(p) || isinf(p) || isnan(q) || isinf(q)) || throw(DomainError("$(p) Nan or inf input"))
     (p > 0 && q > 0) || throw(DomainError("kl divergence undefined for negative inputs"))
     iszero(p) ? zero(p) : (p*log(p) - p*log(q)) # -p*log(q/p) # p*log(p/q) # is equal to
 end

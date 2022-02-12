@@ -26,6 +26,7 @@ end
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
+get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile::PeakProfile=PseudoVoigt(0.5))
@@ -47,6 +48,16 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
                      θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     return c
+end
+
+function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:CrystalPhase})
+    start = 1
+    new_CPs = Vector{CrystalPhase}(undef, length(CPs))
+    for i in eachindex(CPs)
+		new_CPs[i] = CrystalPhase(CPs[i], θ[start:start + get_param_nums(CPs[i])-1])
+		start += get_param_nums(CPs[i])
+	end
+    θ[start:end], new_CPs
 end
 
 function get_intrinsic_crystal_type(cl::Type)
@@ -93,7 +104,7 @@ function get_eight_params(CP::CrystalPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
 
-get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_parmams(CrystalPhase(CP, θ))
+get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
 get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
@@ -119,9 +130,6 @@ get_free_lattice_params(cl::Rhombohedral, θ::AbstractVector) = [θ[1], θ[4]]
 get_free_lattice_params(cl::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], θ[5]]
 get_free_lattice_params(cl::Triclinic, θ::AbstractVector) = θ
 
-function get_eight_params(CP::CrystalPhase, θ::AbstractVector)
-    get_eight_params(CP.cl, θ)
-end
 
 collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 

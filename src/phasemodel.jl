@@ -1,0 +1,82 @@
+const Background = Union{BackgroundModel, Nothing}
+
+struct PhaseModel{A<:AbstractVector{<:CrystalPhase}, B<:Background} 
+    CPs::A
+    background::B
+end
+
+"""
+Update Phasemodel object with new parameters
+Update the Phases and background seperately
+The parameters for background always comes last
+"""
+
+function PhaseModel(CPs::AbstractVector{<:CrystalPhase})
+    PhaseModel(CPs, nothing)
+end
+
+PhaseModel(CP::CrystalPhase) = PhaseModel([CP])
+PhaseModel(CP::CrystalPhase, BG::Background) = PhaseModel([CP], BG)
+
+function PhaseModel(PM::PhaseModel, θ::AbstractVector)
+    # bg_param_num = get_param_nums(PM.background)
+    # θ_cp = θ[1:end - bg_param_num ]
+    # θ_bg = θ[end - bg_param_num + 1 : end]
+    θ, CPs = reconstruct_CPs!(θ, PM.CPs)
+    θ, BG  = reconstruct_BG!(θ, PM.background)
+    PhaseModel(CPs, BG)
+end
+
+function reconstruct!(pm::PhaseModel, θ::AbstractVector)
+    θ, CPs = reconstruct_CPs!(θ, pm.CPs)
+    θ, background = reconstruct_BG!(θ, pm.background)
+    isempty(θ) || error("θ should be empty after reconstructing the PhaseModel object.")
+    return PhaseModel(CPs, background)
+end
+
+Nothing(n::Nothing, a::Any) = nothing
+get_param_nums(B::Nothing) = 0
+get_free_params(B::Nothing) = Float64[]
+
+evaluate!(y::AbstractVector, B::Nothing, θ::AbstractVector, x::AbstractVector) = y
+evaluate!(y::AbstractVector, B::Nothing, x::AbstractVector) = y
+evaluate_residual!(B::Nothing, θ::AbstractVector, x::AbstractVector, r::AbstractVector) = r
+evaluate_residual!(B::Nothing, x::AbstractVector, r::AbstractVector) = r
+
+
+get_param_nums(PM::PhaseModel) = get_param_nums(PM.CPs) + get_param_nums(PM.background)
+get_free_params(PM::PhaseModel) = vcat(get_free_params(PM.CPs), get_free_params(PM.background))
+
+# TODO: Combine these function with the ones in CrystalPhase
+function (PM::PhaseModel)(x::AbstractVector, y::AbstractVector)
+    evaluate!(y, PM, x)
+end
+
+function evaluate(pm::PhaseModel, θ::AbstractVector, x::AbstractVector)
+    y = zeros(Real, size(x))
+    evaluate!(y, pm, θ, x)
+end
+
+function evaluate!(y::AbstractVector, PM::PhaseModel, x::AbstractVector)
+    evaluate!(y, PM.CPs, x)
+    evaluate!(y, PM.background, x)
+    y
+end
+
+function evaluate!(y::AbstractVector, PM::PhaseModel, θ::AbstractVector,
+                   x::AbstractVector)
+    PhaseModel(PM, θ)(x, y)
+end
+
+function evaluate_residual!(PM::PhaseModel, θ::AbstractVector,
+                            x::AbstractVector, r::AbstractVector)
+    evaluate_residual!(PhaseModel(PM, θ), x, r)
+    r
+end
+
+function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector)
+    evaluate_residual!(PM.CPs, x, r)
+    evaluate_residual!(PM.background, x, r)
+    r
+end
+

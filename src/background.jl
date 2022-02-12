@@ -21,6 +21,15 @@ function BackgroundModel(x::AbstractVector, k, l::Real, λ::Real = 1; rank_tol::
     BackgroundModel(k, K, U, S, λ, c)
 end
 
+function reconstruct_BG!(θ::AbstractVector, B::BackgroundModel)
+    param_num = get_param_nums(B)
+    new_B = BackgroundModel(B.k, B.K, B.U, B.S, B.λ, θ[1:param_num])
+    return θ[param_num+1:end], new_B
+end
+# function BackgroundModel(BG::BackgroundModel,  c::)
+
+reconstruct_BG!(θ::AbstractVector, B::Nothing) = θ, nothing
+
 LinearAlgebra.svd(G::Gramian) = svd(Matrix(G))
 
 # x is vector of q values in case of XRD
@@ -34,25 +43,61 @@ function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAUL
     U, S, V = svd(K)
     i = findfirst(<(rank_tol), S)
     Ui = @view U[:, 1:i]
-    Si = @view S[:, 1:i]
+    Si = @view S[1:i]
     return K, Ui, Si
 end
 
-function evaluate(B::BackgroundModel, c::AbstractVector)
-    y = zeros(eltype(c), size(B.K, 1))
-    evaluate!(y, B, c)
+# function evaluate(B::BackgroundModel, c::AbstractVector)
+#     y = zeros(eltype(c), size(B.K, 1))
+#     evaluate!(y, B, c)
+# end
+
+
+# function evaluate!(y::AbstractVector, B::BackgroundModel, c::AbstractVector)
+#     A = isnothing(B.U) ? B.K : B.U
+#     mul!(y, A, c)
+# end
+
+function evaluate!(y::AbstractVector, B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
+    reconstruct_BG!(θ, B)
+    evaluate!(y, B, x)
 end
 
-function evaluate!(y::AbstractVector, B::BackgroundModel, c::AbstractVector)
-    A = isnothing(U) ? B.K : B.U
-    mul!(y, A, c)
+function evaluate(B::BackgroundModel, x::AbstractVector)
+    y = zero(x)
+    evaluate!(y, B, x)
 end
 
-function prior(B::BackgroundModel, c::AbstractVector)
+function evaluate(B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
+    y = zero(x)
+    evaluate!(y, B, θ, x)
+end
+
+function evaluate!(y::AbstractVector, B::BackgroundModel, x::AbstractVector)
+    A = isnothing(B.U) ? B.K : B.U
+    y .+= mul!(zero(x), A, B.c)
+    y
+end
+
+function evaluate_residual!(BG::BackgroundModel, θ::AbstractVector,
+                            x::AbstractVector, r::AbstractVector)
+    evaluate_residual!(reconstruct_BG(BG, θ), x, r)
+end
+
+function evaluate_residual!(B::BackgroundModel, x::AbstractVector, r::AbstractVector)
+    A = isnothing(B.U) ? B.K : B.U
+    y = zero(r)
+    r .-= mul!(y, A, B.c)
+    r
+end
+
+function _prior(B::BackgroundModel, c::AbstractVector)
     p = zero(c)
     lm_prior!(p, B, c)
     sum(abs2, p)
 end
+
+_prior(B::Nothing, c::AbstractVector) = 0
 
 # least-squares prior for background model to be used in conjunction with LevenbergMarquart
 # computes
@@ -63,3 +108,13 @@ function lm_prior!(p::AbstractVector, B::BackgroundModel, c::AbstractVector)
         @. p = B.λ * c / B.S
     end
 end
+
+function lm_prior!(p::AbstractVector, B::BackgroundModel)
+    if isnothing(B.U)
+        @. p = B.λ * B.c
+    else
+        @. p = B.λ * B.c / B.S
+    end
+end
+
+function lm_prior!(p::AbstractVector, B::Nothing, c::AbstractVector) end
