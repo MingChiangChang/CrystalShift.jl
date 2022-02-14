@@ -7,7 +7,7 @@ using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles
 using CrystalShift: get_fraction
 using NPZ
 
-path = "data/"
+path = "../data/"
 test_path = path * "Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 sol = npzread(path * "crystalphase_test_sol.npy")
