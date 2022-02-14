@@ -11,6 +11,10 @@ Update the Phases and background seperately
 The parameters for background always comes last
 """
 
+function PhaseModel()
+    PhaseModel(CrystalPhase[], nothing)
+end
+
 function PhaseModel(CPs::AbstractVector{<:CrystalPhase})
     PhaseModel(CPs, nothing)
 end
