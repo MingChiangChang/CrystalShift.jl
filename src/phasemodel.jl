@@ -52,6 +52,11 @@ function (PM::PhaseModel)(x::AbstractVector, y::AbstractVector)
     evaluate!(y, PM, x)
 end
 
+function (PM::PhaseModel)(x::AbstractVector)
+    y = zero(x)
+    PM(x, y)
+end
+
 function evaluate(pm::PhaseModel, θ::AbstractVector, x::AbstractVector)
     y = zeros(Real, size(x))
     evaluate!(y, pm, θ, x)
