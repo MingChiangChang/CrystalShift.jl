@@ -32,6 +32,7 @@ function PhaseModel(PM::PhaseModel, θ::AbstractVector)
 end
 
 Base.size(PM::PhaseModel) = size(PM.CPs)
+Base.length(PM::PhaseModel) = legnth(PM.CPs)
 
 function reconstruct!(pm::PhaseModel, θ::AbstractVector)
     θ, CPs = reconstruct_CPs!(θ, pm.CPs)
