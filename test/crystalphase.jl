@@ -1,13 +1,13 @@
 # include("../src/CrystalShift.jl")
-# TODO: if this should be in the testing suite, add tests and remove plots and @time macros
 module Testcrystalshift
 using Test
 using CrystalShift
 using CrystalShift: evaluate!, get_param_nums, get_eight_params, get_free_lattice_params
-using CrystalShift: collect_crystals, Lorentz, PseudoVoigt
+using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles
+using CrystalShift: get_fraction
 using NPZ
 
-path = "../data/"
+path = "data/"
 test_path = path * "Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 sol = npzread(path * "crystalphase_test_sol.npy")
@@ -48,6 +48,12 @@ end
     @test get_free_lattice_params(cs[10], [1., 2., 3., 4., 5., 6.]) == [1., 3.]
 
     @test collect_crystals(cs[1:3]) == [cs[1].cl, cs[2].cl, cs[3].cl]
+    @test show(cs[1])
+    new_cs2 = CrystalPhase(cs[2], [1., 2., 3.,])
+    new_cs6 = CrystalPhase(cs[6], [1., 2., 3., 4., 5.])
+    @test get_moles(new_cs2) ≈ 0.006821969673395041
+    @test get_moles(new_cs6) ≈ 0.037642918053186716
+    @test get_fraction([new_cs2, new_cs6]) ≈ [get_moles(new_cs2), get_moles(new_cs6)]./(get_moles(new_cs2)+get_moles(new_cs6))
 end
 
 # Test construction with 5 phases from different crystal family

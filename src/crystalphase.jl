@@ -21,6 +21,7 @@ function Base.show(io::IO, CP::CrystalPhase)
     println("Normalization: $(CP.norm_constant)")
     println("Lattice information:")
     println(CP.cl)
+    return true
 end
 
 Base.Bool(CP::CrystalPhase) = true

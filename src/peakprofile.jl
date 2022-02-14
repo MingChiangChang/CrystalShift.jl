@@ -35,60 +35,60 @@ get_free_params(P::PseudoVoigtProfile) = [P.α]
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)
-function mixture!(y::AbstractVector, P::PeakProfile,
-                  x::AbstractVector, θ::AbstractMatrix)
-   for j in 1:size(θ, 2)
-      @simd for i in eachindex(x)
-         @inbounds y[i] = P(x[i], θ[:, j]...)
-      end
-   end
-   return y
-end
+# function mixture!(y::AbstractVector, P::PeakProfile,
+#                   x::AbstractVector, θ::AbstractMatrix)
+#    for j in 1:size(θ, 2)
+#       @simd for i in eachindex(x)
+#          @inbounds y[i] = P(x[i], θ[:, j]...)
+#       end
+#    end
+#    return y
+# end
 
-function mixture(P::PeakProfile, x::AbstractVector, θ::AbstractMatrix)
-   mixture!(similar(x), P, x, θ)
-end
+# function mixture(P::PeakProfile, x::AbstractVector, θ::AbstractMatrix)
+#    mixture!(similar(x), P, x, θ)
+# end
 
-# θ parameters of mixture (peak parameters x number of peaks x number of patterns)
-function mixture!(Y::AbstractMatrix, P::PeakProfile,
-                  x::AbstractVector, θ::AbstractArray{<:Real, 3})
-   k = size(θ, 3)
-   size(Y, 1) == length(x) || throw(DimensionMismatch(""))
-   size(Y, 2) == k || throw(DimensionMismatch(""))
-   for i in 1:k
-      y_i = @view Y[:, i]
-      θ_i = @view θ[:, :, i]
-      mixture!(y_i, P, x, θ_i)
-   end
-   return Y
-end
+# # θ parameters of mixture (peak parameters x number of peaks x number of patterns)
+# function mixture!(Y::AbstractMatrix, P::PeakProfile,
+#                   x::AbstractVector, θ::AbstractArray{<:Real, 3})
+#    k = size(θ, 3)
+#    size(Y, 1) == length(x) || throw(DimensionMismatch(""))
+#    size(Y, 2) == k || throw(DimensionMismatch(""))
+#    for i in 1:k
+#       y_i = @view Y[:, i]
+#       θ_i = @view θ[:, :, i]
+#       mixture!(y_i, P, x, θ_i)
+#    end
+#    return Y
+# end
 
-function mixture(P::PeakProfile, x::AbstractVector, θ::AbstractArray{<:Real, 3})
-   Y = zeros(eltype(x), (length(x), size(θ, 3)))
-   mixture!(Y, P, x, θ)
-end
+# function mixture(P::PeakProfile, x::AbstractVector, θ::AbstractArray{<:Real, 3})
+#    Y = zeros(eltype(x), (length(x), size(θ, 3)))
+#    mixture!(Y, P, x, θ)
+# end
 
 
-###### gradients
-# .031ns vs 11.404 ns (lorentz vs gauss)
-@inline function gradient(::Lorentz, x::Real, c::Real, μ::Real, σ::Real)
-   ξ = (x-μ)/σ
-   e = inv(1 + ξ^2)
-   y = c * e # value
-   dc = e # this stays the same regardless of peak function
-   dμ = y * e * 2ξ/σ
-   dσ = dμ * ξ
-   return y, (dc, dμ, dσ)
-end
+# ###### gradients
+# # .031ns vs 11.404 ns (lorentz vs gauss)
+# @inline function gradient(::Lorentz, x::Real, c::Real, μ::Real, σ::Real)
+#    ξ = (x-μ)/σ
+#    e = inv(1 + ξ^2)
+#    y = c * e # value
+#    dc = e # this stays the same regardless of peak function
+#    dμ = y * e * 2ξ/σ
+#    dσ = dμ * ξ
+#    return y, (dc, dμ, dσ)
+# end
 
-# gauss gradient definition
-@inline function gradient(::Gauss, x::Real, c::Real, μ::Real, σ::Real)
-   ξ = (x-μ)/σ
-   e = exp(-ξ^2/2)
-   y = c * e # value
-   dc = e
-   yξ = y*ξ/σ # temporary to pool computation
-   dμ = yξ
-   dσ = yξ*ξ
-   return y, (dc, dμ, dσ)
-end
+# # gauss gradient definition
+# @inline function gradient(::Gauss, x::Real, c::Real, μ::Real, σ::Real)
+#    ξ = (x-μ)/σ
+#    e = exp(-ξ^2/2)
+#    y = c * e # value
+#    dc = e
+#    yξ = y*ξ/σ # temporary to pool computation
+#    dμ = yξ
+#    dσ = yξ*ξ
+#    return y, (dc, dμ, dσ)
+# end
