@@ -31,6 +31,8 @@ function PhaseModel(PM::PhaseModel, θ::AbstractVector)
     PhaseModel(CPs, BG)
 end
 
+Base.size(PM::PhaseModel) = size(PM.CPs)
+
 function reconstruct!(pm::PhaseModel, θ::AbstractVector)
     θ, CPs = reconstruct_CPs!(θ, pm.CPs)
     θ, background = reconstruct_BG!(θ, pm.background)
