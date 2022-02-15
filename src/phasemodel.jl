@@ -33,6 +33,9 @@ end
 
 Base.size(PM::PhaseModel) = size(PM.CPs)
 Base.length(PM::PhaseModel) = length(PM.CPs)
+Base.iterate(PM::PhaseModel) = iterate(PM.CPs)
+Base.iterate(PM::PhaseModel, state) = iterate(PM.CPs, state)
+Base.:(==)(PM1::PhaseModel, PM2::PhaseModel) = PM1.CPs == PM2.CPs
 
 function reconstruct!(pm::PhaseModel, θ::AbstractVector)
     θ, CPs = reconstruct_CPs!(θ, pm.CPs)
@@ -50,9 +53,11 @@ evaluate!(y::AbstractVector, B::Nothing, x::AbstractVector) = y
 evaluate_residual!(B::Nothing, θ::AbstractVector, x::AbstractVector, r::AbstractVector) = r
 evaluate_residual!(B::Nothing, x::AbstractVector, r::AbstractVector) = r
 
-
 get_param_nums(PM::PhaseModel) = get_param_nums(PM.CPs) + get_param_nums(PM.background)
 get_free_params(PM::PhaseModel) = vcat(get_free_params(PM.CPs), get_free_params(PM.background))
+
+get_phase_ids(PM::PhaseModel) = get_phase_ids(PM.CPs)
+get_phase_ids(CPs::AbstractVector) = [p.id for p in CPs]
 
 # TODO: Combine these function with the ones in CrystalPhase
 function (PM::PhaseModel)(x::AbstractVector, y::AbstractVector)
