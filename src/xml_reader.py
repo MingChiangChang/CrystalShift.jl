@@ -6,21 +6,26 @@ import re
 home = Path.home()
 
 path = home / 'Desktop' / 'AlLiFe_data' / 'sticks' / 'AlLiFe_oxides'
+path = home / 'Downloads' / 'AlLiFeO_assembled_icdd' 
 
 xmls = list(path.glob("*.xml"))
 
-with open('sticks.csv', 'w') as f:
+with open(f'{str(path)}/sticks.csv', 'w') as f:
 
     for idx, xml in enumerate(xmls):
+        print(xml)
         tree = ET.parse(xml)
         root = tree.getroot()
         pdf = root.find('pdf_data')
         chem_form = pdf.find('chemical_formula').text
         xstal_sys = pdf.find('xstal_system').text
-        sg = pdf.find('xtlsg').text
-        print(sg)
-        if ' ' in sg:
-            sg = sg[:sg.index(' ')]
+        if pdf.find('xtlsg') is not None:
+            sg = pdf.find('xtlsg').text
+            print(sg)
+            if ' ' in sg:
+                sg = sg[:sg.index(' ')]
+        else:
+            sg = 'P1'
 
         a = pdf.find('xtla').text
         b = pdf.find('xtlb').text
