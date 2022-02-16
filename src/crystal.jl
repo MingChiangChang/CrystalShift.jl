@@ -129,7 +129,7 @@ function Base.show(io::IO, ct::Crystal)
 end
 
 check_not_equal(x...) = length(Set(x)) == length(x)
-check_equal(x...) = all(y->y==x[1], x)
+check_equal(x...) = all(y->isapprox(y, x[1], rtol=0.001), x)
 
 function isCubic(a::Real, b::Real, c::Real,
                  α::Real, β::Real, γ::Real)
