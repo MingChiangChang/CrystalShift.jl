@@ -125,12 +125,13 @@ def _get_crystal_system(info_dict):
 
 if __name__ == "__main__":
     home = Path.home()
-    path = home / 'Desktop' / 'github' /\
-            'Crystallography_based_shifting' / 'data'
-    # cif_paths = list(path.glob('*ICSD.cif'))
-    cif_paths = path.glob("Ta-Sn-O/*/*.cif")
+    #path = home / 'Desktop' / 'github' /\
+    #        'Crystallography_based_shifting' / 'data'
+    path = home / 'Downloads' / 'cifs'
+    cif_paths = list(path.glob('*.cif'))
+    #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 
     # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
-    out_path = path / 'Ta-Sn-O'
+    out_path = path #/ 'Ta-Sn-O'
     print(cif_paths)
     cif_to_input(cif_paths, out_path, (0, 66))

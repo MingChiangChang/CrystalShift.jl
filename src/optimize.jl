@@ -55,11 +55,15 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 	log_θ = θ
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
-	# TODO use Match.jl
+	# TODO use Match.jl, or just use multiple dispatch on method?
 	if opt_stn.method == LM
 		log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
 	elseif opt_stn.method == Newton
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
+	elseif opt_stn.method == bfgs
+		log_θ = BFGS!(log_θ, pm, x, y, opt_stn)
+	elseif opt_stn.method == l_bfgs
+		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
 	end
 
 	log_θ[1:get_param_nums(pm.CPs)]= exp.(log_θ[1:get_param_nums(pm.CPs)])
@@ -144,6 +148,28 @@ function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::A
 							maxiter = maxiter, verbose = verbose)
 	fixedpoint!(D, log_θ, S)
 
+	return log_θ
+end
+
+function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, 
+				opt_stn::OptimizationSettings)
+	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
+
+	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
+	D = DecreasingStep(N, log_θ)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=true)
+	fixedpoint!(D, log_θ, S)
+	return log_θ
+end
+
+function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, 
+				opt_stn::OptimizationSettings)
+	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
+
+	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ) 
+	D = DecreasingStep(N, log_θ)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=true)
+	fixedpoint!(D, log_θ, S)
 	return log_θ
 end
 

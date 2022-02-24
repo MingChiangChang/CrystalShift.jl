@@ -6,13 +6,14 @@ using CrystalShift: newton!, get_free_lattice_params, get_fraction
 using LinearAlgebra
 using Random: rand
 using Test
+# using BenchmarkTools
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
 maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = 1e-3
+std_noise = 0.1
 mean_θ = [1., 1, .2]
 std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
@@ -97,6 +98,11 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
     norm(c.(x).-y)
 end
 
+@time test_optimize(cs[10], x, LM, verbose)
+@time test_optimize(cs[10], x, Newton, false)
+@time test_multiphase_optimize(cs, x, 2, LM, "LS", verbose)
+
+
 # test fails when the lattice parameters shift too much
 @testset "Single phase with shift LM test" begin
     correct_counts = 0
@@ -113,12 +119,34 @@ end
     correct_counts = 0
     for (idx, cp) in enumerate(cs)
         verbose && println(idx)
-        if test_optimize(cp, x, Newton, false) < 0.1
+        if  test_optimize(cp, x, Newton, false) < 0.1
             correct_counts += 1
         end
     end
     @test correct_counts >= size(cs, 1) - 1
 end
+
+# @testset "Single phase with shift bfgs test" begin
+#     correct_counts = 0
+#     for (idx, cp) in enumerate(cs)
+#         verbose && println(idx)
+#         if  test_optimize(cp, x, bfgs, true) < 0.1 # FIXME: Sometimes sin(x) goes to infinite (This only happens when doing test)
+#             correct_counts += 1                    # FIXME: dx goes to 0.0 when std_noise goes to 1e-2
+#         end
+#     end
+#     @test correct_counts >= size(cs, 1) - 1
+# end
+
+# @testset "Single phase with shift lbfgs test" begin
+#     correct_counts = 0
+#     for (idx, cp) in enumerate(cs)
+#         verbose && println(idx)
+#         if  test_optimize(cp, x, l_bfgs, true) < 0.1
+#             correct_counts += 1
+#         end
+#     end
+#     @test correct_counts >= size(cs, 1) - 1
+# end
 
 @testset "Multiple phases with shift test" begin
     correct_counts = 0

@@ -1,6 +1,6 @@
 using CovarianceFunctions
 using LinearAlgebra
-const DEFAULT_RANK_TOL = 1e-6
+const DEFAULT_RANK_TOL = 1e-6 # IDEA: consider increase in tolerance
 
 struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:AbstractVector, LT, CT}
     k::KT # kernel function

@@ -1,7 +1,7 @@
 const ALLOWED_OBJECTIVE = ["LS", "KL"]
 const PRIOR_LENGTH = 3
 const DEFAULT_TOL = 1e-8
-@exported_enum OptimizationMethods LM Newton
+@exported_enum OptimizationMethods LM Newton bfgs l_bfgs
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
     phases::AbstractVector{<:CrystalPhase})

@@ -1,8 +1,7 @@
-module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
-using CrystalShift: BackgroundModel, evaluate!, PhaseModel
+using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz
 using CovarianceFunctions
 using CovarianceFunctions: EQ
 
@@ -15,12 +14,12 @@ residual_tol = 0.1 # tolerance for residual norm after optimization
 maxiter = 128 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = 1e-3
+std_noise = 1.
 mean_θ = [1., 1, .2]
-std_θ = [.02, 1., 1.]
+std_θ = [.2, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -29,7 +28,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (Lorentz()))
 x = collect(8:.1:60)
 
 
@@ -53,22 +52,16 @@ data, params = synthesize_data(cs[1], x)
 
 noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
-noisy_data = noise .+ data
+noisy_data = data
 bg = BackgroundModel(x, EQ(), 20)
 
-PM = PhaseModel(cs[1:1], bg)
+PM = PhaseModel(cs[1:1])
 noisy_data = convert(Vector{Real}, noisy_data)
 
+
 c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
-            objective = "LS", method = LM, maxiter = maxiter,
-            regularization = true, verbose = verbose)
+            method=bfgs,
+            objective = "LS", maxiter = maxiter,
+            regularization = true, verbose = true)
 
 y = zero(x)
-
-# using Plots
-# plt = plot(x, noisy_data, label="Ground truth")
-# plot!(x, evaluate!(y, c, x), label="Fitted graph")
-# display(plt)
-@test norm(evaluate!(y, c, x) .- noisy_data) < 0.1
-
-end

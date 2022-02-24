@@ -4,6 +4,7 @@ using Base.Threads
 using OptimizationAlgorithms: LevenbergMarquart, LevenbergMarquartSettings
 using OptimizationAlgorithms: SaddleFreeNewton, DecreasingStep
 using OptimizationAlgorithms: StoppingCriterion, fixedpoint!
+using OptimizationAlgorithms: BFGS, LBFGS
 using LinearAlgebra
 using OptimizationAlgorithms
 using SpecialFunctions

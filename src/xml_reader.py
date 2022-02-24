@@ -10,6 +10,12 @@ path = home / 'Downloads' / 'AlLiFeO_assembled_icdd'
 
 xmls = list(path.glob("*.xml"))
 
+def check_none(*arg):
+    for i in arg:
+        if i is None:
+            return True
+    return False
+
 with open(f'{str(path)}/sticks.csv', 'w') as f:
 
     for idx, xml in enumerate(xmls):
@@ -45,6 +51,8 @@ with open(f'{str(path)}/sticks.csv', 'w') as f:
             h = stick.find('h').text
             k = stick.find('k').text
             l = stick.find('l').text
+            if check_none(h, k, l):
+                continue
             intensity = stick.find('intensity').text
             intensity = re.sub("[^0-9]", "", intensity)
             hs.append(h)
