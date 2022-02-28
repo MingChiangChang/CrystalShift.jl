@@ -31,6 +31,24 @@ macro exported_enum(name, args...)
         end)
 end
 
+function special_inv(x::Real)
+    if x > 10000
+        return zero(x)
+    else
+        return inv(x)
+    end
+end
+
+function special_exp(x::Real)
+    if x < -10
+        return zero(x)
+    else
+        return exp(x)
+    end
+end
+
+
+
 ########################## objective functions #################################
 # Kullback-Leibler divergence
 function kl(p::Real, q::Real)

@@ -1,10 +1,10 @@
-struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N}
+struct CrystalPhase{T, V<:AbstractVector{T}, ID, NM, C, CL, P, K, M, N}
     cl::C # crystal object
     origin_cl::CL # save for later comparison
     peaks::V # Vector of peak object
 
-    id::Int # Just index
-    name::String # For printing
+    id::ID # Just index
+    name::NM # For printing
 
     act::K # Activation
     σ::M # Width of peaks
@@ -163,18 +163,18 @@ function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::Ab
     y
 end
 
-function evaluate!(CP::CrystalPhase, θ::AbstractVector,
-                   x::AbstractVector, y::AbstractVector)
+function evaluate!(y::AbstractVector, CP::CrystalPhase, θ::AbstractVector,
+                   x::AbstractVector)
     CrystalPhase(CP, θ)(x, y)
 end
 
-function evaluate!(y::AbstractVector, CPs::AbstractVector{<:Crystal},
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase},
                    θ::AbstractVector, x::AbstractVector)
     s = 1
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s : s+num_of_param-1]
-        evalute!(y, CPs[i], θ_temp, x)
+        evaluate!(y, CPs[i], θ_temp, x)
         s += num_of_param
     end
     y

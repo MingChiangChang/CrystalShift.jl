@@ -15,13 +15,13 @@ get_free_params(P::PeakProfile) = []
 struct LorentzianProfile{T} <: PeakProfile{T} end
 const Lorentz = LorentzianProfile
 Lorentz() = Lorentz{Float64}()
-(P::Lorentz)(x::Real) = inv(1 + x^2)
+(P::Lorentz)(x::Real) = special_inv(1 + x^2)
 
 ############################### Gaussian function ##############################
 struct GaussianProfile{T} <: PeakProfile{T} end
 const Gauss = GaussianProfile
 Gauss() = Gauss{Float64}()
-(P::Gauss)(x::Real) = exp(-x^2/2)
+(P::Gauss)(x::Real) = special_exp(-x^2/2)
 
 
 ############################# pseudo-voigt function ############################
