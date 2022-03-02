@@ -32,16 +32,16 @@ macro exported_enum(name, args...)
 end
 
 function special_inv(x::Real)
-    if x > 10000
-        return zero(x)
+    if x > 100.
+        return 1E-6
     else
         return inv(x)
     end
 end
 
 function special_exp(x::Real)
-    if x < -10
-        return zero(x)
+    if x < -10.
+        return 1E-6
     else
         return exp(x)
     end

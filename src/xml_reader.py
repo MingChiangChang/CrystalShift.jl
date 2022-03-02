@@ -6,7 +6,7 @@ import re
 home = Path.home()
 
 path = home / 'Desktop' / 'AlLiFe_data' / 'sticks' / 'AlLiFe_oxides'
-path = home / 'Downloads' / 'AlLiFeO_assembled_icdd' 
+path = home / 'Downloads' / 'AlLiFeO' 
 
 xmls = list(path.glob("*.xml"))
 

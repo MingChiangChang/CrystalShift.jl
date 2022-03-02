@@ -2,7 +2,7 @@ module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
-using CrystalShift: BackgroundModel, evaluate!, PhaseModel
+using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz
 using CovarianceFunctions
 using CovarianceFunctions: EQ
 
@@ -29,7 +29,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (Lorentz(), ))
 x = collect(8:.1:60)
 
 
@@ -59,7 +59,7 @@ bg = BackgroundModel(x, EQ(), 20)
 PM = PhaseModel(cs[1:1], bg)
 noisy_data = convert(Vector{Real}, noisy_data)
 
-c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
+@time c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
             objective = "LS", method = LM, maxiter = maxiter,
             regularization = true, verbose = verbose)
 

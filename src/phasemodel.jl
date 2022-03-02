@@ -88,12 +88,10 @@ end
 function evaluate_residual!(PM::PhaseModel, θ::AbstractVector,
                             x::AbstractVector, r::AbstractVector)
     evaluate_residual!(PhaseModel(PM, θ), x, r)
-    r
 end
 
 function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector)
     evaluate_residual!(PM.CPs, x, r)
     evaluate_residual!(PM.background, x, r)
-    r
 end
 

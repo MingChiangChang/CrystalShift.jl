@@ -293,12 +293,13 @@ function _residual!(pm::PhaseModel,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	params = copy(log_θ)
-	params[1:get_param_nums(pm.CPs)] .= exp.(params[1:get_param_nums(pm.CPs)])
+	
+	log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
 	@. r = y
-	evaluate_residual!(pm, params, x, r) # Avoid allocation, put everything in here??
+	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
+	log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
 	return r
 end
 

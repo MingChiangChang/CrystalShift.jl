@@ -1,10 +1,10 @@
-struct CrystalPhase{T, V<:AbstractVector{T}, ID, NM, C, CL, P, K, M, N}
+struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N}
     cl::C # crystal object
     origin_cl::CL # save for later comparison
     peaks::V # Vector of peak object
 
-    id::ID # Just index
-    name::NM # For printing
+    id::Int64 # Just index
+    name::String # For printing
 
     act::K # Activation
     σ::M # Width of peaks
@@ -46,7 +46,7 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     fp = CP.cl.free_param
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     t = eltype(θ)
-    c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+   c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
                      θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     return c
 end
