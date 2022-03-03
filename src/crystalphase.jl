@@ -45,10 +45,21 @@ end
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     fp = CP.cl.free_param
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
+    profile_type = get_intrinsic_profile_type(typeof(CP.profile))
     t = eltype(θ)
-   c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
-                     θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
+    c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+                     θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:end]...), CP.norm_constant)
     return c
+end
+
+function get_intrinsic_profile_type(profile_type::Type)
+    if profile_type <: PseudoVoigt
+        return PseudoVoigt
+    elseif profile_type <: Lorentz
+        return Lorentz
+    elseif profile_type <: Gauss
+        return Gauss
+    end
 end
 
 function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:CrystalPhase})
@@ -165,6 +176,12 @@ end
 
 function evaluate!(y::AbstractVector, CP::CrystalPhase, θ::AbstractVector,
                    x::AbstractVector)
+    # fp = CP.cl.free_param
+    # new_param = get_eight_params(CP, θ)[1:6]
+    # CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ = new_param
+    # CP.act = θ[fp+1]
+    # CP.σ = θ[fp+2]
+    # CP(x, y)
     CrystalPhase(CP, θ)(x, y)
 end
 
@@ -180,8 +197,41 @@ function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase},
     y
 end
 
+function new_evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+    q = get_peak_pos.((CP.cl, ), CP.peaks) .* 10 # TODO: preallocate
+    temp = zero(q)
+    @. y += get_evalutation_at((CP, ), x, (q, ), (temp, )) # Main bottle neck
+    y
+end
+
+function get_evalutation_at(CP::CrystalPhase, x::Real, q::AbstractVector, temp::AbstractVector)
+    temp .= get_intensities(CP) .* CP.profile.(get_distance(CP, x, q))
+    return CP.act * sum(temp)
+end
+
+function get_distance(CP::CrystalPhase, x::Real, q::AbstractVector)
+    (x.-q)/CP.σ
+end
+
+function get_intensities(CP::CrystalPhase)
+    [CP.peaks[i].I for i in eachindex(CP.peaks)]
+end
+
+function new_evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
+    for CP in CPs
+        new_evaluate!(y, CP, x)
+    end
+    y
+end
+
 function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
+    # fp = CP.cl.free_param
+    # new_param = get_eight_params(CP, θ)[1:6]
+    # CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ = new_param
+    # CP.act = θ[fp+1]
+    # CP.σ = θ[fp+2]
+    # evaluate_residual!(CP, x, r)
     evaluate_residual!(CrystalPhase(CP, θ), x, r)
 end
 

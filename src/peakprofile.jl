@@ -21,6 +21,10 @@ Lorentz() = Lorentz{Float64}()
 struct GaussianProfile{T} <: PeakProfile{T} end
 const Gauss = GaussianProfile
 Gauss() = Gauss{Float64}()
+function Gauss(a::AbstractArray) 
+    isempty(a) && error("Gauss recieves a parameter")
+    Gauss()
+end
 (P::Gauss)(x::Real) = special_exp(-x^2/2)
 
 
@@ -32,6 +36,11 @@ const PseudoVoigt = PseudoVoigtProfile
 (P::PseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
 get_free_params(P::PseudoVoigtProfile) = [P.α]
+
+function PseudoVoigt(a::AbstractVector) 
+   length(a) == 1 || error("PseudoVoigt receive more than one params")
+   PseudoVoigt{eltype(a)}(a[1])
+end
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)

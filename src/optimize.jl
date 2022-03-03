@@ -98,7 +98,7 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 	end
 
 	stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
-						min_decrease = 1e-8, max_iter = opt_stn.maxiter,
+						min_decrease = 1e-5, max_iter = opt_stn.maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = 0.1)
 
 	λ = 1e-6
@@ -157,7 +157,7 @@ function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Ab
 
 	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
 	D = DecreasingStep(N, log_θ)
-	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=true)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
 	fixedpoint!(D, log_θ, S)
 	return log_θ
 end
@@ -168,7 +168,7 @@ function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Abs
 
 	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ) 
 	D = DecreasingStep(N, log_θ)
-	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=true)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
 	fixedpoint!(D, log_θ, S)
 	return log_θ
 end
