@@ -457,7 +457,7 @@ version = "0.5.5+0"
 
 [[deps.OptimizationAlgorithms]]
 deps = ["BenchmarkTools", "Clp", "DataStructures", "DiffResults", "ECOS", "ForwardDiff", "JuMP", "LinearAlgebra", "SCS", "SparseArrays", "StaticArrays", "StatsBase", "Test"]
-path = "/Users/ming/.julia/dev/OptimizationAlgorithms"
+git-tree-sha1 = "86b7d831b5fc882e0cc38e1afe4e4702a1e8e8c8"
 uuid = "5eef6961-c6df-46a7-ba44-0f01c6045f8f"
 version = "0.2.0"
 
