@@ -457,9 +457,9 @@ version = "0.5.5+0"
 
 [[deps.OptimizationAlgorithms]]
 deps = ["BenchmarkTools", "Clp", "DataStructures", "DiffResults", "ECOS", "ForwardDiff", "JuMP", "LinearAlgebra", "SCS", "SparseArrays", "StaticArrays", "StatsBase", "Test"]
-git-tree-sha1 = "70e58a2496d94530531375740fa01cd9976027dd"
+path = "/Users/ming/.julia/dev/OptimizationAlgorithms"
 uuid = "5eef6961-c6df-46a7-ba44-0f01c6045f8f"
-version = "0.1.0"
+version = "0.2.0"
 
 [[deps.OrderedCollections]]
 git-tree-sha1 = "85f8e6578bf1f9ee0d11e7bb1b1456435479d47c"
@@ -617,9 +617,9 @@ version = "2.0.0"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "6354dfaf95d398a1a70e0b28238321d5d17b2530"
+git-tree-sha1 = "74fb527333e72ada2dd9ef77d98e4991fb185f04"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.4.0"
+version = "1.4.1"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]

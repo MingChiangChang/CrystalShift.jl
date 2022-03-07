@@ -27,15 +27,21 @@ function Gauss(a::AbstractArray)
 end
 (P::Gauss)(x::Real) = special_exp(-x^2/2)
 
+@inline sigmoid(a::Real) = 1/(1+exp(-a))
 
 ############################# pseudo-voigt function ############################
 struct PseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
+   sig_α::T
+
+   function PseudoVoigtProfile{T}(a::T) where T<:Real
+      new{T}(a, sigmoid(a))
+   end
 end
 const PseudoVoigt = PseudoVoigtProfile
-(P::PseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+(P::PseudoVoigt)(x::Real) = P.sig_α * Lorentz()(x) + (1-P.sig_α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
-get_free_params(P::PseudoVoigtProfile) = [P.α]
+get_free_params(P::PseudoVoigtProfile) = [P.sig_α]
 
 function PseudoVoigt(a::AbstractVector) 
    length(a) == 1 || error("PseudoVoigt receive more than one params")

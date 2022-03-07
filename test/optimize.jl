@@ -101,7 +101,7 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
     for i in c
         println(get_free_params(i))
     end
-    # println(full_params)
+    println(full_params)
     # plt = plot(x, y)
     # plot!(x, evaluate!(zero(x), c, x))
     # display(plt)

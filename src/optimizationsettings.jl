@@ -22,7 +22,7 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         full_std_θ[start + n:start + n + 1] = std_θ[2:3]
         if phase.profile isa PseudoVoigt
             full_mean_θ[start + n + 2] = 0.5
-            full_std_θ[start + n + 2] = 10
+            full_std_θ[start + n + 2] = 10.
             start += (n+3)
         else
             start += (n+2)

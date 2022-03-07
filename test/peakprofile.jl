@@ -1,12 +1,12 @@
 module TestPeakProfile
 using Test
 using CrystalShift: PeakProfile, Lorentz, Gauss, PseudoVoigt
-using CrystalShift: get_param_nums, get_free_params
+using CrystalShift: get_param_nums, get_free_params, sigmoid
 
 @testset "PeakProfile" begin
     l = Lorentz()
     g = Gauss()
-    v = PseudoVoigt(.5)
+    v = PseudoVoigt{Float64}(.5)
 
     x = randn()
     μ = randn()
@@ -17,7 +17,7 @@ using CrystalShift: get_param_nums, get_free_params
     @test get_param_nums(v) == 1
     @test get_free_params(l) == []
     @test get_free_params(g) == []
-    @test get_free_params(v) == [.5]
+    @test get_free_params(v) == [sigmoid(.5)]
 
     for p in (l, g, v)
         @test p isa PeakProfile
