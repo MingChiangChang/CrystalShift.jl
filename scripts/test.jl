@@ -14,8 +14,8 @@ maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 0.1
-mean_θ = [1., 1, .2]
-std_θ = [.02, 1., 1.]
+mean_θ = [1., .5, .2]
+std_θ = [.05, 2., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
 function synthesize_data(cp::CrystalPhase, x::AbstractVector)
@@ -27,7 +27,7 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     r = zero(x)
     evaluate!(r, cp, params, x)
     normalization = maximum(r)
-    params[end-1] /= normalization
+    params[end-2] /= normalization
     return r/normalization, params
 end
 
@@ -40,15 +40,15 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt(0.5),))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
 y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
-test = evaluate!(zero(x), cs[1], params, x)
+# test = evaluate!(zero(x), cs[1], params, x)
 c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
                   method =LM,
-                  maxiter = maxiter, regularization = false, verbose=false)
+                  maxiter = maxiter, regularization = true, verbose=false)
 
 plt = plot(x, test)
 plot!(x, evaluate!(y, c, x))
