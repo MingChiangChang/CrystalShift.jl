@@ -13,7 +13,7 @@ residual_tol = 0.1 # tolerance for residual norm after optimization
 maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = 0.1
+std_noise = 1.
 mean_θ = [1., .5, .2]
 std_θ = [.05, 2., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
@@ -40,13 +40,13 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt{Float64}(0.5),))
 x = collect(8:.1:60)
 y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 # test = evaluate!(zero(x), cs[1], params, x)
-c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
+@btime c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
                   method =LM,
                   maxiter = maxiter, regularization = true, verbose=false)
 

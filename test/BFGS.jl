@@ -8,13 +8,14 @@ using CovarianceFunctions: EQ
 using LinearAlgebra
 using Random: rand
 using Test
+using Plots
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 128 # appears to be required for phase combinations in particular
+maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = 1.
+std_noise = .001
 mean_θ = [1., 1, .2]
 std_θ = [.2, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
@@ -28,7 +29,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (Lorentz()))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.3, ), (Lorentz()))
 x = collect(8:.1:60)
 
 
@@ -62,6 +63,9 @@ noisy_data = convert(Vector{Real}, noisy_data)
 c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
             method=bfgs,
             objective = "LS", maxiter = maxiter,
-            regularization = true, verbose = true)
+            regularization = false, verbose = true)
 
 y = zero(x)
+plt = plot(x, noisy_data)
+plot!(x, evaluate!(y, c, x))
+display(plt)

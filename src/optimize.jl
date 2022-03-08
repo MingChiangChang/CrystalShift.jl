@@ -50,7 +50,7 @@ end
 function optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 	θ = initialize_activation!(θ, pm, x, y)
-    
+    # TODO: Don't take log of profile parameters
 	θ[1:get_param_nums(pm.CPs)]= log.(θ[1:get_param_nums(pm.CPs)]) # tramsform to log space for better conditioning
 	log_θ = θ
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
@@ -150,13 +150,12 @@ function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::A
 
 	return log_θ
 end
-
+using OptimizationAlgorithms: UnitDirection
 function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, 
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
 	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
-	# N = TrustedDirection(N, 1, 1)
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
@@ -169,6 +168,7 @@ function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Abs
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
 	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ) 
+	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
 	fixedpoint!(D, log_θ, S)
