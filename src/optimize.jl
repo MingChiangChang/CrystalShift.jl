@@ -156,6 +156,8 @@ function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Ab
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
 	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
+	# N = TrustedDirection(N, 1, 1)
+	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
 	fixedpoint!(D, log_θ, S)
@@ -205,6 +207,7 @@ function get_newton_objective_func(pm::PhaseModel,
 	end
 
 	function ls_residual(log_θ::AbstractVector)
+		(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf  #TODO: 
 		r = zeros(promote_type(eltype(log_θ), eltype(x), eltype(y)), length(x))
 		r = _residual!(pm, log_θ, x, y, r, pr.std_noise)
 		return sum(abs2, r)
@@ -293,8 +296,8 @@ function _residual!(pm::PhaseModel,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	
 	log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
+	(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf 
 	@. r = y
 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
