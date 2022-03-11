@@ -28,6 +28,11 @@ end
 (P::Gauss)(x::Real) = special_exp(-x^2/2)
 
 @inline sigmoid(a::Real) = 1/(1+exp(-a))
+@inline inverse_sig(a::Real) = -log((1-a)/a)
+
+function inverse_sig()
+    return []
+end
 
 ############################# pseudo-voigt function ############################
 struct PseudoVoigtProfile{T} <: PeakProfile{T}
@@ -39,9 +44,9 @@ struct PseudoVoigtProfile{T} <: PeakProfile{T}
    end
 end
 const PseudoVoigt = PseudoVoigtProfile
-(P::PseudoVoigt)(x::Real) = P.sig_α * Lorentz()(x) + (1-P.sig_α) * Gauss()(x)
+(P::PseudoVoigt)(x::Real) = (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
-get_free_params(P::PseudoVoigtProfile) = [P.sig_α]
+get_free_params(P::PseudoVoigtProfile) = [P.sig_α] # This is in sigmoid space!!
 
 function PseudoVoigt(a::AbstractVector) 
    length(a) == 1 || error("PseudoVoigt receive more than one params")

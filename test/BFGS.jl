@@ -9,13 +9,14 @@ using LinearAlgebra
 using Random: rand
 using Test
 using Plots
+using BenchmarkTools
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
 maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = .001
+std_noise = .1
 mean_θ = [1., 1, .2]
 std_θ = [.2, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
@@ -60,10 +61,10 @@ PM = PhaseModel(cs[1:1])
 noisy_data = convert(Vector{Real}, noisy_data)
 
 
-c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
+@time c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
             method=bfgs,
             objective = "LS", maxiter = maxiter,
-            regularization = false, verbose = true)
+            regularization = true, verbose = true)
 
 y = zero(x)
 plt = plot(x, noisy_data)

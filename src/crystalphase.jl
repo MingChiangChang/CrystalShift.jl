@@ -47,11 +47,11 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     profile_param_num = get_param_nums(CP.profile)
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
-    # println(θ[fp+3:fp+2+profile_param_num])
     t = eltype(θ)
     c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
     # θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
-                   θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:fp+2+profile_param_num]...), CP.norm_constant)
+                   θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:fp+2+profile_param_num]...),
+                   CP.norm_constant)
     return c
 end
 
