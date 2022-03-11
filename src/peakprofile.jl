@@ -55,6 +55,16 @@ function PseudoVoigt(a::AbstractVector)
    PseudoVoigt{eltype(a)}(a[1])
 end
 
+struct FixedPseudoVoigtProfile{T} <: PeakProfile{T}
+   α::T
+end
+
+const FixedPseudoVoigt = FixedPseudoVoigtProfile
+FixedPseudoVoigt(a::Float64) = FixedPseudoVoigt{Float64}(a)
+(P::FixedPseudoVoigt)(x::Real) = (-0.5+P.α) * Lorentz()(x) + (1.5-P.α) * Gauss()(x)
+get_param_nums(P::FixedPseudoVoigt) = 0
+get_free_params(P::FixedPseudoVoigt) = []
+
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)
 # function mixture!(y::AbstractVector, P::PeakProfile,
