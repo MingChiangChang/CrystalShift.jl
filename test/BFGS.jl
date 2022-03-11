@@ -1,7 +1,7 @@
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
-using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz
+using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, FixedPseudoVoigt
 using CovarianceFunctions
 using CovarianceFunctions: EQ
 
@@ -30,7 +30,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = @. CrystalPhase(String(s[1:end-1]), (0.3, ), (Lorentz()))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.3, ), (FixedPseudoVoigt(0.5)))
 x = collect(8:.1:60)
 
 
@@ -39,7 +39,7 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     interval_size = 0.025
     scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
     @. params = params*scaling
-    params = [params..., 1., 0.2, 0.5]
+    params = [params..., 1., 0.2]
     r = evaluate(cp, params, x)
     normalization = maximum(r)
     params[end-1] /= normalization
