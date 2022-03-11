@@ -30,7 +30,7 @@ get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.prof
 get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
-                      profile::PeakProfile=PseudoVoigt{Float64}(0.5))
+                      profile::PeakProfile=PseudoVoigt(0.5))
     f = split(_stn, '\n')
     lattice_info = split(f[1], ',')
     id = parse(Int64, lattice_info[1])

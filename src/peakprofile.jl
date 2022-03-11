@@ -43,7 +43,9 @@ struct PseudoVoigtProfile{T} <: PeakProfile{T}
       new{T}(a, sigmoid(a))
    end
 end
+
 const PseudoVoigt = PseudoVoigtProfile
+PseudoVoigt(a::Float64) = PseudoVoigt{Float64}(a)
 (P::PseudoVoigt)(x::Real) = (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
 get_free_params(P::PseudoVoigtProfile) = [P.sig_α] # This is in sigmoid space!!
