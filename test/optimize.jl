@@ -138,27 +138,27 @@ end
     @test correct_counts >= size(cs, 1) - 1
 end
 
-# # @testset "Single phase with shift bfgs test" begin
-# #     correct_counts = 0
-# #     for (idx, cp) in enumerate(cs)
-# #         verbose && println(idx)
-# #         if  test_optimize(cp, x, bfgs, true) < 0.1 # FIXME: Sometimes sin(x) goes to infinite (This only happens when doing test)
-# #             correct_counts += 1                    # FIXME: dx goes to 0.0 when std_noise goes to 1e-2
-# #         end
-# #     end
-# #     @test correct_counts >= size(cs, 1) - 1
-# # end
+@testset "Single phase with shift bfgs test" begin
+    correct_counts = 0
+    for (idx, cp) in enumerate(cs)
+        verbose && println(idx)
+        if  test_optimize(cp, x, bfgs, false) < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= size(cs, 1) - 1
+end
 
-# # @testset "Single phase with shift lbfgs test" begin
-# #     correct_counts = 0
-# #     for (idx, cp) in enumerate(cs)
-# #         verbose && println(idx)
-# #         if  test_optimize(cp, x, l_bfgs, true) < 0.1
-# #             correct_counts += 1
-# #         end
-# #     end
-# #     @test correct_counts >= size(cs, 1) - 1
-# # end
+@testset "Single phase with shift lbfgs test" begin
+    correct_counts = 0
+    for (idx, cp) in enumerate(cs)
+        verbose && println(idx)
+        if  test_optimize(cp, x, l_bfgs, false) < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= size(cs, 1) - 1
+end
 
 @testset "Multiple phases with shift test" begin
     correct_counts = 0
