@@ -61,7 +61,7 @@ end
 
 const FixedPseudoVoigt = FixedPseudoVoigtProfile
 FixedPseudoVoigt(a::Float64) = FixedPseudoVoigt{Float64}(a)
-(P::FixedPseudoVoigt)(x::Real) = (-0.5+P.α) * Lorentz()(x) + (1.5-P.α) * Gauss()(x)
+(P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
 get_param_nums(P::FixedPseudoVoigt) = 0
 get_free_params(P::FixedPseudoVoigt) = []
 
