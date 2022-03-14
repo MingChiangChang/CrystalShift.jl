@@ -142,6 +142,7 @@ function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::A
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
 	N = SaddleFreeNewton(get_newton_objective_func(pm, x, y, opt_stn), log_θ)
+	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	# IDEA: D = OptimizationAlgorithms.TrustedDirection(D, maxnorm, maxentry)	
 	S = StoppingCriterion(log_θ, dx = tol, rx = tol,
@@ -197,17 +198,23 @@ function get_newton_objective_func(pm::PhaseModel,
 	# NOTE on order of inputs in KL divergence:
 	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
+	
 	function kl_objective(log_θ::AbstractVector)
 		log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
-		r_θ = evaluate(pm, log_θ, x) # reconstruction of phases, IDEA: pre-allocate result (one for Dual, one for Float)
+		if (any(isinf, log_θ) || any(isnan, log_θ))
+			log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
+			return Inf
+		end
+		r_θ = evaluate(pm, log_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
+		log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
 		p_θ = prior(log_θ)
 		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
 		kl(r_θ, y) + λ * p_θ
 	end
 
 	function ls_residual(log_θ::AbstractVector)
-		(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf  #TODO: 
+		(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf
 		r = zeros(promote_type(eltype(log_θ), eltype(x), eltype(y)), length(x))
 		r = _residual!(pm, log_θ, x, y, r, pr.std_noise)
 		return sum(abs2, r)

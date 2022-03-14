@@ -173,15 +173,15 @@ end
     @test correct_counts >= 3
 end
 
-# # @testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
-# #     correct_counts = 0
-# #     for _ in 1:5
-# #         if test_multiphase_optimize(cs, x, 2, Newton, "KL", verbose) < 0.1
-# #             correct_counts += 1
-# #         end
-# #     end
-# #     @test correct_counts >= 3
-# # end
+@testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
+    correct_counts = 0
+    for _ in 1:5
+        if test_multiphase_optimize(cs, x, 2, Newton, "KL", verbose) < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= 3
+end
 
 @testset "Multiple phases with shift newton least sqaure test" begin # call it a success if 4/5 cases passed
     correct_counts = 0

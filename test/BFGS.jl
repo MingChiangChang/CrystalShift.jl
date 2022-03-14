@@ -13,10 +13,10 @@ using BenchmarkTools
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 512 # appears to be required for phase combinations in particular
+maxiter = 16 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = .1
+std_noise = .01
 mean_θ = [1., 1, .2]
 std_θ = [.2, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
@@ -30,7 +30,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = @. CrystalPhase(String(s[1:end-1]), (0.3, ), (FixedPseudoVoigt(0.5)))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.3, ), (FixedPseudoVoigt(0.5), ))
 x = collect(8:.1:60)
 
 
@@ -56,14 +56,14 @@ noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
 noisy_data = data
 bg = BackgroundModel(x, EQ(), 20)
-
+s
 PM = PhaseModel(cs[1:1])
 noisy_data = convert(Vector{Real}, noisy_data)
 
 
 @time c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
-            method=bfgs,
-            objective = "LS", maxiter = maxiter,
+            method=Newton,
+            objective = "KL", maxiter = maxiter,
             regularization = true, verbose = true)
 
 y = zero(x)
