@@ -249,7 +249,7 @@ function (cl::Rhombohedral)(P::Peak)
     sqrt(P.h^2 * cl.a^4 * sin(cl.α)^2
     + P.k^2 * cl.a^4 * sin(cl.α)^2
     + P.l^2 * cl.a^4 * sin(cl.α)^2
-    + ((2cl.a^4)(cos(cl.α)^2 - cos(cl.α))
+    + ((2cl.a^4)*(cos(cl.α)^2 - cos(cl.α))
     * (P.h * P.k + P.k * P.l + P.h * P.l) )))
 end
 
