@@ -50,9 +50,9 @@ test, params = synthesize_data(cs[1], x)
                   method =LM,
                   maxiter = maxiter, regularization = true, verbose=false)
 
-plt = plot(x, test)
-plot!(x, evaluate!(y, c, x))
-display(plt)
+# plt = plot(x, test)
+# plot!(x, evaluate!(y, c, x))
+# display(plt)
 
 # t = rand(get_param_nums(cs[1]))
 # tt = rand(get_param_nums(cs[1:3]))
