@@ -127,7 +127,7 @@ if __name__ == "__main__":
     home = Path.home()
     #path = home / 'Desktop' / 'github' /\
     #        'Crystallography_based_shifting' / 'data'
-    path = home / 'Downloads' / 'cifs'
+    path = home / 'Downloads' / 'cif'
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 

@@ -2,7 +2,7 @@ module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
-using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz
+using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt
 using CovarianceFunctions
 using CovarianceFunctions: EQ
 
@@ -12,7 +12,7 @@ using Test
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 128 # appears to be required for phase combinations in particular
+maxiter = 1024 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
@@ -29,7 +29,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (Lorentz(), ))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (PseudoVoigt(0.5), ))
 x = collect(8:.1:60)
 
 
