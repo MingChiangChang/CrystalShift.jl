@@ -31,6 +31,13 @@ macro exported_enum(name, args...)
         end)
 end
 
+function volume(a::Real, b::Real, c::Real,
+                α::Real, β::Real, γ::Real)
+        return (a * b * c
+        * sqrt( 1+2*cos(α)*cos(β)*cos(γ)
+              - cos(α)^2 - cos(β)^2 - cos(γ)^2 ) )
+end
+
 function special_inv(x::Real)
     if x > 100.
         return 1E-6

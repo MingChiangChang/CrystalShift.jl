@@ -46,13 +46,14 @@ y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 # test = evaluate!(zero(x), cs[1], params, x)
-@btime c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
-                  method =LM,
-                  maxiter = maxiter, regularization = true, verbose=false)
+# @benchmark c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
+#                   method =LM,
+#                   maxiter = maxiter, regularization = true, verbose=false)
 
-plt = plot(x, test)
-plot!(x, evaluate!(y, c, x))
-display(plt)
+@benchmark evaluate!(zero(x), cs, x)
+# plt = plot(x, test)
+# plot!(x, evaluate!(y, c, x))
+# display(plt)
 
 # t = rand(get_param_nums(cs[1]))
 # tt = rand(get_param_nums(cs[1:3]))

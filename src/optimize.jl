@@ -295,7 +295,7 @@ function _prior(p::AbstractVector, log_θ::AbstractVector,
 				mean_θ::AbstractVector, std_θ::AbstractVector)
 	mean_log_θ = log.(mean_θ)
 	@. p = (log_θ - mean_log_θ) / (sqrt(2)*std_θ)
-	return p
+	return p # IDEA: Is this too small??
 end
 
 function _residual!(pm::PhaseModel,
