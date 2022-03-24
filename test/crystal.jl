@@ -49,7 +49,7 @@ end
 end
 
 @testset "Crystal object creation" begin
-    @test Bool(Triclinic{Float64}(1.0,2.0,3.0,4.0,5.0,6.0))
+    @test Bool(Triclinic{Float64}(1.0,2.0,3.0,pi/2, 1.0, pi/2+0.1))
 
     @test_throws MethodError Monoclinic{Float64}(2.0, 1.0, 1.0, pi/2, 1.0, pi/2)
     @test Bool(Monoclinic{Float64}(1.0, 1.5, 2.0, 1.0))
@@ -124,8 +124,8 @@ end
     cl = Monoclinic{Float64}(1., 2., 3., 2.5)
     @test get_free_lattice_params(cl) == [1., 2., 3., 2.5]
 
-    cl = Triclinic{Float64}(1., 2., 3., 4., 5., 6.)
-    @test get_free_lattice_params(cl) == [1., 2., 3., 4., 5., 6.]
+    cl = Triclinic{Float64}(1., 2., 3., pi/2, 1.0, pi/2+0.1)
+    @test get_free_lattice_params(cl) == [1., 2., 3., pi/2, 1.0, pi/2+0.1]
 end
 
 end # module

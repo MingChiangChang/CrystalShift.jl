@@ -150,7 +150,7 @@ struct Hexagonal{T}<:Crystal{T}
     function Hexagonal{T}(a::T, c::T) where {T<:Real}
         #check_not_equal(a, c) || error("a, c should be different for hexagonal")
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3,
-               (1., 0.), (1., 0.), sincos(γ),
+               (1., 0.), (1., 0.), sincos(2*pi/3),
                volume(a, a, c, pi/2, pi/2, 2*pi/3), 2)
     end
 end
@@ -269,7 +269,7 @@ end
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
 function (cl::Crystal)(P::Peak)
-    (2pi/volume(cl) *
+    (2pi/cl.volume *
     sqrt(P.h^2 * cl.b^2 * cl.c^2 * cl.sincos_α[1]^2
     + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2
     + P.l^2 * cl.a^2 * cl.b^2 * cl.sincos_γ[1]^2
