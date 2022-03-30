@@ -16,22 +16,22 @@ struct PeakModCP{T, V<:AbstractVector{T}, C, L, CL, P, K, M, N} <: AbstractPhase
 end
 Base.Bool(CP::PeakModCP) = true
 Base.Bool(CPs::AbstractVector{<:PeakModCP}) = true
-get_param_nums(CP::PeakModCP) = CP.cl.free_param + 2 + get_param_nums(CP.profile) + length(CP.peak_int)
+get_param_nums(CP::PeakModCP) = length(CP.peak_int)
 # get_param_nums(CPs::AbstractVector{<:PeakModCP}) = sum(get_param_nums.(CPs))
 
 function get_intensity(p::Peak)
     return p.I
 end
 
-function PeakModCP(_stn::String, wid_init::Real=.1, #allow_peak_mod::Int64=10,
+function PeakModCP(_stn::String, wid_init::Real=.1, allow_peak_mod::Int64=10,
                  profile::PeakProfile=PseudoVoigt(0.5))
     f = split(_stn, '\n')
     lattice_info = split(f[1], ',')
     id = parse(Int64, lattice_info[1])
     crystal = get_crystal(cast(lattice_info[4:end], Float64))
     peaks, norm_constant = get_peaks(f[2:end])
-    sort!(peaks)
-    allowed_peak = length(peaks)#min(allow_peak_mod, length(peaks))
+    sort!(peaks, rev=true)
+    allowed_peak = min(allow_peak_mod, length(peaks))
     peak_int = zeros(Float64, allowed_peak)
     @. peak_int = get_intensity(peaks)[1:allowed_peak]
     name = String(lattice_info[2])
@@ -47,9 +47,10 @@ end
 
 get_param_nums(CP::PeakModCP) = length(CP.peak_int)
 
-function PeakModCP(CP::CrystalPhase)
-    peak_int = zeros(Float64, length(CP.peaks))
-    @. peak_int = get_intensity(CP.peaks)
+function PeakModCP(CP::CrystalPhase, allowed_peak::Int64=10)
+    peak_int = zeros(Float64, allowed_peak)
+    sort!(CP.peaks, rev=true)
+    @. peak_int = get_intensity(CP.peaks[1:allowed_peak])
     PeakModCP(CP.cl, CP.origin_cl, CP.peaks, peak_int, CP.id, CP.name, CP.act, CP.σ, CP.profile, CP.norm_constant)
 end
 
@@ -86,20 +87,31 @@ end
 
 function (CP::PeakModCP)(x::Real) 
     y = zero(x)
-    @simd for i in eachindex(CP.peak_int)
+    n = length(CP.peak_int)
+    @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        y += CP.act * CP.peak_int[i] * CP.profile((x-q)/CP.σ) # Main bottle neck
+        if i <= n
+            y += CP.act * CP.peak_int[i] * CP.profile((x-q)/CP.σ) # Main bottle neck
+        else
+            y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ)
+        end
     end
     y
 end
+
 function evaluate(CP::PeakModCP, θ::AbstractVector, x::AbstractVector) 
     PeakModCP(CP, θ).(x)
 end
+
 function evaluate_residual!(CP::PeakModCP, x::AbstractVector, r::AbstractVector) 
-    
-    @simd for i in eachindex(CP.peak_int)
+    n = length(CP.peak_int)
+    for i in eachindex(CP.peak_int)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
         @. r -= CP.act * CP.peak_int[i] * CP.profile((x-q)/CP.σ) # Main bottle neck
+    end
+    for i in n+1:length(CP.peaks)
+        q = (CP.cl)(CP.peaks[i]) * 10
+        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ)
     end
     r
 end
@@ -109,9 +121,14 @@ function evaluate!(y::AbstractVector, CP::PeakModCP, θ::AbstractVector,  x::Abs
 end
 
 function evaluate!(y::AbstractVector, CP::PeakModCP, x::AbstractVector) 
-    @simd for i in eachindex(CP.peak_int)
+    n = length(CP.peak_int)
+    for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        @. y += CP.act * CP.peak_int[i] * CP.profile((x-q)/CP.σ) # Main bottle neck
+        if i <= n
+            @. y += CP.act * CP.peak_int[i] * CP.profile((x-q)/CP.σ) # Main bottle neck
+        else
+            @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ)
+        end
     end
     y
 end

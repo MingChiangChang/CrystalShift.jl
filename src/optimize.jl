@@ -49,7 +49,9 @@ end
 
 function optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
-	θ = initialize_activation!(θ, pm, x, y)
+	if eltype(pm.CPs) <: CrystalPhase
+	    θ = initialize_activation!(θ, pm, x, y)
+	end
     # TODO: Don't take log of profile parameters
 	θ[1:get_param_nums(pm.CPs)]= log.(θ[1:get_param_nums(pm.CPs)]) # tramsform to log space for better conditioning
 	log_θ = θ
