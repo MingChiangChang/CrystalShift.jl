@@ -61,6 +61,14 @@ function PeakModCP(CP::CrystalPhase)
     PeakModCP(CP.cl, CP.origin_cl, CP.peaks, peak_int, CP.id, CP.name, CP.act, CP.σ, CP.profile, CP.norm_constant)
 end
 
+function CrystalPhase(CP::PeakModCP)
+    for i in 1:length(CP.peak_int)
+        CP.peaks[i] = Peak(CP.peaks[i].h, CP.peaks[i].k, CP.peaks[i].l,
+                        CP.peaks[i].q, CP.peak_int[i])
+    end
+    CrystalPhase(CP.cl, CP.origin_cl, CP.peaks, CP.id, CP.name, CP.act, CP.σ, CP.profile, CP.norm_constant)
+end
+
 function PeakModCP(CP::PeakModCP, θ::AbstractVector) 
     # fp = CP.cl.free_param
     # profile_param_num = get_param_nums(CP.profile)
@@ -81,6 +89,8 @@ function PeakModCP(CP::PeakModCP, θ::AbstractVector)
                 CP.act, CP.σ, CP.profile, CP.norm_constant)
     return CP
 end
+
+
 
 function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:PeakModCP})
     start = 1
