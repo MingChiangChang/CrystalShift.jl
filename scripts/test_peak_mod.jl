@@ -49,11 +49,11 @@ y = data.I[1:400, 3]
 y /= maximum(y)
 
 # c = optimize()
-@time c = optimize!([cs[6], cs[12]], x, y, std_noise, mean_θ, std_θ;
+@time c = optimize!([cs[6], ], x, y, std_noise, mean_θ, std_θ;
                   objective = objective, method = method, maxiter = 128,
                   regularization = true, verbose = false)
 
-pm_cp = PeakModCP.(c, 32)
+pm_cp = PeakModCP.(c)
 
 
 @time cp = optimize!(pm_cp, x, y, std_noise, peak_mean_θ, peak_std_θ;
