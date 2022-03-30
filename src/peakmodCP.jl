@@ -14,6 +14,7 @@ struct PeakModCP{T, V<:AbstractVector{T}, C, L, CL, P, K, M, N} <: AbstractPhase
                # other peak profiles are needed
     norm_constant::N
 end
+
 Base.Bool(CP::PeakModCP) = true
 Base.Bool(CPs::AbstractVector{<:PeakModCP}) = true
 get_param_nums(CP::PeakModCP) = length(CP.peak_int)
@@ -70,27 +71,11 @@ function CrystalPhase(CP::PeakModCP)
 end
 
 function PeakModCP(CP::PeakModCP, θ::AbstractVector) 
-    # fp = CP.cl.free_param
-    # profile_param_num = get_param_nums(CP.profile)
-    # cl = get_intrinsic_crystal_type(typeof(CP.cl))
-    # profile_type = get_intrinsic_profile_type(typeof(CP.profile))
-    # t = eltype(θ)
-    # if profile_param_num >0
-    #     c = PeakModCP(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, θ[fp+3:fp+length(CP.peak_int)+2],
-    #                 CP.id, CP.name,
-    #                 θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+length(CP.peak_int)+2:fp+2+profile_param_num]...),
-    #                 CP.norm_constant)
-    # else
-    # c = PeakModCP(CP.cl, CP.origin_cl, CP.peaks, θ[fp+3:fp+length(CP.peak_int)+2], 
-    #             CP.id, CP.name,
-    #             θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     CP = PeakModCP(CP.cl, CP.origin_cl, CP.peaks, θ, 
                 CP.id, CP.name,
                 CP.act, CP.σ, CP.profile, CP.norm_constant)
     return CP
 end
-
-
 
 function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:PeakModCP})
     start = 1

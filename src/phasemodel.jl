@@ -19,6 +19,14 @@ function PhaseModel(CPs::AbstractVector{<:AbstractPhase})
     PhaseModel(CPs, nothing)
 end
 
+function PeakModCP(pm::PhaseModel)
+    PeakModCP.(pm.CPs)
+end
+
+function CrystalPhase(pm::PhaseModel)
+    CrystalPhase.(pm.CPs)
+end
+
 PhaseModel(CP::AbstractPhase) = PhaseModel([CP])
 PhaseModel(CP::AbstractPhase, BG::Background) = PhaseModel([CP], BG)
 

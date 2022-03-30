@@ -2,7 +2,7 @@ using ProgressBars
 
 using CrystalShift
 using CrystalShift: get_free_params, extend_priors, Lorentz, evaluate_residual!, PseudoVoigt
-using CrystalShift: Gauss, FixedPseudoVoigt, PeakModCP, optimize!, evaluate!
+using CrystalShift: Gauss, FixedPseudoVoigt, PeakModCP, optimize!, evaluate!, full_optimize!
 using PhaseMapping: load
 using Plots
 using LinearAlgebra
@@ -45,17 +45,17 @@ data, _ = load("AlLiFe", "/Users/ming/Downloads/")
 x = data.Q
 x = x[1:400]
 
-y = data.I[1:400, 3]
+y = data.I[1:400, 1]
 y /= maximum(y)
 
 # c = optimize()
-@time c = optimize!([cs[6], ], x, y, std_noise, mean_θ, std_θ;
+@time c = full_optimize!([cs[6], ], x, y, std_noise, mean_θ, std_θ;
                   objective = objective, method = method, maxiter = 128,
                   regularization = true, verbose = false)
 
-pm_cp = PeakModCP.(c)
+# pm_cp = PeakModCP.(c)
 
 
-@time cp = optimize!(pm_cp, x, y, std_noise, peak_mean_θ, peak_std_θ;
-                  objective = objective, method = bfgs, maxiter = 16,
-                  regularization = true, verbose = false)
+# @time cp = optimize!(pm_cp, x, y, std_noise, peak_mean_θ, peak_std_θ;
+#                   objective = objective, method = bfgs, maxiter = 16,
+#                   regularization = true, verbose = false)

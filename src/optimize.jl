@@ -16,6 +16,52 @@ function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
    argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
+function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+	std_θ::AbstractVector = [1., Inf, 5.];
+	method::OptimizationMethods, objective::String = "LS",
+	maxiter::Int = 32,
+	regularization::Bool = true,
+	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+    
+	c = optimize!(pm, x, y, std_noise, mean_θ, std_θ;
+	      method=method, objective=objective, maxiter=maxiter,
+		  regularization=regularization, verbose=verbose, tol=tol)
+
+	pm_cp = PhaseModel(PeakModCP(c), c.background)
+
+	c = optimize!(pm_cp, x, y, std_noise, [1.], [1.];
+				method=bfgs, objective=objective, maxiter=16,
+				regularization=regularization, verbose=verbose, tol=tol)
+    
+	return PhaseModel(CrystalPhase(c), c.background)
+end
+
+function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector,
+	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+	std_θ::AbstractVector = [1., Inf, 5.];
+	method::OptimizationMethods, objective::String = "LS",
+	maxiter::Int = 32,
+	regularization::Bool = true,
+	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+    pm = PhaseModel(cp)
+	pm = full_optimize!(pm, x, y, std_noise, mean_θ, std_θ;
+						method=method, objective=objective, maxiter=maxiter,
+						regularization=regularization, verbose=verbose, tol=tol)
+	pm.CPs
+end
+
+function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
+	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+	std_θ::AbstractVector = [1., Inf, 5.];
+	method::OptimizationMethods, objective::String = "LS",
+	maxiter::Int = 32,
+	regularization::Bool = true,
+	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+	full_optimize!([cp], x, y, std_noise, mean_θ, std_θ;
+				method=method, objective=objective, maxiter=maxiter,
+				regularization=regularization, verbose=verbose, tol=tol)
+end
 """
     optimize!
 
