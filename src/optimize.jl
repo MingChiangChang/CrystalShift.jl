@@ -76,7 +76,7 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 	start = 1
 	for phase in pm.CPs
         param_num = get_param_nums(phase)
-		p = evaluate(phase, θ, x)
+		p = evaluate(phase, θ[start:start+param_num-1], x)
 		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = dot(p, y) / sum(abs2, p)
         start += param_num
 	end
@@ -239,7 +239,7 @@ function get_newton_objective_func(pm::PhaseModel,
 	end
 end
 
-function optimize!(phases::AbstractVector{<:CrystalPhase},
+function optimize!(phases::AbstractVector{<:AbstractPhase},
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
@@ -256,7 +256,7 @@ end
 
 
 # Single phase situation. Put phase into [phase].
-function optimize!(phase::CrystalPhase,
+function optimize!(phase::AbstractPhase,
 					x::AbstractVector, y::AbstractVector,
 					std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 					std_θ::AbstractVector = [1., Inf, 5.];
