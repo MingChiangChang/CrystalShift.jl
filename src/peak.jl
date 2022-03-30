@@ -15,6 +15,9 @@ function Peak(s::String)
     Peak(h, k, l, q, I)
 end
 
+import Base.isless
+isless(peak_1::Peak, peak_2::Peak) = isless(peak_1.I, peak_2.I)
+
 function get_peaks(lines)
     peaks = Vector{Peak}(undef, size(lines))
     for i in eachindex(lines)

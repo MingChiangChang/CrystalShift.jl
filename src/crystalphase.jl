@@ -1,4 +1,6 @@
-struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N}
+abstract type AbstractPhase end
+
+struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
     cl::C # crystal object
     origin_cl::CL # save for later comparison
     peaks::V # Vector of peak object
@@ -24,10 +26,12 @@ function Base.show(io::IO, CP::CrystalPhase)
     return true
 end
 
+Base.Bool(CP::AbstractPhase) = true
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
-get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
+get_param_nums(APs::AbstractVector{<:AbstractPhase}) = sum(get_param_nums.(APs))
+# get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile::PeakProfile=PseudoVoigt(0.5))
@@ -70,7 +74,7 @@ function get_intrinsic_profile_type(profile_type::Type)
     end
 end
 
-function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:CrystalPhase})
+function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:AbstractPhase})
     start = 1
     new_CPs = Vector{CrystalPhase}(undef, length(CPs))
     for i in eachindex(CPs)
@@ -112,7 +116,7 @@ function get_free_params(CP::CrystalPhase)
     return vcat(get_free_lattice_params(CP.cl), [CP.act, CP.σ], get_free_params(CP.profile))
 end
 
-function get_free_params(CPs::AbstractVector{<:CrystalPhase})
+function get_free_params(CPs::AbstractVector{<:AbstractPhase})
     p = Vector{Float64}()
     for cp in CPs
         push!(p, get_free_params(cp)...) # Preallocation?
@@ -120,11 +124,11 @@ function get_free_params(CPs::AbstractVector{<:CrystalPhase})
     p
 end
 
-function get_eight_params(CP::CrystalPhase)
+function get_eight_params(CP::AbstractPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
 
-get_eight_params(CP::CrystalPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
+get_eight_params(CP::AbstractPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
 get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
 get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
 get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
@@ -133,15 +137,15 @@ get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2],
 get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[5], θ[6]]
 get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
 
-function get_free_lattice_params(CPs::AbstractVector{<:CrystalPhase})
+function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
     p = Vector{Float64}()
     for cp in CPs
         push!(p, get_free_lattice_params(cp)...) # Preallocation?
     end
     p
 end
-get_free_lattice_params(CP::CrystalPhase) = get_free_lattice_params(CP.cl)
-get_free_lattice_params(CP::CrystalPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
+get_free_lattice_params(CP::AbstractPhase) = get_free_lattice_params(CP.cl)
+get_free_lattice_params(CP::AbstractPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
 get_free_lattice_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
 get_free_lattice_params(cl::Tetragonal, θ::AbstractVector) = [θ[1], θ[3]]
 get_free_lattice_params(cl::Hexagonal, θ::AbstractVector) = [θ[1], θ[3]]
@@ -155,11 +159,11 @@ collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
 # Preallocating
 # Functor comes in handy but use evaluate! when you can to be clear
-function (CP::CrystalPhase)(x::AbstractVector, y::AbstractVector)
+function (CP::AbstractPhase)(x::AbstractVector, y::AbstractVector)
     evaluate!(y, CP, x)
 end
 
-function (CPs::AbstractVector{<:CrystalPhase})(x::AbstractVector,
+function (CPs::AbstractVector{<:AbstractPhase})(x::AbstractVector,
                                                y::AbstractVector)
     @simd for i in eachindex(CPs)
         CPs[i](x, y)
@@ -175,7 +179,7 @@ function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
     y
 end
 
-function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase}, x::AbstractVector)
     for CP in CPs
         evaluate!(y, CP, x)
     end
@@ -193,7 +197,7 @@ function evaluate!(y::AbstractVector, CP::CrystalPhase, θ::AbstractVector,
     CrystalPhase(CP, θ)(x, y)
 end
 
-function evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase},
+function evaluate!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase},
                    θ::AbstractVector, x::AbstractVector)
     s = 1
     for i in eachindex(CPs)
@@ -244,7 +248,7 @@ function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
     evaluate_residual!(CrystalPhase(CP, θ), x, r)
 end
 
-function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
+function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
               x::AbstractVector, r::AbstractVector)
     @simd for i in eachindex(CPs)
         evaluate_residual!(CPs[i], x, r)
@@ -260,7 +264,7 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
     r
 end
 
-function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
+function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
              θ::AbstractVector, x::AbstractVector, r::AbstractVector)
     s = 1
     for i in eachindex(CPs)
@@ -282,7 +286,7 @@ function (CP::CrystalPhase)(x::Real)
     y
 end
 
-function (CPs::AbstractVector{<:CrystalPhase})(x::Real)
+function (CPs::AbstractVector{<:AbstractPhase})(x::Real)
     y = zero(x)
     @simd for i in eachindex(CPs) #
         y += CPs[i](x)
@@ -296,7 +300,7 @@ function evaluate(CP::CrystalPhase, θ::AbstractVector,
     CrystalPhase(CP, θ).(x)
 end
 
-function evaluate(CPs::AbstractVector{<:CrystalPhase},
+function evaluate(CPs::AbstractVector{<:AbstractPhase},
                   θ::AbstractVector, x::AbstractVector)
     y = zeros(size(x))
     s = 1

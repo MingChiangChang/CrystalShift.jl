@@ -1,6 +1,6 @@
 const Background = Union{BackgroundModel, Nothing}
 
-struct PhaseModel{A<:AbstractVector{<:CrystalPhase}, B<:Background} 
+struct PhaseModel{A<:AbstractVector{<:AbstractPhase}, B<:Background} 
     CPs::A
     background::B
 end
@@ -15,12 +15,12 @@ function PhaseModel()
     PhaseModel(CrystalPhase[], nothing)
 end
 
-function PhaseModel(CPs::AbstractVector{<:CrystalPhase})
+function PhaseModel(CPs::AbstractVector{<:AbstractPhase})
     PhaseModel(CPs, nothing)
 end
 
-PhaseModel(CP::CrystalPhase) = PhaseModel([CP])
-PhaseModel(CP::CrystalPhase, BG::Background) = PhaseModel([CP], BG)
+PhaseModel(CP::AbstractPhase) = PhaseModel([CP])
+PhaseModel(CP::AbstractPhase, BG::Background) = PhaseModel([CP], BG)
 
 function PhaseModel(PM::PhaseModel, θ::AbstractVector)
     # bg_param_num = get_param_nums(PM.background)

@@ -1,10 +1,11 @@
 const ALLOWED_OBJECTIVE = ["LS", "KL"]
 const PRIOR_LENGTH = 3
+const PEAK_PRIOR_LENGTH = 1
 const DEFAULT_TOL = 1e-8
 @exported_enum OptimizationMethods LM Newton bfgs l_bfgs
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-    phases::AbstractVector{<:CrystalPhase})
+    phases::AbstractVector{<:AbstractPhase})
     extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
 end
 
@@ -23,13 +24,54 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         if phase.profile isa PseudoVoigt
             full_mean_θ[start + n + 2] = 0.5
             full_std_θ[start + n + 2] = 10.
-            start += (n+3)
-        else
-            start += (n+2)
         end
+        start += get_param_nums(phase)
     end
+    
     return full_mean_θ, full_std_θ
 end
+
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+                      phases::AbstractVector{<:PeakModCP})
+    totl_params = sum([get_param_nums(phase) for phase in phases])
+    full_mean_θ = zeros(totl_params)
+    full_std_θ = zeros(totl_params)
+    start = 1
+    for phase in phases
+        n = get_param_nums(phase)
+        full_mean_θ[start:start+n-1] = get_free_params(phase) .* mean_θ
+        full_std_θ[start:start+n-1] = repeat(std_θ[1:1], n)
+        start += n
+    end
+    println(full_mean_θ)
+    println(full_std_θ)
+    full_mean_θ, full_std_θ
+end
+
+# function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+#                         phases::AbstractVector{<:PeakModCP})
+#     totl_params = sum([get_param_nums(phase) for phase in phases])
+#     full_mean_θ = zeros(totl_params)
+#     full_std_θ = zeros(totl_params)
+#     start = 1
+#     for phase in phases
+#         n = phase.cl.free_param
+#         full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
+#         full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
+#         full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
+#         full_std_θ[start + n:start + n + 1] = std_θ[2:3]
+#         full_mean_θ[start + n + 2:start + n + 1 + length(phase.peaks)] .= mean_θ[4] .* get_intensity.(phase.peaks) 
+#         full_std_θ[start + n + 2:start + n + 1 + length(phase.peaks)] = repeat(std_θ[4:4], length(phase.peaks))
+#         if phase.profile isa PseudoVoigt
+#             full_mean_θ[start + n + length(phase.peaks)] = 0.5
+#             full_std_θ[start + n + length(phase.peaks)] = 10.
+#         end
+#         start += get_param_nums(phase)
+#     end
+#     println(full_mean_θ)
+#     println(full_std_θ)
+#     return full_mean_θ, full_std_θ
+# end
 
 struct Priors{T}
     std_noise::Real
@@ -44,6 +86,15 @@ struct Priors{T}
         mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
         new{V}(std_noise, mean_θ, std_θ)
     end
+
+    function Priors{V}(phases::AbstractVector{<:PeakModCP}, std_noise::Real,
+        mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}) where V<:Real
+    length(mean_θ) == length(std_θ) == PEAK_PRIOR_LENGTH || error("Prior must have length of $(PEAK_PRIOR_LENGTH)")
+    std_noise > 0 || error("std_noise must be larger than zero")
+
+    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
+    new{V}(std_noise, mean_θ, std_θ)
+end
 end
 
 
