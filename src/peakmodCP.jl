@@ -48,16 +48,15 @@ end
 
 get_param_nums(CP::PeakModCP) = length(CP.peak_int)
 
-function PeakModCP(CP::CrystalPhase, allowed_peak::Int64=10)
+function PeakModCP(CP::CrystalPhase, allow_peak_mod::Int64=10)
+    allowed_peak = min(allow_peak_mod, length(CP.peaks))
     peak_int = zeros(Float64, allowed_peak)
-    sort!(CP.peaks, rev=true)
     @. peak_int = get_intensity(CP.peaks[1:allowed_peak])
     PeakModCP(CP.cl, CP.origin_cl, CP.peaks, peak_int, CP.id, CP.name, CP.act, CP.σ, CP.profile, CP.norm_constant)
 end
 
 function PeakModCP(CP::CrystalPhase)
     peak_int = zeros(Float64, length(CP.peaks))
-    sort!(CP.peaks, rev=true)
     @. peak_int = get_intensity(CP.peaks)
     PeakModCP(CP.cl, CP.origin_cl, CP.peaks, peak_int, CP.id, CP.name, CP.act, CP.σ, CP.profile, CP.norm_constant)
 end

@@ -3,10 +3,13 @@ using ProgressBars
 using CrystalShift
 using CrystalShift: get_free_params, extend_priors, Lorentz, evaluate_residual!, PseudoVoigt
 using CrystalShift: Gauss, FixedPseudoVoigt, PeakModCP, optimize!, evaluate!, full_optimize!
+using CrystalShift: PhaseModel
 using PhaseMapping: load
 using Plots
 using LinearAlgebra
 using BenchmarkTools
+
+using Base.Threads
 
 std_noise = 1e-2
 # mean_θ = [1., 1., .1, 1.] # Set to favor true solution
@@ -45,14 +48,18 @@ data, _ = load("AlLiFe", "/Users/ming/Downloads/")
 x = data.Q
 x = x[1:400]
 
-y = data.I[1:400, 1]
+y = data.I[1:400, 11]
 y /= maximum(y)
 
+@threads for i in eachindex(cs)
 # c = optimize()
-@time c = full_optimize!([cs[6], ], x, y, std_noise, mean_θ, std_θ;
-                  objective = objective, method = method, maxiter = 128,
-                  regularization = true, verbose = false)
-
+    @time c = full_optimize!(PhaseModel([cs[i]]), x, y, std_noise, mean_θ, std_θ;
+                    objective = objective, method = method, maxiter = 128,
+                    regularization = true, verbose = false)
+    # plt = plot(x, y, title=i)
+    # plot!(x, evaluate!(zero(x), c, x))
+    # display(plt)
+end
 # pm_cp = PeakModCP.(c)
 
 

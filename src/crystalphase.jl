@@ -40,6 +40,7 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     id = parse(Int64, lattice_info[1])
     crystal = get_crystal(cast(lattice_info[4:end], Float64))
     peaks, norm_constant = get_peaks(f[2:end])
+    sort!(peaks, rev=true)
     name = String(lattice_info[2])
     act = 1.0
 
