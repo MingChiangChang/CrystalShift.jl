@@ -17,12 +17,6 @@ function int_mod(CP::CrystalPhase, x::AbstractVector, allowed_num::Int64)
     return int_mod(basis, const_basis, peak_int)
 end
 
-function get_int_mod(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
-    IMs = int_mod.(PM.CPs, (x, ), (allowed_num, ))
-    evaluate!(IMs[1].const_basis, PM.background, x)
-    IMs
-end
-
 get_param_nums(IM::int_mod) = length(IM.peak_int)
 get_free_params(IM::int_mod) = IM.peak_int
 

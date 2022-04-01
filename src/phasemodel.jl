@@ -103,3 +103,8 @@ function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector
     evaluate_residual!(PM.background, x, r)
 end
 
+function get_int_mod(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
+    IMs = int_mod.(PM.CPs, (x, ), (allowed_num, ))
+    evaluate!(IMs[1].const_basis, PM.background, x)
+    IMs
+end
