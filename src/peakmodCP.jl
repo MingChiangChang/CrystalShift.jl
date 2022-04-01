@@ -46,9 +46,8 @@ function get_free_params(CP::PeakModCP)
     CP.peak_int
 end
 
-get_param_nums(CP::PeakModCP) = length(CP.peak_int)
 
-function PeakModCP(CP::CrystalPhase, allow_peak_mod::Int64=10)
+function PeakModCP(CP::CrystalPhase, allow_peak_mod::Int64)
     allowed_peak = min(allow_peak_mod, length(CP.peaks))
     peak_int = zeros(Float64, allowed_peak)
     @. peak_int = get_intensity(CP.peaks[1:allowed_peak])

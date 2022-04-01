@@ -28,13 +28,13 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	      method=method, objective=objective, maxiter=maxiter,
 		  regularization=regularization, verbose=verbose, tol=tol)
 
-	pm_cp = PhaseModel(PeakModCP(c), c.background)
+    IMs = get_int_mod(c, x, 32)
 
-	c = optimize!(pm_cp, x, y, std_noise, [1.], [1.];
+	Mod_IMs = optimize!(IMs, x, y, std_noise, [1.], [1.];
 				method=bfgs, objective=objective, maxiter=16,
 				regularization=regularization, verbose=verbose, tol=tol)
-    
-	return PhaseModel(CrystalPhase(c), c.background)
+    change_peak_int!.(c.CPs, Mod_IMs)
+	return c
 end
 
 function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector,

@@ -37,7 +37,24 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
     full_mean_θ = zeros(totl_params)
     full_std_θ = zeros(totl_params)
     start = 1
-    
+
+    for phase in phases
+        n = get_param_nums(phase)
+        full_mean_θ[start:start+n-1] = get_free_params(phase) .* mean_θ
+        full_std_θ[start:start+n-1] = repeat(std_θ[1:1], n)
+        start += n
+    end
+
+    full_mean_θ, full_std_θ
+end
+
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+        phases::AbstractVector{<:int_mod})
+    totl_params = sum([get_param_nums(phase) for phase in phases])
+    full_mean_θ = zeros(totl_params)
+    full_std_θ = zeros(totl_params)
+    start = 1
+
     for phase in phases
         n = get_param_nums(phase)
         full_mean_θ[start:start+n-1] = get_free_params(phase) .* mean_θ
@@ -94,7 +111,16 @@ struct Priors{T}
 
     mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
     new{V}(std_noise, mean_θ, std_θ)
-end
+    end
+
+    function Priors{V}(phases::AbstractVector{<:int_mod}, std_noise::Real,
+        mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}) where V<:Real
+    length(mean_θ) == length(std_θ) == PEAK_PRIOR_LENGTH || error("Prior must have length of $(PEAK_PRIOR_LENGTH)")
+    std_noise > 0 || error("std_noise must be larger than zero")
+
+    mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
+    new{V}(std_noise, mean_θ, std_θ)
+    end
 end
 
 

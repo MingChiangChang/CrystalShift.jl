@@ -172,6 +172,20 @@ function (CPs::AbstractVector{<:AbstractPhase})(x::AbstractVector,
     y
 end
 
+function evaluate!(y::AbstractVector, CP::AbstractPhase, peak::Peak, x::AbstractVector)
+    q = (CP.cl)(peak) * 10 # account for unit difference
+    @. y += CP.act * peak.I * CP.profile((x-q)/CP.σ)
+    y
+end
+
+function evaluate!(y::AbstractMatrix, CP::AbstractPhase, peaks::AbstractVector{<:Peak}, x::AbstractVector)
+    @simd for i in eachindex(peaks)
+        q = (CP.cl)(peaks[i]) * 10 # account for unit difference
+        @. y[:,i] = CP.act * peaks[i].I * CP.profile((x-q)/CP.σ)
+    end
+    y
+end
+
 function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
     @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
