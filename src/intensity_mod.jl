@@ -10,7 +10,6 @@ function int_mod(CP::CrystalPhase, x::AbstractVector, allowed_num::Int64)
     evaluate!(basis, CP, CP.peaks[1:peak_num], x)
     const_basis = zeros(Float64, size(x, 1))
     for i in peak_num+1:size(CP.peaks, 1)
-        println(CP.peaks[i])
         evaluate!(const_basis, CP, CP.peaks[i], x)
     end
     peak_int =  ones(Float64, peak_num)
