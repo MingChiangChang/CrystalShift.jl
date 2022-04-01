@@ -4,6 +4,7 @@ struct int_mod{T, V<:AbstractMatrix{T}, L<:AbstractVector{T}, K} <: AbstractPhas
     peak_int::K
 end
 
+# test
 function int_mod(CP::CrystalPhase, x::AbstractVector, allowed_num::Int64)
     peak_num = min(allowed_num, size(CP.peaks, 1))
     basis = zeros(Float64, size(x, 1), peak_num)
