@@ -43,7 +43,7 @@ Base.size(PM::PhaseModel) = size(PM.CPs)
 Base.length(PM::PhaseModel) = length(PM.CPs)
 Base.iterate(PM::PhaseModel) = iterate(PM.CPs)
 Base.iterate(PM::PhaseModel, state) = iterate(PM.CPs, state)
-Base.:(==)(PM1::PhaseModel, PM2::PhaseModel) = [p.id for p in PM1.CPs] ==[p.id for p in PM2.CPs]
+Base.:(==)(PM1::PhaseModel, PM2::PhaseModel) = [p.id for p in PM1.CPs] == [p.id for p in PM2.CPs]
 
 function reconstruct!(pm::PhaseModel, θ::AbstractVector)
     θ, CPs = reconstruct_CPs!(θ, pm.CPs)
