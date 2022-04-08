@@ -28,7 +28,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	      method=method, objective=objective, maxiter=maxiter,
 		  regularization=regularization, verbose=verbose, tol=tol)
 
-    IMs = get_int_mod(c, x, 32)
+    IMs = get_PeakModCP(c, x, 32)
 
 	Mod_IMs = optimize!(IMs, x, y, std_noise, [1.], [1.];
 				method=bfgs, objective=objective, maxiter=16,

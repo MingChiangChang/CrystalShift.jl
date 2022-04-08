@@ -19,9 +19,9 @@ function PhaseModel(CPs::AbstractVector{<:AbstractPhase})
     PhaseModel(CPs, nothing)
 end
 
-function PeakModCP(pm::PhaseModel)
-    PeakModCP.(pm.CPs)
-end
+# function PeakModCP(pm::PhaseModel)
+#     PeakModCP.(pm.CPs)
+# end
 
 function CrystalPhase(pm::PhaseModel)
     CrystalPhase.(pm.CPs)
@@ -103,8 +103,8 @@ function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector
     evaluate_residual!(PM.background, x, r)
 end
 
-function get_int_mod(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
-    IMs = int_mod.(PM.CPs, (x, ), (allowed_num, ))
+function get_PeakModCP(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
+    IMs = PeakModCP.(PM.CPs, (x, ), (allowed_num, ))
     evaluate!(IMs[1].const_basis, PM.background, x)
     IMs
 end

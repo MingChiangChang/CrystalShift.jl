@@ -2,8 +2,8 @@ using ProgressBars
 
 using CrystalShift
 using CrystalShift: get_free_params, extend_priors, Lorentz, evaluate_residual!, PseudoVoigt
-using CrystalShift: Gauss, FixedPseudoVoigt, PeakModCP, optimize!, evaluate!, full_optimize!
-using CrystalShift: PhaseModel, int_mod, get_int_mod
+using CrystalShift: Gauss, FixedPseudoVoigt, optimize!, evaluate!, full_optimize!
+using CrystalShift: PhaseModel, PeakModCP, get_PeakModCP
 using PhaseMapping: load
 using Plots
 using LinearAlgebra
@@ -48,20 +48,21 @@ data, _ = load("AlLiFe", "/Users/ming/Downloads/")
 x = data.Q
 x = x[1:400]
 
-y = data.I[1:400, 3]
+y = data.I[1:400, 1]
 y /= maximum(y)
 
 # for i in eachindex(cs)
 # c = optimize()
-@time c = full_optimize!(PhaseModel([cs[6], cs[12]]), x, y, std_noise, mean_θ, std_θ;
+@time c = full_optimize!(PhaseModel(cs[6]), x, y, std_noise, mean_θ, std_θ;
                 objective = objective, method = method, maxiter = 128,
                 regularization = true, verbose = false)
-# plt = plot(x, y, title=i)
-# plot!(x, evaluate!(zero(x), c, x))
-# display(plt)
+# plot(x, y)
+plt = plot(x, y)
+plot!(x, evaluate!(zero(x), c, x))
+display(plt)
 # end
-# @time pm_cp = int_mod.(c.CPs, (x, ), (32, ))
-# @time pm_cp = get_int_mod(c, x, 32)
+# @time pm_cp = PeakModCP.(c.CPs, (x, ), (32, ))
+# @time pm_cp = get_PeakModCP(c, x, 32)
 
 # @time cp = optimize!(pm_cp, x, y, std_noise, peak_mean_θ, peak_std_θ;
 #                   objective = objective, method = bfgs, maxiter = 16,
