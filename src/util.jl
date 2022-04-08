@@ -40,7 +40,7 @@ end
 
 function special_inv(x::Real)
     if x > 100.
-        return 1E-6
+        return 1E-8
     else
         return inv(x)
     end
@@ -48,7 +48,7 @@ end
 
 function special_exp(x::Real)
     if x < -10.
-        return 1E-6
+        return 1E-8
     else
         return exp(x)
     end
