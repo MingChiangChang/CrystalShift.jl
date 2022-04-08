@@ -4,8 +4,9 @@ using Test
 using CrystalShift
 using CrystalShift: evaluate!, get_param_nums, get_eight_params, get_free_lattice_params
 using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles
-using CrystalShift: get_fraction
+using CrystalShift: get_fraction, get_free_params, evaluate_residual!
 using NPZ
+using LinearAlgebra
 
 path = "../data/"
 test_path = path * "Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
@@ -22,6 +23,8 @@ end
 cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
 y = zero(x)
+
+show(cs[1])
 
 @testset "Helper functions" begin
     @test Bool(cs[1]) == true 
@@ -78,6 +81,12 @@ end
         @test multi_sol[i,:] ≈ e
     end
 end
+
+t = zero(x)
+
+evaluate!(t, cs[1], x)
+evaluate_residual!(cs[1], [get_free_params(cs[1])..., 1, .1], x, t)
+norm(t) ≈ 0  
 
 # cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt(0.5),))
 # x = collect(8:.1:60)

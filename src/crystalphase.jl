@@ -225,17 +225,17 @@ function evaluate!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase},
     y
 end
 
-function new_evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
-    q = get_peak_pos.((CP.cl, ), CP.peaks) .* 10 # TODO: preallocate
-    temp = zero(q)
-    @. y += get_evalutation_at((CP, ), x, (q, ), (temp, )) # Main bottle neck
-    y
-end
+# function new_evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+#     q = get_peak_pos.((CP.cl, ), CP.peaks) .* 10 # TODO: preallocate
+#     temp = zero(q)
+#     @. y += get_evalutation_at((CP, ), x, (q, ), (temp, )) # Main bottle neck
+#     y
+# end
 
-function get_evalutation_at(CP::CrystalPhase, x::Real, q::AbstractVector, temp::AbstractVector)
-    temp .= get_intensities(CP) .* CP.profile.(get_distance(CP, x, q))
-    return CP.act * sum(temp)
-end
+# function get_evalutation_at(CP::CrystalPhase, x::Real, q::AbstractVector, temp::AbstractVector)
+#     temp .= get_intensities(CP) .* CP.profile.(get_distance(CP, x, q))
+#     return CP.act * sum(temp)
+# end
 
 function get_distance(CP::CrystalPhase, x::Real, q::AbstractVector)
     (x.-q)/CP.σ
@@ -245,12 +245,12 @@ function get_intensities(CP::CrystalPhase)
     [CP.peaks[i].I for i in eachindex(CP.peaks)]
 end
 
-function new_evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
-    for CP in CPs
-        new_evaluate!(y, CP, x)
-    end
-    y
-end
+# function new_evaluate!(y::AbstractVector, CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector)
+#     for CP in CPs
+#         new_evaluate!(y, CP, x)
+#     end
+#     y
+# end
 
 function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)

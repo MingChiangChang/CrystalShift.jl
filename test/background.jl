@@ -3,6 +3,7 @@ using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
 using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt
+using CrystalShift: _prior, get_param_nums, lm_prior!
 using CovarianceFunctions
 using CovarianceFunctions: EQ
 
@@ -20,7 +21,7 @@ mean_θ = [1., 1, .2]
 std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -70,5 +71,10 @@ y = zero(x)
 # plot!(x, evaluate!(y, c, x), label="Fitted graph")
 # display(plt)
 @test norm(evaluate!(y, c, x) .- noisy_data) < 0.1
+
+evaluate(PM.background, x)
+evaluate(PM.background, rand(get_param_nums(PM.background)), x)
+_prior(PM.background, rand(get_param_nums(PM.background)))
+lm_prior!(rand(get_param_nums(PM.background)), PM.background)
 
 end
