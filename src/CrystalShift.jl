@@ -12,7 +12,8 @@ using SpecialFunctions
 export CrystalPhase
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
-export OptimizationMethods, Peak
+export OptimizationMethods, Peak, PhaseModel, BackgroundModel
+export evaluate!, evaluate_residual!
 
 
 include("util.jl")

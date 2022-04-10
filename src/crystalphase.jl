@@ -114,7 +114,15 @@ function get_fraction(CPs::AbstractVector{<:CrystalPhase})
 end
 
 function get_free_params(CP::CrystalPhase)
-    return vcat(get_free_lattice_params(CP.cl), [CP.act, CP.σ], get_free_params(CP.profile))
+    cl_params = get_free_lattice_params(CP.cl)
+    parms = Vector{eltype(cl_params)}(undef, get_param_nums(CP))
+    parms[1:CP.cl.free_param] .= get_free_lattice_params(CP.cl)
+    parms[CP.cl.free_param+1:CP.cl.free_param+2] .= [CP.act, CP.σ]
+    p = get_free_params(CP.profile)
+    if !isempty(p)
+        parms[CP.cl.free_param+3:end] .= p
+    end
+    return parms
 end
 
 function get_free_params(CPs::AbstractVector{<:AbstractPhase})
@@ -284,7 +292,7 @@ function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
     s = 1
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
-        θ_temp = @view θ[s : s+num_of_param]
+        θ_temp = @view θ[s : s+num_of_param-1]
         evaluate_residual!(CPs[i], θ_temp, x, r)
         s += num_of_param
     end

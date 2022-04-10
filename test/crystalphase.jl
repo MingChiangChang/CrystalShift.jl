@@ -3,8 +3,8 @@ module Testcrystalshift
 using Test
 using CrystalShift
 using CrystalShift: evaluate!, get_param_nums, get_eight_params, get_free_lattice_params
-using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles
-using CrystalShift: get_fraction, get_free_params, evaluate_residual!
+using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles, Gauss
+using CrystalShift: get_fraction, get_free_params, evaluate_residual!, get_intrinsic_profile_type
 using NPZ
 using LinearAlgebra
 
@@ -21,6 +21,7 @@ else
 end
 
 cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
+gauss_cs = CrystalPhase(String(s[1]), 0.1, Gauss())
 x = collect(8:.1:60)
 y = zero(x)
 
@@ -57,6 +58,7 @@ end
     @test get_moles(new_cs2) ≈ 0.006821969673395041
     @test get_moles(new_cs6) ≈ 0.037642918053186716
     @test get_fraction([new_cs2, new_cs6]) ≈ [get_moles(new_cs2), get_moles(new_cs6)]./(get_moles(new_cs2)+get_moles(new_cs6))
+    @test get_intrinsic_profile_type(typeof(gauss_cs.profile)) == Gauss
 end
 
 # Test construction with 5 phases from different crystal family
@@ -83,10 +85,22 @@ end
 end
 
 t = zero(x)
-
 evaluate!(t, cs[1], x)
-evaluate_residual!(cs[1], [get_free_params(cs[1])..., 1, .1], x, t)
-norm(t) ≈ 0  
+println(get_free_params(cs[1]))
+evaluate_residual!(cs[1], get_free_params(cs[1]), x, t)
+@test norm(t) < 10^-10 
+
+t = zero(x)
+evaluate!(t, cs[1], get_free_params(cs[1]), x)
+println(get_free_params(cs[1]))
+evaluate_residual!(cs[1], get_free_params(cs[1]), x, t)
+@test norm(t) < 10^-10  
+
+t = zero(x)
+evaluate!(t, cs[1:2], get_free_params(cs[1:2]), x)
+println(get_free_params(cs[1:2]))
+evaluate_residual!(cs[1:2], get_free_params(cs[1:2]), x, t)
+@test norm(t) < 10^-10  
 
 # cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt(0.5),))
 # x = collect(8:.1:60)

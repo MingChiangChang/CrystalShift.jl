@@ -24,7 +24,7 @@ end
 # end
 
 function CrystalPhase(pm::PhaseModel)
-    CrystalPhase.(pm.CPs)
+    pm.CPs
 end
 
 PhaseModel(CP::AbstractPhase) = PhaseModel([CP])
@@ -40,6 +40,7 @@ function PhaseModel(PM::PhaseModel, θ::AbstractVector)
 end
 
 Base.size(PM::PhaseModel) = size(PM.CPs)
+Base.size(PM::PhaseModel, dim::Integer) = size(PM.CPs, dim)
 Base.length(PM::PhaseModel) = length(PM.CPs)
 Base.iterate(PM::PhaseModel) = iterate(PM.CPs)
 Base.iterate(PM::PhaseModel, state) = iterate(PM.CPs, state)

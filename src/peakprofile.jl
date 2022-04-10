@@ -22,7 +22,7 @@ struct GaussianProfile{T} <: PeakProfile{T} end
 const Gauss = GaussianProfile
 Gauss() = Gauss{Float64}()
 function Gauss(a::AbstractArray) 
-    isempty(a) && error("Gauss recieves a parameter")
+    isempty(a) || error("Gauss recieves a parameter")
     Gauss()
 end
 (P::Gauss)(x::Real) = special_exp(-x^2/2)
