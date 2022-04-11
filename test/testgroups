@@ -4,6 +4,8 @@ peakprofile
 crystal
 crystalphase
 peakmodCP
+phasemodel
+optimizationsettings
 optimize
 background
 phaseresult
