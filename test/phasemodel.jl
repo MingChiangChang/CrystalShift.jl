@@ -8,7 +8,7 @@ using CrystalShift: get_phase_ids
 using LinearAlgebra
 using CovarianceFunctions: EQ
 
-path = "data/"
+path = "../data/"
 test_path = path * "Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
