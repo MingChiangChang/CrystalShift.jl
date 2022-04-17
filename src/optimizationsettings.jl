@@ -4,10 +4,10 @@ const PEAK_PRIOR_LENGTH = 1
 const DEFAULT_TOL = 1e-8
 @exported_enum OptimizationMethods LM Newton bfgs l_bfgs
 
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-    phases::AbstractVector{<:AbstractPhase})
-    extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
-end
+# function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+#     phases::AbstractVector{<:AbstractPhase})
+#     extend_priors(mean_θ, std_θ, [phase.cl for phase in phases])
+# end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
                         phases::AbstractVector{<:CrystalPhase})
@@ -31,22 +31,6 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
     return full_mean_θ, full_std_θ
 end
 
-function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-                      phases::AbstractVector{<:PeakModCP})
-    totl_params = sum([get_param_nums(phase) for phase in phases])
-    full_mean_θ = zeros(totl_params)
-    full_std_θ = zeros(totl_params)
-    start = 1
-
-    for phase in phases
-        n = get_param_nums(phase)
-        full_mean_θ[start:start+n-1] = get_free_params(phase) .* mean_θ
-        full_std_θ[start:start+n-1] = repeat(std_θ[1:1], n)
-        start += n
-    end
-
-    full_mean_θ, full_std_θ
-end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         phases::AbstractVector{<:PeakModCP})

@@ -43,6 +43,22 @@ t = zero(x)
 evaluate!(t, c, x)
 @test norm(t-y) < 0.2
 
+@time c = full_optimize!(cs[1], x, y, std_noise, mean_θ, std_θ;
+                objective = "LS", method = LM, maxiter = 128,
+                regularization = true, verbose = false)
+
+t = zero(x)
+evaluate!(t, c, x)
+@test norm(t-y) < 0.2
+
+@time c = full_optimize!(cs[1:1], x, y, std_noise, mean_θ, std_θ;
+                objective = "LS", method = LM, maxiter = 128,
+                regularization = true, verbose = false)
+
+t = zero(x)
+evaluate!(t, c, x)
+@test norm(t-y) < 0.2
+
 evaluate_residual!(c, x, t)
 @test norm(t) < 10^-10
 # plot(x, y)

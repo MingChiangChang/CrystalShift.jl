@@ -1,7 +1,7 @@
 function fit_phases(phases::AbstractVector{<:CrystalPhase},
                    x::AbstractVector, y::AbstractVector,
-                   std_noise::Real, mean_θ::AbstractVector = [1. ,.2],
-                   std_θ::AbstractVector = [1., 1.];
+                   std_noise::Real, mean_θ::AbstractVector = [1. , 1.,.2],
+                   std_θ::AbstractVector = [1., 1., 1.];
                    maxiter::Int = 32, regularization::Bool = true)
 	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
     @threads for i in eachindex(phases)
@@ -317,26 +317,6 @@ function optimize!(phase::AbstractPhase,
                method=method, objective= objective, maxiter=maxiter, regularization=regularization,
 			   verbose=verbose, tol=tol)
 end
-
-function length_check(phases::AbstractVector, mean_θ::AbstractVector, std_θ::AbstractVector)
-    (sum([phase.cl.free_param + 2 for phase in phases]) == length(mean_θ) == length(std_θ) )
-end
-
-function initialize_activation!(θ::AbstractVector, phases::AbstractVector,
-	                 x::AbstractVector, y::AbstractVector, min_activation::Real = 1e-4)
-	# Use inner product to set initial activation
-	new_θ = copy(θ) # make a copy
-	start = 1
-	for phase in phases
-        param_num = get_param_nums(phase)
-		p = evaluate(phase, θ, x)
-		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = dot(p, y) / sum(abs2, p)
-        start += param_num
-	end
-	return new_θ
-end
-
-
 
 ############################# Objective Helper ############################
 function _prior(p::AbstractVector, log_θ::AbstractVector,

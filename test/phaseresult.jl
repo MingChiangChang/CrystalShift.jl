@@ -28,6 +28,7 @@ x = collect(8:.1:60)
 a = PhaseResult([cs[1]], cs[1].name, 0.1, [1.,2.,3.], true)
 b = PhaseResult([cs[2]], cs[2].name, 0.1, [1.,2.,3.], false)
 c = PhaseResult([cs[3]], cs[3].name, 0.1, [1.,2.,3.], false)
+d = PhaseResult(cs[4], cs[1].name, [0.1, 0.2, 0.3], [1.,2.,3.], true)
 
 sp = StripeResult([a,b,c], 0.5, 10, 10, 800, 800)
 @test get_center(sp) == a

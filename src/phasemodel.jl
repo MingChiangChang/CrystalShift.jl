@@ -1,6 +1,7 @@
 const Background = Union{BackgroundModel, Nothing}
+const OptionalPhases = Union{AbstractVector{<:AbstractPhase}, Nothing}
 
-struct PhaseModel{A<:AbstractVector{<:AbstractPhase}, B<:Background} 
+struct PhaseModel{A<:OptionalPhases, B<:Background} 
     CPs::A
     background::B
 end
@@ -17,6 +18,10 @@ end
 
 function PhaseModel(CPs::AbstractVector{<:AbstractPhase})
     PhaseModel(CPs, nothing)
+end
+
+function PhaseModel(BG::Background)
+    PhaseModel(nothing, BG)
 end
 
 # function PeakModCP(pm::PhaseModel)

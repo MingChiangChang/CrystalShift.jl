@@ -7,7 +7,7 @@ struct PhaseResult{T, V<:AbstractVector{T}, K, M}
     isCenter::Bool
 end
 
-function PhaseResult(cl::Crystal, name::AbstractString,
+function PhaseResult(cl::CrystalPhase, name::AbstractString,
                      H::AbstractVector, y::AbstractVector, isCenter::Bool)
     PhaseResult([cl], name, H, y, isCenter)
 end
