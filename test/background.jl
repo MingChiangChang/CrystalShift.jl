@@ -52,6 +52,7 @@ end
 
 data, params = synthesize_data(cs[1], x)
 
+# TODO: Test pure background fit
 noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
 noisy_data = noise .+ data

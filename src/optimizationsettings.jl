@@ -31,6 +31,11 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
     return full_mean_θ, full_std_θ
 end
 
+function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
+                        phases::Nothing)
+    return [], []
+end
+
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         phases::AbstractVector{<:PeakModCP})
@@ -95,6 +100,11 @@ struct Priors{T}
 
     mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
     new{V}(std_noise, mean_θ, std_θ)
+    end
+
+    function Priors{V}(phases::Nothing, std_noise::Real,
+        mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}) where V<:Real
+        new{V}(std_noise, [], [])
     end
 end
 

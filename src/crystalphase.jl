@@ -85,6 +85,8 @@ function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:AbstractPhas
     θ[start:end], new_CPs
 end
 
+reconstruct_CPs!(θ::AbstractVector, CPs::Nothing) = θ, nothing
+
 function get_intrinsic_crystal_type(cl::Type)
     if cl <: Cubic
         return Cubic
