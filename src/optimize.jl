@@ -99,8 +99,9 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
     # TODO: Don't take log of profile parameters
-	θ[1:get_param_nums(pm.CPs)]= log.(θ[1:get_param_nums(pm.CPs)]) # tramsform to log space for better conditioning
+	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
+	println(log_θ)
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
 	# TODO use Match.jl, or just use multiple dispatch on method?
@@ -114,7 +115,7 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
 	end
 
-	log_θ[1:get_param_nums(pm.CPs)]= exp.(log_θ[1:get_param_nums(pm.CPs)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 	return θ
 end
@@ -128,7 +129,6 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = dot(p, y) / sum(abs2, p)
         start += param_num
 	end
-
 	return new_θ
 end
 
@@ -168,16 +168,26 @@ function get_lm_objective_func(pm::PhaseModel,
 	end
 
 	# Regularized cost function
-	function f(rp::AbstractVector, log_θ::AbstractVector)\
+	function f(rp::AbstractVector, log_θ::AbstractVector)
+		# println(any(isnan, log_θ))
+		if (any(isinf, log_θ) || any(isnan, log_θ))
+			println("returning inf")
+			return Inf
+		end
 		bg_param_num = get_param_nums(pm.background)
-		θ_cp = log_θ[1:end - bg_param_num ]
+		w_param_num = get_param_nums(pm.wildcard)
+		θ_cp = log_θ[1:end - w_param_num-bg_param_num]
+		θ_w  = log_θ[end - w_param_num-bg_param_num+1 : end-bg_param_num]
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		r = @view rp[1:length(y)] # residual term
 		residual!(r, log_θ)
 		p = @view rp[length(y)+1:length(y)+get_param_nums(pm.CPs)] # prior term
 		prior!(p, θ_cp)
-		bg_p = @view rp[length(y)+get_param_nums(pm.CPs)+1:end]
+		wp = @view rp[length(y)+get_param_nums(pm.CPs)+1:length(y)+get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]
+		lm_prior!(wp, pm.wildcard, θ_w)
+		bg_p = @view rp[length(y)+get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)+1:end]
 		lm_prior!(bg_p, pm.background, θ_bg)
+		# println(isnan.(rp))
 		return rp
 	end
 
@@ -331,13 +341,13 @@ function _residual!(pm::PhaseModel,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf 
 	@. r = y
 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
-	log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	return r
 end
 

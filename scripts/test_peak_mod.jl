@@ -8,6 +8,7 @@ using PhaseMapping: load
 using Plots
 using LinearAlgebra
 using BenchmarkTools
+using CovarianceFunctions: EQ
 
 using Base.Threads
 
@@ -53,10 +54,11 @@ y /= maximum(y)
 
 # for i in eachindex(cs)
 # c = optimize()
-@time c = full_optimize!(PhaseModel(cs[6]), x, y, std_noise, mean_θ, std_θ;
+bg = BackgroundModel(x, EQ(), 5, rank_tol=1e-2)
+@time c = full_optimize!(PhaseModel(cs[17], bg), x, y, std_noise, mean_θ, std_θ;
                 objective = objective, method = method, maxiter = 128,
-                regularization = true, verbose = false)
-# plot(x, y)
+                regularization = true, verbose = true, tol=1E-5)
+plot(x, y)
 plt = plot(x, y)
 plot!(x, evaluate!(zero(x), c, x))
 display(plt)

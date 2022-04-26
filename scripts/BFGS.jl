@@ -61,12 +61,12 @@ PM = PhaseModel(cs[1:1])
 noisy_data = convert(Vector{Real}, noisy_data)
 
 
-@time c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
+@benchmark c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
             method=Newton,
             objective = "KL", maxiter = maxiter,
-            regularization = true, verbose = true)
+            regularization = true, verbose = false)
 
-y = zero(x)
-plt = plot(x, noisy_data)
-plot!(x, evaluate!(y, c, x))
-display(plt)
+# y = zero(x)
+# plt = plot(x, noisy_data)
+# plot!(x, evaluate!(y, c, x))
+# display(plt)

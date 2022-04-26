@@ -32,10 +32,9 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
-                        phases::Nothing)
+                       phases::Nothing)
     return [], []
 end
-
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         phases::AbstractVector{<:PeakModCP})

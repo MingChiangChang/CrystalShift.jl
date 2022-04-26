@@ -75,18 +75,6 @@ function get_intrinsic_profile_type(profile_type::Type)
     end
 end
 
-function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:AbstractPhase})
-    start = 1
-    new_CPs = Vector{CrystalPhase}(undef, length(CPs))
-    for i in eachindex(CPs)
-		new_CPs[i] = CrystalPhase(CPs[i], θ[start:start + get_param_nums(CPs[i])-1])
-		start += get_param_nums(CPs[i])
-	end
-    θ[start:end], new_CPs
-end
-
-reconstruct_CPs!(θ::AbstractVector, CPs::Nothing) = θ, nothing
-
 function get_intrinsic_crystal_type(cl::Type)
     if cl <: Cubic
         return Cubic
@@ -292,7 +280,7 @@ end
 function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
              θ::AbstractVector, x::AbstractVector, r::AbstractVector)
     s = 1
-    for i in eachindex(CPs)
+    @inbounds @simd for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s : s+num_of_param-1]
         evaluate_residual!(CPs[i], θ_temp, x, r)
