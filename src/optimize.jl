@@ -101,7 +101,6 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
     # TODO: Don't take log of profile parameters
 	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
-	println(log_θ)
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
 	# TODO use Match.jl, or just use multiple dispatch on method?
@@ -169,9 +168,7 @@ function get_lm_objective_func(pm::PhaseModel,
 
 	# Regularized cost function
 	function f(rp::AbstractVector, log_θ::AbstractVector)
-		# println(any(isnan, log_θ))
 		if (any(isinf, log_θ) || any(isnan, log_θ))
-			println("returning inf")
 			return Inf
 		end
 		bg_param_num = get_param_nums(pm.background)
@@ -187,7 +184,6 @@ function get_lm_objective_func(pm::PhaseModel,
 		lm_prior!(wp, pm.wildcard, θ_w)
 		bg_p = @view rp[length(y)+get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)+1:end]
 		lm_prior!(bg_p, pm.background, θ_bg)
-		# println(isnan.(rp))
 		return rp
 	end
 

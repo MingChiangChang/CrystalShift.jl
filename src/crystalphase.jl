@@ -216,7 +216,6 @@ function evaluate!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase},
     for i in eachindex(CPs)
         num_of_param = get_param_nums(CPs[i])
         θ_temp = @view θ[s : s+num_of_param-1]
-        println("$(s) $(s+num_of_param-1)")
         evaluate!(y, CPs[i], θ_temp, x)
         s += num_of_param
     end
