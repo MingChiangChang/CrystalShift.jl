@@ -1,4 +1,4 @@
-module Testphasemodel
+# module Testphasemodel
 using Test
 using CrystalShift
 using CrystalShift: evaluate!, get_param_nums, get_eight_params, get_free_lattice_params
@@ -53,4 +53,4 @@ end
 @test get_param_nums(pm) == get_param_nums(cs[1]) + get_param_nums(bg)
 @test get_phase_ids(pm) == [0]
 @test get_phase_ids(pm2) == [0,1]
-end
+# end
