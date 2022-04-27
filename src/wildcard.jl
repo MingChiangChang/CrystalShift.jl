@@ -1,8 +1,8 @@
 struct Wildcard{K, VK<:AbstractVector{K}, PR, T} <: AbstractPhase
     peak_locs::VK
     activations::VK
-    name::String
     σ::VK
+    name::String
     profile::PR
 
     mean_θ::T
@@ -10,15 +10,15 @@ struct Wildcard{K, VK<:AbstractVector{K}, PR, T} <: AbstractPhase
 end
 
 function Wildcard(peak_locs::AbstractVector, activations::AbstractVector,
-                  name::String, σ::AbstractVector,
+                  σ::AbstractVector, name::String,
                   profile::PeakProfile, std_θ::AbstractVector)
     mean_θ = log.([peak_locs..., activations..., σ...])
-    Wildcard(peak_locs, activations, name, σ, profile, mean_θ, std_θ)
+    Wildcard(peak_locs, activations, σ, name, profile, mean_θ, std_θ)
 end
 
 function Wildcard(W::Wildcard, θ::AbstractVector)
     l = length(W.peak_locs)
-    Wildcard(θ[1:l], θ[l+1:2*l], W.name, θ[2*l+1:3*l], W.profile, W.mean_θ, W.std_θ)
+    Wildcard(θ[1:l], θ[l+1:2*l], θ[2*l+1:3*l], W.name, W.profile, W.mean_θ, W.std_θ)
 end
 
 get_param_nums(W::Wildcard) = 3*length(W.peak_locs)
