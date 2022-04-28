@@ -57,3 +57,9 @@ function lm_prior!(p::AbstractVector, W::AbstractVector{<:Wildcard},
     end
     p
 end
+
+function _prior(W::AbstractVector{<:Wildcard}, θ::AbstractVector)
+    p = zero(θ)
+    lm_prior!(p, W, θ)
+    sum(abs2, p)
+end

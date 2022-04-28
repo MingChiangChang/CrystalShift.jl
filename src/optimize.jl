@@ -16,6 +16,24 @@ function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
    argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
+function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::AbstractVector, 
+					std_noise::Real;
+					method::OptimizationMethods, 
+					objective::String = "LS",
+					maxiter::Int = 32,
+					regularization::Bool = true,
+					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
+	
+    pm = PhaseModel(W, BG)
+	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.], 
+											maxiter, regularization, 
+											method, objective, verbose, tol)
+
+	y ./= maximum(y) * 2
+	opt_pm = optimize!(pm, x, y, opt_stn)
+	return opt_pm
+end
+
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 	std_θ::AbstractVector = [1., Inf, 5.];
@@ -39,7 +57,7 @@ end
 
 function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector,
 	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-	std_θ::AbstractVector = [1., Inf, 5.];
+	std_θ::AbstractVector = [1., 1., 5.];
 	method::OptimizationMethods, objective::String = "LS",
 	maxiter::Int = 32,
 	regularization::Bool = true,
@@ -53,7 +71,7 @@ end
 
 function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-	std_θ::AbstractVector = [1., Inf, 5.];
+	std_θ::AbstractVector = [1., 1., 5.];
 	method::OptimizationMethods, objective::String = "LS",
 	maxiter::Int = 32,
 	regularization::Bool = true,
@@ -82,15 +100,15 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 							maxiter, regularization, 
 							method, objective, verbose, tol)
 
-	θ = optimize!(pm, x, y, opt_stn)
-
-	pm = reconstruct!(pm, θ)
-	return pm
+	optimize!(pm, x, y, opt_stn)
 end
 
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 	θ = get_free_params(pm)
-	optimize!(θ, pm, x, y, opt_stn)
+	θ = optimize!(θ, pm, x, y, opt_stn)
+
+	pm = reconstruct!(pm, θ)
+	return pm
 end
 
 function optimize!(θ::AbstractVector, pm::PhaseModel,
@@ -238,13 +256,16 @@ function get_newton_objective_func(pm::PhaseModel,
 
 	function prior(log_θ::AbstractVector)
 		bg_param_num = get_param_nums(pm.background)
-		θ_cp = log_θ[1:end - bg_param_num ]
+		w_param_num = get_param_nums(pm.wildcard)
+		θ_cp = log_θ[1:end - w_param_num-bg_param_num]
+		θ_w  = log_θ[end - w_param_num-bg_param_num+1 : end-bg_param_num]
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		p = zero(eltype(log_θ))
 		@inbounds @simd for i in eachindex(θ_cp)
 			p += ((θ_cp[i] - mean_log_θ[i]) / (sqrt(2)*pr.std_θ[i]))^2
 		end
 		p += _prior(pm.background, θ_bg)
+		p += _prior(pm.wildcard, θ_w)
 		return p
 	end
 
@@ -253,7 +274,7 @@ function get_newton_objective_func(pm::PhaseModel,
 	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
 	
-	function kl_objective(log_θ::AbstractVector)
+	function kl_objective(log_θ::AbstractVector) # TODO: Fix this for wildcard 
 		log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
 		if (any(isinf, log_θ) || any(isnan, log_θ))
 			log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
@@ -276,10 +297,14 @@ function get_newton_objective_func(pm::PhaseModel,
 
 	function ls_prior(log_θ::AbstractVector)
 		bg_param_num = get_param_nums(pm.background)
-		θ_cp = log_θ[1:end - bg_param_num ]
+		w_param_num = get_param_nums(pm.wildcard)
+		θ_cp = log_θ[1:end - w_param_num-bg_param_num]
+		θ_w  = log_θ[end - w_param_num-bg_param_num+1 : end-bg_param_num]
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		p = zero(θ_cp)
-		return (sum(abs2, _prior(p, θ_cp, pr.mean_θ, pr.std_θ))) + _prior(pm.background, θ_bg)
+		return (sum(abs2, _prior(p, θ_cp, pr.mean_θ, pr.std_θ))
+		        + _prior(pm.background, θ_bg)
+				+ _prior(pm.wildcard, θ_w) )
 	end
 
 	function ls_objective(log_θ::AbstractVector)

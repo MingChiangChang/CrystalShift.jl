@@ -1,6 +1,6 @@
 module TestWildcard
 using CrystalShift
-using CrystalShift: Wildcard, Lorentz, evaluate, optimize!
+using CrystalShift: Wildcard, Lorentz, evaluate, optimize!, fit_amorphous
 using CovarianceFunctions: EQ
 
 using NPZ 
@@ -22,8 +22,10 @@ bg = BackgroundModel(q, EQ(), 20, rank_tol=1e-3)
 
 pm = PhaseModel(w, bg)
 
-new_pm = optimize!(pm, q, y, 1e-2, [1.,1., 1.], [1., 1., 1.], method=LM, objective="LS",
-                         maxiter=512, regularization=true, verbose=false)
+# new_pm = optimize!(pm, q, y, 1e-2, [1.,1., 1.], [1., 1., 1.], method=bfgs, objective="LS",
+#                          maxiter=512, regularization=true, verbose=false)
+new_pm = fit_amorphous(w, bg, q, y, 1e-2, method=bfgs, objective="LS",
+                maxiter=512, regularization=true, verbose=false)
 t = zero(q)
 # plot!(q, evaluate!(t, new_pm, q))
 # plot!(q, evaluate!(zero(q), new_pm.wildcard, q))
