@@ -34,6 +34,7 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 	return opt_pm
 end
 
+# TODO: allow change in some parameters
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 	std_θ::AbstractVector = [1., Inf, 5.];
@@ -42,16 +43,22 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	regularization::Bool = true,
 	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
-	c = optimize!(pm, x, y, std_noise, mean_θ, std_θ;
-	      method=method, objective=objective, maxiter=maxiter,
-		  regularization=regularization, verbose=verbose, tol=tol)
+	c = pm
+	for i in 1:8
+		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
+			method=method, objective=objective, maxiter=maxiter,
+			regularization=regularization, verbose=verbose, tol=tol)
 
-    IMs = get_PeakModCP(c, x, 32)
+		IMs = get_PeakModCP(c, x, 128)
 
-	Mod_IMs = optimize!(IMs, x, y, std_noise, [1.], [1.];
-				method=bfgs, objective=objective, maxiter=64,
-				regularization=regularization, verbose=verbose, tol=tol)
-    change_peak_int!.(c.CPs, Mod_IMs)
+		Mod_IMs = optimize!(IMs, x, y, std_noise, [1.], [.5];
+					method=bfgs, objective=objective, maxiter=32,
+					regularization=regularization, verbose=verbose, tol=tol)
+		change_peak_int!.(c.CPs, Mod_IMs)
+		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
+			method=method, objective=objective, maxiter=maxiter,
+			regularization=regularization, verbose=verbose, tol=tol)
+	end
 	return c
 end
 
@@ -194,7 +201,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	H = ForwardDiff.hessian(res, log_θ)
 	val = res(log_θ)
-	uncer = diag(val / (length(x) - length(log_θ)) * inverse(H))
+	uncer = sqrt.(diag(val / (length(x) - length(log_θ)) * inverse(H)))
 
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
