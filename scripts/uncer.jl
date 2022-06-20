@@ -30,7 +30,7 @@ cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
 
 y = zero(x)
-noise = 0.1rand(length(x))
+noise = 0.01rand(length(x))
 y += noise
 evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
 pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[1]), x, y, std_noise, mean_θ, std_θ;

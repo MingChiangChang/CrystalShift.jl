@@ -38,3 +38,7 @@ function normalize_peaks!(peaks::AbstractVector{Peak})
 end
 
 twoθ2q(twoθ::Float64, λ::Float64=1.5406) = 4*pi*sin(deg2rad(twoθ/2)) / λ
+
+function q2twoθ(q::Real, λ::Float64=1.5406)
+    2*asin(q*λ / (4*pi)) * 180/pi
+end

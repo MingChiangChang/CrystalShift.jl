@@ -7,6 +7,7 @@ home = Path.home()
 
 path = home / 'Desktop' / 'AlLiFe_data' / 'sticks' / 'AlLiFe_oxides'
 path = home / 'Downloads' / 'AlLiFeO' 
+path = home / 'Downloads' / 'CrFeV_toCornell' / 'icdd' 
 
 xmls = list(path.glob("*.xml"))
 
@@ -16,7 +17,7 @@ def check_none(*arg):
             return True
     return False
 
-with open(f'{str(path)}/sticks.csv', 'w') as f:
+with open(f'{str(path)}/_sticks.csv', 'w') as f:
 
     for idx, xml in enumerate(xmls):
         print(xml)
