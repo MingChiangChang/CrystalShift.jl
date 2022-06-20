@@ -8,6 +8,8 @@ using OptimizationAlgorithms: BFGS, LBFGS
 using LinearAlgebra
 using OptimizationAlgorithms
 using SpecialFunctions
+using ForwardDiff
+using LazyInverses
 
 export CrystalPhase, AbstractPhase, PeakModCP, Wildcard
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic

@@ -67,7 +67,10 @@ def _get_key(cif_dict):
     return list(cif_dict.keys())[0]
 
 def _get_phase_name(info_dict):
-    phase_name = remove_blank(info_dict["_chemical_formula_structural"])
+    if "_chemical_formula_structural" in info_dict.keys():
+        phase_name = remove_blank(info_dict["_chemical_formula_structural"])
+    else:
+        phase_name = remove_blank(info_dict["_chemical_formula_moiety"])
     try:
         space_group = remove_blank(info_dict["_space_group_name_H-M_alt"])
     except KeyError:
@@ -127,11 +130,14 @@ if __name__ == "__main__":
     home = Path.home()
     #path = home / 'Desktop' / 'github' /\
     #        'Crystallography_based_shifting' / 'data'
-    path = home / 'Downloads' / 'cif'
+    path = home / 'Downloads' / 'CIF-3'
+    path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
+    path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
+    path = home / "Downloads" / "tio2"
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 
     # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
     out_path = path #/ 'Ta-Sn-O'
     print(cif_paths)
-    cif_to_input(cif_paths, out_path, (0, 66))
+    cif_to_input(cif_paths, out_path, (10, 50))

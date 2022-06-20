@@ -23,7 +23,7 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
-	
+
     pm = PhaseModel(W, BG)
 	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.], 
 											maxiter, regularization, 
@@ -41,7 +41,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	maxiter::Int = 32,
 	regularization::Bool = true,
 	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
-    
+
 	c = optimize!(pm, x, y, std_noise, mean_θ, std_θ;
 	      method=method, objective=objective, maxiter=maxiter,
 		  regularization=regularization, verbose=verbose, tol=tol)
@@ -49,7 +49,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
     IMs = get_PeakModCP(c, x, 32)
 
 	Mod_IMs = optimize!(IMs, x, y, std_noise, [1.], [1.];
-				method=bfgs, objective=objective, maxiter=16,
+				method=bfgs, objective=objective, maxiter=64,
 				regularization=regularization, verbose=verbose, tol=tol)
     change_peak_int!.(c.CPs, Mod_IMs)
 	return c
@@ -86,7 +86,7 @@ end
     This is the function that each of the node would call on.
     Try to fit a PhaseModel, which comprise a vector of CrystalPhase 
 	and an optional BackgroundModel to the given spectrum y.
-	
+
 	Return: a PhaseModel object
 """
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
@@ -97,7 +97,7 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 					regularization::Bool = true,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ, 
-							maxiter, regularization, 
+							maxiter, regularization,
 							method, objective, verbose, tol)
 
 	optimize!(pm, x, y, opt_stn)
@@ -117,7 +117,9 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
     # TODO: Don't take log of profile parameters
-	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
+	# @views test
+	# or . test
+	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
 
@@ -136,6 +138,69 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 	θ = log_θ
 	return θ
 end
+
+function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+		std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+		std_θ::AbstractVector = [1., Inf, 5.];
+		method::OptimizationMethods, objective::String = "LS",
+		maxiter::Int = 32,
+		regularization::Bool = true,
+		verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
+    objective == "LS" || error("Invalid objective!")
+	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ, 
+				maxiter, regularization,
+				method, objective, verbose, tol)
+
+	optimize_with_uncertainty!(pm, x, y, opt_stn)
+end
+
+function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+	θ = get_free_params(pm)
+	θ, uncer = optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
+
+	pm = reconstruct!(pm, θ)
+	return pm, uncer
+end
+
+function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
+									x::AbstractVector, y::AbstractVector,
+									opt_stn::OptimizationSettings)
+	if eltype(pm.CPs) <: CrystalPhase
+		θ = initialize_activation!(θ, pm, x, y)
+	end
+	# TODO: Don't take log of profile parameters
+	# @views test
+	# or . test
+	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
+	log_θ = θ
+	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+
+	# TODO use Match.jl, or just use multiple dispatch on method?
+	if opt_stn.method == LM
+		log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
+	elseif opt_stn.method == Newton
+		log_θ = newton!(log_θ, pm, x, y, opt_stn)
+	elseif opt_stn.method == bfgs
+		log_θ = BFGS!(log_θ, pm, x, y, opt_stn)
+	elseif opt_stn.method == l_bfgs
+		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
+	end
+
+	f = get_lm_objective_func(pm, x, y, opt_stn)
+	r = zeros(Real, length(y) + length(log_θ))
+	function res(log_θ)
+		sum(abs2, f(r, log_θ))
+	end
+
+	H = ForwardDiff.hessian(res, log_θ)
+	val = res(log_θ)
+	uncer = diag(val / (length(x) - length(log_θ)) * inverse(H))
+
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	θ = log_θ
+	return θ, uncer
+end
+
 
 function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector)
     new_θ = copy(θ) # make a copy
@@ -169,11 +234,11 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 	λ = 1e-6
 	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
 	return log_θ
-end 
+end
 
 function get_lm_objective_func(pm::PhaseModel,
 							   x::AbstractVector, y::AbstractVector,
-							   opt_stn::OptimizationSettings) 
+							   opt_stn::OptimizationSettings)
 	pr = opt_stn.priors
 
 	function residual!(r::AbstractVector, log_θ::AbstractVector)
@@ -206,7 +271,7 @@ function get_lm_objective_func(pm::PhaseModel,
 	end
 
 	opt_stn.regularization ? (return f) : (return residual!)
-end 
+end
 
 # TODO: Work with newton
 function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, 
@@ -273,16 +338,16 @@ function get_newton_objective_func(pm::PhaseModel,
 	# NOTE on order of inputs in KL divergence:
 	# kl(y, r_θ) is more inclusive, i.e. it tries to fit all peaks, even if it can't
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
-	
-	function kl_objective(log_θ::AbstractVector) # TODO: Fix this for wildcard 
-		log_θ[1:get_param_nums(pm.CPs)] .= exp.(log_θ[1:get_param_nums(pm.CPs)])
+
+	function kl_objective(log_θ::AbstractVector) # TODO: Fix this for wildcard
+		log_θ[1:get_param_nums(pm.CPs)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)])
 		if (any(isinf, log_θ) || any(isnan, log_θ))
 			log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
 			return Inf
 		end
 		r_θ = evaluate(pm, log_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
-		log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
+		log_θ[1:get_param_nums(pm.CPs)] .= @views log.(log_θ[1:get_param_nums(pm.CPs)])
 		p_θ = prior(log_θ)
 		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
 		kl(r_θ, y) + λ * p_θ
@@ -353,6 +418,7 @@ end
 function _prior(p::AbstractVector, log_θ::AbstractVector,
 				mean_θ::AbstractVector, std_θ::AbstractVector)
 	mean_log_θ = log.(mean_θ)
+	# eltype(θ) <: AbstractFloat ?  mean_log_θ : mean_log_θ_dual
 	@. p = (log_θ - mean_log_θ) / (sqrt(2)*std_θ)
 	return p # IDEA: Is this too small??
 end
@@ -362,13 +428,13 @@ function _residual!(pm::PhaseModel,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
-	(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf 
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf
 	@. r = y
 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .=  @views log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	return r
 end
 

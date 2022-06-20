@@ -1,7 +1,7 @@
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, Lorentz
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, PseudoVoigt
-using CrystalShift: new_evaluate!, evaluate!,get_param_nums
+using CrystalShift: evaluate!,get_param_nums, FixedPseudoVoigt
 
 using LinearAlgebra
 using Random: rand
@@ -40,7 +40,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (PseudoVoigt{Float64}(0.5),))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
 y = zero(x)
 
@@ -50,7 +50,7 @@ test, params = synthesize_data(cs[1], x)
 #                   method =LM,
 #                   maxiter = maxiter, regularization = true, verbose=false)
 
-@benchmark evaluate!(zero(x), cs, x)
+@benchmark evaluate!(zero(x), cs[1], x)
 # plt = plot(x, test)
 # plot!(x, evaluate!(y, c, x))
 # display(plt)
