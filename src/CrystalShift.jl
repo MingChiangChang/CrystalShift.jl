@@ -15,7 +15,7 @@ export CrystalPhase, AbstractPhase, PeakModCP, Wildcard
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
 export OptimizationMethods, Peak, PhaseModel, BackgroundModel
-export evaluate!, evaluate_residual!
+export evaluate!, evaluate_residual!, optimize!, full_optimize!
 
 
 include("util.jl")
