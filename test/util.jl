@@ -12,7 +12,7 @@ y = mapreduce(permutedims, vcat, y)
 
 @testset "util" begin
     @test parse_cond("chess_x_y_700_1000", Float64) == [700., 1000.]
-    @test get_weighted_center(y) == 500.
+    @test isapprox(get_weighted_center(y), 500, atol=2)
     @test kl(y, y) == 0.
     @test kl(1, 3) ≈ -1.0986122886681098
     @test poisson(1, 1) ≈ 0.36787944117144233
