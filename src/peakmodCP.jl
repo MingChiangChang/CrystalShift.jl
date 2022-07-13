@@ -51,7 +51,7 @@ function evaluate!(y::AbstractVector, IM::PeakModCP, x::AbstractVector)
 end
 
 function evaluate!(y::AbstractVector, IM::PeakModCP, θ::AbstractVector,
-                  x::AbstractVector) 
+                  x::AbstractVector)
     @. IM.peak_int = θ
     @simd for i in eachindex(IM.peak_int)
         @. y += IM.basis[:,i] * IM.peak_int[i]

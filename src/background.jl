@@ -118,3 +118,26 @@ function lm_prior!(p::AbstractVector, B::BackgroundModel)
 end
 
 function lm_prior!(p::AbstractVector, B::Nothing, c::AbstractVector) end
+
+
+########## PeakModCP extension ##############
+function PeakModCP(b::BackgroundModel, x::AbstractVector, allowed_num::Int64)
+    if allowed_num < get_param_nums(b)
+        basis = b.U[1:allowed_num, :]
+        const_basis = b.U[allowed_num+1:end, :]
+        peak_int = ones(Float64, allowed_num)
+        return PeakModCP(basis, const_basis, peak_int)
+    else
+        basis = b.U
+        peak_int = ones(Float64, get_param_nums(b))
+        return PeakModCP(basis, zeros(Float64, size(x, 1)), peak_int)
+    end
+end
+
+function change_c!(b::BackgroundModel, cp::AbstractVector{PeakModCP})
+    length(cp) == 1 || error("length of cp must be 1")
+    b.c .*= cp[1].peak_int
+end
+
+function change_c!(b::Nothing, cp::PeakModCP) end
+function change_c!(b::Nothing, cp::AbstractVector) end

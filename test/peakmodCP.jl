@@ -1,9 +1,10 @@
 module TestPMCP
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate!
-using CrystalShift: newton!, evaluate_residual!
+using CrystalShift: newton!, evaluate_residual!, BackgroundModel
 using CrystalShift: PeakModCP, FixedPseudoVoigt, PhaseModel, full_optimize!
 using LinearAlgebra
+using CovarianceFunctions: EQ
 using Random: rand
 using Test
 # using Plots
@@ -37,23 +38,43 @@ evaluate!(y, pmcp, x)
 # for i in eachindex(cs)
 # c = optimize()
 @time c = full_optimize!(PhaseModel(cs[1:1]), x, y, std_noise, mean_θ, std_θ;
-                objective = "LS", method = LM, maxiter = 128,
-                regularization = true, verbose = false)
+                objective = "LS", method = LM,
+                regularization = true,
+                loop_num = 8,
+                peak_shift_iter = 32,
+                mod_peak_num = 32,
+                peak_mod_mean = [1.],
+                peak_mod_std = [.5],
+                peak_mod_iter = 32,
+                 verbose = false)
 t = zero(x)
 evaluate!(t, c, x)
 @test norm(t-y) < 0.2
 
 @time c = full_optimize!(cs[1], x, y, std_noise, mean_θ, std_θ;
-                objective = "LS", method = LM, maxiter = 128,
-                regularization = true, verbose = false)
+                objective = "LS", method = LM,
+                regularization = true,
+                loop_num = 8,
+                peak_shift_iter = 32,
+                mod_peak_num = 32,
+                peak_mod_mean = [1.],
+                peak_mod_std = [.5],
+                peak_mod_iter = 32, verbose = false)
 
 t = zero(x)
 evaluate!(t, c, x)
 @test norm(t-y) < 0.2
 
 @time c = full_optimize!(cs[1:1], x, y, std_noise, mean_θ, std_θ;
-                objective = "LS", method = LM, maxiter = 128,
-                regularization = true, verbose = false)
+                objective = "LS", method = LM,
+                regularization = true,
+                loop_num = 8,
+                peak_shift_iter = 32,
+                mod_peak_num = 32,
+                peak_mod_mean = [1.],
+                peak_mod_std = [.5],
+                peak_mod_iter = 32,
+                 verbose = false)
 
 t = zero(x)
 evaluate!(t, c, x)
@@ -63,6 +84,33 @@ evaluate_residual!(c, x, t)
 @test norm(t) < 10^-10
 # plot(x, y)
 # plt = plot(x, y)
+# plot!(x, evaluate!(zero(x), c, x))
+# display(plt)
+
+noise_intensity = 0.1
+noise = noise_intensity.*(1 .+ sin.(0.2x))
+noisy_data = noise .+ y
+bg = BackgroundModel(x, EQ(), 10, rank_tol=1e-3)
+
+@time c = full_optimize!(PhaseModel(cs[1:1], nothing, bg), x, noisy_data,
+                std_noise, mean_θ, std_θ;
+                objective = "LS", method = LM,
+                regularization = true,
+                loop_num = 8,
+                peak_shift_iter = 32,
+                mod_peak_num = 32,
+                peak_mod_mean = [1.],
+                peak_mod_std = [.5],
+                peak_mod_iter = 32,
+                verbose = false)
+
+t = zero(x)
+evaluate!(t, c, x)
+@test norm(t-noisy_data) < 0.2
+
+evaluate_residual!(c, x, t)
+@test norm(t) < 10^-10
+# plt = plot(x, noisy_data)
 # plot!(x, evaluate!(zero(x), c, x))
 # display(plt)
 # end

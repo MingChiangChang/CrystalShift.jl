@@ -147,6 +147,34 @@ function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector
     evaluate_residual!(PM.background, x, r)
 end
 
+############### PeakModCP extension #################
+# function PeakModCP(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
+#     peak_num = min(allowed_num, size(CP.peaks, 1))
+#     basis = zeros(Float64, size(x, 1), peak_num + get_param_nums(PM.background))
+#     evaluate!(basis, CP, CP.peaks[1:peak_num], x)
+#     basis[peak_num + 1:end, :] = PM.background.U
+
+#     const_basis = zeros(Float64, size(x, 1))
+#     for i in peak_num+1:size(CP.peaks, 1)
+#         evaluate!(const_basis, CP, CP.peaks[i], x)
+#     end
+#     peak_int = ones(Float64, peak_num + get_param_nums(PM.background))
+#     return PeakModCP(basis, const_basis, peak_int)
+# end
+
+# function get_PeakModCP(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
+#     if isnothing(PM.background)
+#         IMs = Vector{PeakModCP}(undef, length(PM.CPs))
+#         @. IMs = PeakModCP(PM.CPs, (x, ), (allowed_num, ))
+#     else
+#         IMs = Vector{PeakModCP}(undef, length(PM.CPs)+1)
+#         @. IMs[1:end-1] = PeakModCP(PM.CPs, (x, ), (allowed_num, ))
+#         IMs[end] = PeakModCP(PM.background, x, allowed_num)
+#     end
+#     evaluate!(IMs[1].const_basis, PM.wildcard, x)
+#     IMs
+# end
+
 function get_PeakModCP(PM::PhaseModel, x::AbstractVector, allowed_num::Int64)
     IMs = PeakModCP.(PM.CPs, (x, ), (allowed_num, ))
     evaluate!(IMs[1].const_basis, PM.background, x)
