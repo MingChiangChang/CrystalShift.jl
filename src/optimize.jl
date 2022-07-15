@@ -245,7 +245,10 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	H = ForwardDiff.hessian(res, phase_log_θ)
 	val = res(phase_log_θ)
-	display(val)
+	if opt_stn.verbose
+	    println("residual: $(val)")
+		display(H)
+	end
 	uncer = sqrt.(diag(val / (length(x) - length(phase_log_θ)) * inverse(H)))
 
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
