@@ -2,6 +2,7 @@ using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate!, Lorentz
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, optimize_with_uncertainty!
 
+using CovarianceFunctions: EQ
 using LinearAlgebra
 using Random: rand
 using Test
@@ -28,12 +29,13 @@ end
 
 cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
 x = collect(8:.1:60)
+bg = BackgroundModel(x, EQ(), 10., 100., rank_tol=1.)
 
 y = zero(x)
-noise = 0.01rand(length(x))
+noise = 0.1rand(length(x))
 y += noise
 evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
-pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[1]), x, y, std_noise, mean_θ, std_θ;
+pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[1:1], nothing, bg), x, y, std_noise, mean_θ, std_θ;
                             method = LM,
                             maxiter = maxiter,
                             regularization = true,

@@ -27,7 +27,6 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
         end
         start += get_param_nums(phase)
     end
-    
     return full_mean_θ, full_std_θ
 end
 
@@ -87,7 +86,7 @@ struct Priors{T}
                        mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}) where V<:Real
         length(mean_θ) == length(std_θ) == PRIOR_LENGTH || error("Prior must have length of $(PRIOR_LENGTH)")
         std_noise > 0 || error("std_noise must be larger than zero")
-        
+
         mean_θ, std_θ = extend_priors(mean_θ, std_θ, phases)
         new{V}(std_noise, mean_θ, std_θ)
     end

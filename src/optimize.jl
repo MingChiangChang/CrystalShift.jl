@@ -16,17 +16,17 @@ function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
    argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
-function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::AbstractVector, 
+function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::AbstractVector,
 					std_noise::Real;
-					method::OptimizationMethods, 
+					method::OptimizationMethods,
 					objective::String = "LS",
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
 
     pm = PhaseModel(W, BG)
-	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.], 
-											maxiter, regularization, 
+	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.],
+											maxiter, regularization,
 											method, objective, verbose, tol)
 
 	y ./= maximum(y) * 2
@@ -174,7 +174,7 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
 	end
 
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 	return θ
 end
@@ -187,7 +187,7 @@ function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::Abstra
 		regularization::Bool = true,
 		verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
     objective == "LS" || error("Invalid objective!")
-	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ, 
+	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ,
 				maxiter, regularization,
 				method, objective, verbose, tol)
 
@@ -226,15 +226,27 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
 	end
 
-	f = get_lm_objective_func(pm, x, y, opt_stn)
-	r = zeros(Real, length(y) + length(log_θ))
-	function res(log_θ)
-		sum(abs2, f(r, log_θ))
+	# Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
+	phase_params = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+	_, new_bg = reconstruct_BG!(exp.(log_θ[phase_params+1:end]), pm.background)
+	signal = y .- evaluate!(zero(y), new_bg, x)
+	phases = PhaseModel(pm.CPs, pm.wildcard, nothing)
+	phase_log_θ = log_θ[1:phase_params]
+
+	if opt_stn.method == LM
+		f = get_lm_objective_func(phases, x, signal, opt_stn)
+		r = zeros(Real, length(y) + phase_params)
+		function res(log_θ)
+			sum(abs2, f(r, log_θ))
+		end
+	else
+		res = get_newton_objective_func(pm, x, y, opt_stn)
 	end
 
-	H = ForwardDiff.hessian(res, log_θ)
-	val = res(log_θ)
-	uncer = sqrt.(diag(val / (length(x) - length(log_θ)) * inverse(H)))
+	H = ForwardDiff.hessian(res, phase_log_θ)
+	val = res(phase_log_θ)
+	display(val)
+	uncer = sqrt.(diag(val / (length(x) - length(phase_log_θ)) * inverse(H)))
 
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
@@ -336,7 +348,7 @@ function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Ab
 	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
-	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=verbose)
 	fixedpoint!(D, log_θ, S)
 	return log_θ
 end
@@ -345,10 +357,10 @@ function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Abs
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
-	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ) 
+	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ)
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
-	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=false)
+	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=verbose)
 	fixedpoint!(D, log_θ, S)
 	return log_θ
 end
@@ -382,7 +394,7 @@ function get_newton_objective_func(pm::PhaseModel,
 	function kl_objective(log_θ::AbstractVector) # TODO: Fix this for wildcard
 		log_θ[1:get_param_nums(pm.CPs)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)])
 		if (any(isinf, log_θ) || any(isnan, log_θ))
-			log_θ[1:get_param_nums(pm.CPs)] .= log.(log_θ[1:get_param_nums(pm.CPs)])
+			log_θ[1:get_param_nums(pm.CPs)] .= @views log.(log_θ[1:get_param_nums(pm.CPs)])
 			return Inf
 		end
 		r_θ = evaluate(pm, log_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
