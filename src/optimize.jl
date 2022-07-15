@@ -228,7 +228,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	# Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
 	phase_params = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
-	_, new_bg = reconstruct_BG!(exp.(log_θ[phase_params+1:end]), pm.background)
+	_, new_bg = reconstruct_BG!(log_θ[phase_params+1:end], pm.background)
 	signal = y .- evaluate!(zero(y), new_bg, x)
 	phases = PhaseModel(pm.CPs, pm.wildcard, nothing)
 	phase_log_θ = log_θ[1:phase_params]
