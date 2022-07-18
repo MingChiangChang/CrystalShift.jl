@@ -87,7 +87,7 @@ end
 
 function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
                                    x::AbstractVector, num_phase::Int,
-                                   method::OptimizationMethods, objective::String = "LS", 
+                                   method::OptimizationMethods, objective::String = "LS",
                                    verbose = false)
     phase = rand(1:size(cps, 1), num_phase)
     y, full_params = synthesize_multiphase_data(cps[phase], x)

@@ -1,4 +1,4 @@
-module TestBackground
+# module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
@@ -13,7 +13,7 @@ using Test
 
 verbose = false
 residual_tol = 0.1 # tolerance for residual norm after optimization
-maxiter = 1024 # appears to be required for phase combinations in particular
+maxiter = 2000 # appears to be required for phase combinations in particular
 
 # Global
 std_noise = 1e-3
@@ -21,7 +21,7 @@ mean_θ = [1., 1, .2]
 std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -56,7 +56,7 @@ data, params = synthesize_data(cs[1], x)
 noise_intensity = 0.1
 noise = noise_intensity.*(1 .+ sin.(0.2x))
 noisy_data = noise .+ data
-bg = BackgroundModel(x, EQ(), 20, rank_tol=1e-2)
+bg = BackgroundModel(x, EQ(), 10, rank_tol=1e-4)
 
 PM = PhaseModel(cs[1:1], nothing, bg)
 noisy_data = convert(Vector{Real}, noisy_data)
@@ -67,10 +67,10 @@ noisy_data = convert(Vector{Real}, noisy_data)
 
 y = zero(x)
 
-# using Plots
-# plt = plot(x, noisy_data, label="Ground truth")
-# plot!(x, evaluate!(y, c, x), label="Fitted graph")
-# display(plt)
+using Plots
+plt = plot(x, noisy_data, label="Ground truth")
+plot!(x, evaluate!(zero(x), c, x), label="Fitted graph")
+display(plt)
 @test norm(evaluate!(y, c, x) .- noisy_data) < 0.1
 
 evaluate(PM.background, x)
@@ -78,4 +78,4 @@ evaluate(PM.background, rand(get_param_nums(PM.background)), x)
 _prior(PM.background, rand(get_param_nums(PM.background)))
 lm_prior!(rand(get_param_nums(PM.background)), PM.background)
 
-end
+# end
