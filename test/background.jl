@@ -1,4 +1,4 @@
-# module TestBackground
+module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
@@ -21,7 +21,7 @@ mean_θ = [1., 1, .2]
 std_θ = [.02, 1., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -67,10 +67,10 @@ noisy_data = convert(Vector{Real}, noisy_data)
 
 y = zero(x)
 
-using Plots
-plt = plot(x, noisy_data, label="Ground truth")
-plot!(x, evaluate!(zero(x), c, x), label="Fitted graph")
-display(plt)
+# using Plots
+# plt = plot(x, noisy_data, label="Ground truth")
+# plot!(x, evaluate!(zero(x), c, x), label="Fitted graph")
+# display(plt)
 @test norm(evaluate!(y, c, x) .- noisy_data) < 0.1
 
 evaluate(PM.background, x)
@@ -78,4 +78,4 @@ evaluate(PM.background, rand(get_param_nums(PM.background)), x)
 _prior(PM.background, rand(get_param_nums(PM.background)))
 lm_prior!(rand(get_param_nums(PM.background)), PM.background)
 
-# end
+end
