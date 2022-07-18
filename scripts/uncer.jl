@@ -34,8 +34,10 @@ bg = BackgroundModel(x, EQ(), 10., 100., rank_tol=1.)
 y = zero(x)
 noise = 0.1rand(length(x))
 y += noise
-evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
-pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[1:1], nothing, bg), x, y, std_noise, mean_θ, std_θ;
+# evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
+evaluate!(y, cs[1], x)
+evaluate!(y, cs[2], x)
+pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[1:2], nothing, bg), x, y, std_noise, mean_θ, std_θ;
                             method = LM,
                             maxiter = maxiter,
                             regularization = true,
