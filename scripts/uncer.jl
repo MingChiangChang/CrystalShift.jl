@@ -13,7 +13,7 @@ residual_tol = 0.1 # tolerance for residual norm after optimization
 maxiter = 512 # appears to be required for phase combinations in particular
 
 # Global
-std_noise = 0.1
+std_noise = 1.
 mean_θ = [1., .5, .2]
 std_θ = [.05, 2., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization

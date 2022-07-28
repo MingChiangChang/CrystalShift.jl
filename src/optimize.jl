@@ -253,6 +253,13 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
+
+	uncer = get_free_lattice_params(pm.CPs, uncer)
+	for i in eachindex(uncer)
+		if uncer[i] == pi/2
+			uncer[i] = 0
+		end
+	end
 	return θ, uncer
 end
 

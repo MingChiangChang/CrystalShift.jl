@@ -143,6 +143,18 @@ function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
     end
     p
 end
+
+function get_free_lattice_params(CP::AbstractVector{<:AbstractPhase}, θ::AbstractVector)
+    start = 1
+    params = zeros(Float64, 6*length(CP))
+    for i in eachindex(CP)
+        free_param_nums = get_param_nums(CP[i])
+        params[(i-1)*6+1 : i*6] .= get_eight_params(CP[i], θ[start:start+free_param_nums-1])[1:6]
+        start += free_param_nums
+    end
+    params
+end
+
 get_free_lattice_params(CP::AbstractPhase) = get_free_lattice_params(CP.cl)
 get_free_lattice_params(CP::AbstractPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
 get_free_lattice_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
