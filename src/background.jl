@@ -2,7 +2,9 @@ using CovarianceFunctions
 using LinearAlgebra
 const DEFAULT_RANK_TOL = 1e-6 # IDEA: consider increase in tolerance
 
-struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:AbstractVector, LT, CT}
+abstract type AbstractBackground end
+
+struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:AbstractVector, LT, CT} <: AbstractBackground
     k::KT # kernel function
     K::AT # kernel matrix
     U::UT # low rank approximation
@@ -58,17 +60,17 @@ end
 #     mul!(y, A, c)
 # end
 
-function evaluate!(y::AbstractVector, B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
-    reconstruct_BG!(θ, B)
-    evaluate!(y, B, x)
+function evaluate!(y::AbstractVector, B::AbstractBackground, θ::AbstractVector, x::AbstractVector)
+    _, new_B = reconstruct_BG!(θ, B)
+    evaluate!(y, new_B, x)
 end
 
-function evaluate(B::BackgroundModel, x::AbstractVector)
+function evaluate(B::AbstractBackground, x::AbstractVector)
     y = zero(x)
     evaluate!(y, B, x)
 end
 
-function evaluate(B::BackgroundModel, θ::AbstractVector, x::AbstractVector)
+function evaluate(B::AbstractBackground, θ::AbstractVector, x::AbstractVector)
     y = zero(x)
     evaluate!(y, B, θ, x)
 end
@@ -81,7 +83,8 @@ end
 
 function evaluate_residual!(BG::BackgroundModel, θ::AbstractVector,
                             x::AbstractVector, r::AbstractVector)
-    evaluate_residual!(reconstruct_BG(BG, θ), x, r)
+    _, new_B = reconstruct_BG!(θ, BG)
+    evaluate_residual!(new_B, x, r)
 end
 
 function evaluate_residual!(B::BackgroundModel, x::AbstractVector, r::AbstractVector)

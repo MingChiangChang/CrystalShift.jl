@@ -1,4 +1,4 @@
-const Background = Union{BackgroundModel, Nothing}
+const Background = Union{AbstractBackground, Nothing}
 const OptionalPhases = Union{AbstractVector{<:AbstractPhase}, Nothing}
 
 struct PhaseModel{A<:OptionalPhases, W<:OptionalPhases, B<:Background} 
