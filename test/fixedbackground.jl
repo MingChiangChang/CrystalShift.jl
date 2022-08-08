@@ -4,7 +4,7 @@ using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
 using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt
 using CrystalShift: _prior, get_param_nums, lm_prior!
-using CrystalShift: FixedBackground
+using CrystalShift: FixedBackground, optimize_with_uncertainty!
 
 using LinearAlgebra
 using Random: rand
@@ -70,7 +70,7 @@ basis = zero(x)
 basis .-= minimum(basis)
 basis ./= maximum(basis) * 2
 
-FB = FixedBackground(basis, 1., 0., 0.)
+FB = FixedBackground(basis, 1., 10.)
 pm = PhaseModel([cs[1]], nothing, FB)
 c = optimize!(pm, x, noisy_data, std_noise, mean_θ, std_θ,
             objective = "LS", method = LM, maxiter = maxiter,
