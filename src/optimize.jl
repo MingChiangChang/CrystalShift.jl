@@ -254,12 +254,10 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 
-	uncer = get_eight_params(pm.CPs, uncer)
-	for i in eachindex(uncer)
-		if uncer[i] == pi/2
-			uncer[i] = 0
-		end
-	end
+	# setting fill_angle to zero since structurally determined angles have
+	# no uncertainty 
+	fill_angle = 0
+	uncer = get_eight_params(pm.CPs, uncer, fill_angle)
 	return θ, uncer
 end
 
@@ -276,7 +274,7 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 	return new_θ
 end
 
-function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, 
+function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	                 opt_stn::OptimizationSettings)
 	opt_stn.objective == "LS" || error("LM only work with LS for now")
 

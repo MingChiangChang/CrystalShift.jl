@@ -123,17 +123,58 @@ function get_free_params(CPs::AbstractVector{<:AbstractPhase})
     p
 end
 
+function get_eight_param end
+"""Returns a vector of the eight parameters determining a phase structure,
+i.e. three sidelengths and three angles for the unit cell, the activation
+coefficient, as well as the peak width of the empirical spectrum.
+
+Args:
+    - an AbstractPhase object.
+    - (optional) a parameter vector θ holding a subset of phase parameters that
+        are required to specify a phase, i.e. only one side length for a Cubic.
+    - (optional) a real-valued fill angle, fills the unspecified angles with π/2
+        by default. For uncertainty computations, we use fill_angle = 0.
+
+Returns:
+    - Vector of length eight an real elements, containing the phase parameters.
+"""
+const FILL_ANGLE = pi / 2
+
 function get_eight_params(CP::AbstractPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
+# ignore fill angle if the method is independent of it:
+get_eight_params(CP::AbstractPhase, θ::AbstractVector, ::Real) = get_eight_params(CP, θ)
 
-get_eight_params(CP::AbstractPhase, θ::AbstractVector) = get_eight_params(CP.cl, θ)
-get_eight_params(crystal::Cubic, θ::AbstractVector) = [θ[1], θ[1], θ[1], pi/2, pi/2, pi/2, θ[2], θ[3]]
-get_eight_params(crystal::Tetragonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, pi/2, θ[3], θ[4]]
-get_eight_params(crystal::Orthorhombic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, pi/2, pi/2, θ[4], θ[5]]
-get_eight_params(crystal::Rhombohedral, θ::AbstractVector) = [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2], θ[3], θ[4]]
-get_eight_params(crystal::Hexagonal, θ::AbstractVector) = [θ[1], θ[1], θ[2], pi/2, pi/2, 2*pi/3, θ[3], θ[4]]
-get_eight_params(crystal::Monoclinic, θ::AbstractVector) = [θ[1], θ[2], θ[3], pi/2, θ[4], pi/2, θ[5], θ[6]]
+function get_eight_params(CP::AbstractPhase, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    get_eight_params(CP.cl, θ, fill_angle)
+end
+
+function get_eight_params(crystal::Cubic, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    [θ[1], θ[1], θ[1], fill_angle, fill_angle, fill_angle, θ[2], θ[3]]
+end
+
+function get_eight_params(crystal::Tetragonal, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    [θ[1], θ[1], θ[2], fill_angle, fill_angle, fill_angle, θ[3], θ[4]]
+end
+
+function get_eight_params(crystal::Orthorhombic, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    [θ[1], θ[2], θ[3], fill_angle, fill_angle, fill_angle, θ[4], θ[5]]
+end
+
+function get_eight_params(crystal::Rhombohedral, θ::AbstractVector)
+    [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2], θ[3], θ[4]]
+end
+
+function get_eight_params(crystal::Hexagonal, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    # about third fill angle: pi/2 * 4/3 = 2*pi/3
+    [θ[1], θ[1], θ[2], fill_angle, fill_angle, 4/3*fill_angle, θ[3], θ[4]]
+end
+
+function get_eight_params(crystal::Monoclinic, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+    [θ[1], θ[2], θ[3], fill_angle, θ[4], fill_angle, θ[5], θ[6]]
+end
+
 get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
 
 function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
