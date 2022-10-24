@@ -199,12 +199,85 @@ function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::Abstra
 	θ, uncer = optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
 
 	pm = reconstruct!(pm, θ)
-	return pm, uncer
+	return pm, uncer#, test_uncer
 end
 
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector,
 									opt_stn::OptimizationSettings)
+	# if eltype(pm.CPs) <: CrystalPhase
+	# 	θ = initialize_activation!(θ, pm, x, y)
+	# end
+
+	# θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
+	# log_θ = θ
+	# (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
+
+	# if opt_stn.method == LM
+	# 	log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
+	# elseif opt_stn.method == Newton
+	# 	log_θ = newton!(log_θ, pm, x, y, opt_stn)
+	# elseif opt_stn.method == bfgs
+	# 	log_θ = BFGS!(log_θ, pm, x, y, opt_stn)
+	# elseif opt_stn.method == l_bfgs
+	# 	log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
+	# end
+
+	# # Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
+	# phase_params = get_param_nums(pm.CPs) + get_param_nums(pm.wildcard)
+	# # _, new_bg = reconstruct_BG!(log_θ[phase_params+1:end], pm.background)
+	# signal = y #.- evaluate!(zero(y), new_bg, x)
+	# phases = PhaseModel(pm.CPs, pm.wildcard, nothing)
+	# phase_log_θ = log_θ[1:phase_params]
+    # println(exp.(phase_log_θ))
+	# if opt_stn.method == LM
+	# 	f = get_lm_objective_func(phases, x, signal, opt_stn)
+	# 	r = zeros(Real, length(y) + phase_params)
+	# 	function res(log_θ)
+	# 		sum(abs2, f(r, log_θ).*sqrt(2).*opt_stn.priors.std_noise)
+	# 	end
+	# else
+	# 	res = get_newton_objective_func(pm, x, y, opt_stn)
+	# end
+
+    # t = zeros(Real, length(y) + phase_params)
+	# # rr = f(t, phase_log_θ)
+	# # plt = plot(x,y)
+	# # plot!(x, rr*sqrt(2)*opt_stn.priors.std_noise)
+	# # # plot!(x, y .- rr*sqrt(2)*opt_stn.priors.std_noise)
+	# # display(plt)
+	# H = ForwardDiff.hessian(res, phase_log_θ)
+	# g = ForwardDiff.gradient(res, phase_log_θ)
+	# # plt = plot(x, signal)
+	# # plot!(x, evaluate!(zero(x), phases, x))
+	# # display(plt)
+	# display(g)
+	# display(diag(H))
+	# val = res(phase_log_θ)
+	# dof = length(x) - length(phase_log_θ)
+	# uncer = diag((log((dof-1)*val) - log(dof)) * inverse(H))
+	# # uncer = diag((val/dof) * inverse(H))
+    # println(val)
+	# evecs = eigvecs(H)
+	# evals = eigvals(H)
+
+    # test_uncer = zeros(Float64, length(evals))
+	# for i in 1:size(H, 1)
+	# 	for j in 1:size(H, 1)
+    #         test_uncer[i] += 1/evals[j] * (evecs[i,j] )^2
+	# 	end
+	# end
+
+	# log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	# θ = log_θ
+
+	# uncer = get_eight_params(pm.CPs, uncer)
+	# for i in eachindex(uncer)
+	# 	if uncer[i] == pi/2
+	# 		uncer[i] = 0
+	# 	end
+	# end
+	# return θ, uncer, test_uncer
 	if eltype(pm.CPs) <: CrystalPhase
 		θ = initialize_activation!(θ, pm, x, y)
 	end
@@ -233,6 +306,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	phases = PhaseModel(pm.CPs, pm.wildcard, nothing)
 	phase_log_θ = log_θ[1:phase_params]
 
+	# This is hessian in log space, TODO: change to real sapce
 	if opt_stn.method == LM
 		f = get_lm_objective_func(phases, x, signal, opt_stn)
 		r = zeros(Real, length(y) + phase_params)
@@ -244,13 +318,15 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	end
 
 	H = ForwardDiff.hessian(res, phase_log_θ)
-	val = res(phase_log_θ)
+	println(typeof(H))
+	# val = res(phase_log_θ) * sqrt(2) * opt_stn.priors.std_noise
+	val = sum(abs2, y .- evaluate!(zero(x), reconstruct!(pm, log_θ), x))
 	if opt_stn.verbose
 	    println("residual: $(val)")
 		display(H)
 	end
 	uncer = diag(val / (length(x) - length(phase_log_θ)) * inverse(H))
-
+    println(uncer)
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 
@@ -262,6 +338,8 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	end
 	return θ, uncer
 end
+
+
 
 
 function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector)
@@ -491,7 +569,10 @@ function _residual!(pm::PhaseModel,
 					r::AbstractVector,
 					std_noise::Real)
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
-	(any(isinf, log_θ) || any(isnan, log_θ)) && return Inf
+	if (any(isinf, log_θ) || any(isnan, log_θ))
+		log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .=  @views log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+		return Inf
+	end
 	@. r = y
 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and

@@ -86,3 +86,5 @@ function negative_log_poisson_λ(λ::Real, k::Real)
 end
 
 poisson(λ::Real, k::Real) = λ^k * exp(-λ) / gamma(k)
+
+var_lognormal(μ::Real, σ::Real) = (exp(σ^2) - 1) * exp(2μ+σ^2)
