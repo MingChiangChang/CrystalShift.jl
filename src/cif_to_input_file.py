@@ -27,6 +27,7 @@ def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
     '''
     with open(output_path / f'{output_name}.csv', 'w') as f:
         for idx, cif_path in enumerate(cif_paths):
+            print(cif_path)
             cif = CifParser(cif_path)
             lattice = CIFFile(cif_path).SGLattice()
             write_cif(f, idx, cif, lattice, _type, q_range, wvlen)
@@ -53,6 +54,7 @@ def write_peaks_info(f, lattice, q_range, wvlen):
     for peak in xrd:
         q = xrd[peak]['qpos']*10
         I = xrd[peak]['r']
+        print(q, I)
         if q_range[0] < q < q_range[1] and I>0.1:
             f.write(f'\n{peak[0]},{peak[1]},{peak[2]},{q},{I}')
     f.write('#\n')
@@ -134,6 +136,7 @@ if __name__ == "__main__":
     path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
     path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
     path = home / "Downloads" / "tio2"
+    path = home / "Downloads" / "test_cif"
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 

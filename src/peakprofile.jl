@@ -21,7 +21,7 @@ Lorentz() = Lorentz{Float64}()
 struct GaussianProfile{T} <: PeakProfile{T} end
 const Gauss = GaussianProfile
 Gauss() = Gauss{Float64}()
-function Gauss(a::AbstractArray) 
+function Gauss(a::AbstractArray)
     isempty(a) || error("Gauss recieves a parameter")
     Gauss()
 end
