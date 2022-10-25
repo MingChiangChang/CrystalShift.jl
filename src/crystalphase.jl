@@ -162,7 +162,7 @@ function get_eight_params(crystal::Orthorhombic, θ::AbstractVector, fill_angle:
     [θ[1], θ[2], θ[3], fill_angle, fill_angle, fill_angle, θ[4], θ[5]]
 end
 
-function get_eight_params(crystal::Rhombohedral, θ::AbstractVector)
+function get_eight_params(crystal::Rhombohedral, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
     [θ[1], θ[1], θ[1], θ[2], θ[2], θ[2], θ[3], θ[4]]
 end
 

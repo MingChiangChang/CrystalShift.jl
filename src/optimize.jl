@@ -331,7 +331,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	θ = log_θ
 
 	# setting fill_angle to zero since structurally determined angles have
-	# no uncertainty 
+	# no uncertainty
 	fill_angle = 0
 	uncer = get_eight_params(pm.CPs, uncer, fill_angle)
 	return θ, uncer
