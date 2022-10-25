@@ -185,12 +185,12 @@ function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
     p
 end
 
-function get_eight_params(CP::AbstractVector{<:AbstractPhase}, θ::AbstractVector)
+function get_eight_params(CP::AbstractVector{<:AbstractPhase}, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
     start = 1
     params = zeros(Float64, 8*length(CP))
     for i in eachindex(CP)
         free_param_nums = get_param_nums(CP[i])
-        params[(i-1)*8+1 : i*8] .= get_eight_params(CP[i], θ[start:start+free_param_nums-1])
+        params[(i-1)*8+1 : i*8] .= get_eight_params(CP[i], θ[start:start+free_param_nums-1], fill_angle)
         start += free_param_nums
     end
     params
