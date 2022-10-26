@@ -225,9 +225,13 @@ end
 Base.Bool(c::Crystal) = true # For ease of testing
 
 function volume(cl::Crystal)
-    return (cl.a * cl.b * cl.c
-           * sqrt( 1+2*cl.sincos_α[2]*cl.sincos_β[2]*cl.sincos_γ[2]
-           - cl.sincos_α[2]^2 - cl.sincos_β[2]^2 - cl.sincos_γ[2]^2 ) )
+    try
+        return (cl.a * cl.b * cl.c
+            * sqrt( 1+2*cl.sincos_α[2]*cl.sincos_β[2]*cl.sincos_γ[2]
+            - cl.sincos_α[2]^2 - cl.sincos_β[2]^2 - cl.sincos_γ[2]^2 ) )
+    catch DomainError
+        return 0
+    end
 end
 
 function volume(cl::Monoclinic)
