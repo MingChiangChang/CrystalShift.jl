@@ -33,9 +33,13 @@ end
 
 function volume(a::Real, b::Real, c::Real,
                 α::Real, β::Real, γ::Real)
+    try
         return (a * b * c
         * sqrt( 1+2*cos(α)*cos(β)*cos(γ)
-              - cos(α)^2 - cos(β)^2 - cos(γ)^2 ) )
+                - cos(α)^2 - cos(β)^2 - cos(γ)^2 ) )
+    catch DomainError
+        return 0
+    end
 end
 
 function special_inv(x::Real)
