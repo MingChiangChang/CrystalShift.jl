@@ -175,7 +175,7 @@ function get_eight_params(crystal::Monoclinic, θ::AbstractVector, fill_angle::R
     [θ[1], θ[2], θ[3], fill_angle, θ[4], fill_angle, θ[5], θ[6]]
 end
 
-get_eight_params(crystal::Triclinic, θ::AbstractVector) = θ
+get_eight_params(crystal::Triclinic, θ::AbstractVector, fill_angle::Real) = θ
 
 function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
     p = Vector{Float64}()
