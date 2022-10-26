@@ -265,14 +265,18 @@ end
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
 function (cl::Crystal)(P::Peak)
-    (2pi/cl.volume *
-    sqrt(P.h^2 * cl.b^2 * cl.c^2 * cl.sincos_α[1]^2
-    + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2
-    + P.l^2 * cl.a^2 * cl.b^2 * cl.sincos_γ[1]^2
-    + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cl.sincos_α[2]*cl.sincos_β[2] - cl.sincos_γ[2])
-    + 2*P.k * P.l * cl.a^2 * cl.b * cl.c * (cl.sincos_β[2]*cl.sincos_γ[2] - cl.sincos_α[2])
-    + 2*P.h * P.l * cl.a * cl.b^2 * cl.c * (cl.sincos_α[2]*cl.sincos_γ[2] - cl.sincos_β[2])
-    ))
+    try
+        (2pi/cl.volume *
+        sqrt(P.h^2 * cl.b^2 * cl.c^2 * cl.sincos_α[1]^2
+        + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2
+        + P.l^2 * cl.a^2 * cl.b^2 * cl.sincos_γ[1]^2
+        + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cl.sincos_α[2]*cl.sincos_β[2] - cl.sincos_γ[2])
+        + 2*P.k * P.l * cl.a^2 * cl.b * cl.c * (cl.sincos_β[2]*cl.sincos_γ[2] - cl.sincos_α[2])
+        + 2*P.h * P.l * cl.a * cl.b^2 * cl.c * (cl.sincos_α[2]*cl.sincos_γ[2] - cl.sincos_β[2])
+        ))
+    catch DomainError
+        return Inf
+    end
 end
 
 function (cl::Cubic)(P::Peak)
@@ -291,10 +295,14 @@ function (cl::Hexagonal)(P::Peak)
 end
 
 function (cl::Orthorhombic)(P::Peak)
-    (2pi/(cl.a*cl.b*cl.c) *
-    sqrt(P.h^2 * cl.b^2 * cl.c^2
-         + P.k^2 * cl.a^2 * cl.c^2
-         + P.l^2 * cl.a^2 * cl.b^2))
+    try
+        return (2pi/(cl.a*cl.b*cl.c) *
+                sqrt(P.h^2 * cl.b^2 * cl.c^2
+                    + P.k^2 * cl.a^2 * cl.c^2
+                    + P.l^2 * cl.a^2 * cl.b^2))
+    catch DomainError
+        return Inf
+    end
 end
 
 function (cl::Rhombohedral)(P::Peak)

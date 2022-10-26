@@ -38,7 +38,7 @@ function volume(a::Real, b::Real, c::Real,
         * sqrt( 1+2*cos(α)*cos(β)*cos(γ)
                 - cos(α)^2 - cos(β)^2 - cos(γ)^2 ) )
     catch DomainError
-        return 0
+        return Inf
     end
 end
 

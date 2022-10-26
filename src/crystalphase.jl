@@ -324,7 +324,7 @@ end
 function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
     x::AbstractVector, r::AbstractVector)
     @simd for i in eachindex(CPs)
-        if CPs[i].cl.volume == 0
+        if isinf(CPs[i].cl.volume)
             return Inf
         end
         evaluate_residual!(CPs[i], x, r)
@@ -335,6 +335,9 @@ end
 function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
     @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
+        if isinf(q)
+            return Inf
+        end
         @. r -= CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
     end
     r
