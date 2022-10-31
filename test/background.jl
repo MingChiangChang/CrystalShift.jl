@@ -62,7 +62,7 @@ PM = PhaseModel(cs[1:1], nothing, bg)
 noisy_data = convert(Vector{Real}, noisy_data)
 
 @time c = optimize!(PM, x, noisy_data, std_noise, mean_θ, std_θ,
-            objective = "LS", method = LM, maxiter = maxiter,
+            objective = "LS", method = LM, optimize_mode = Simple, maxiter = maxiter,
             regularization = true, verbose = verbose)
 
 y = zero(x)

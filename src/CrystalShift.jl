@@ -10,6 +10,7 @@ using OptimizationAlgorithms
 using SpecialFunctions
 using ForwardDiff
 using LazyInverses
+using StatsBase
 
 export CrystalPhase, AbstractPhase, PeakModCP, Wildcard
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic

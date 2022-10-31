@@ -31,6 +31,6 @@ pmcp = PeakModCP(cs[1], x, 10)
 pmcp2 = PeakModCP(cs[2], x, 10)
 @test extend_priors([1.], [.02], [pmcp, pmcp2]) == ([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02])
 
-OptimizationSettings{Float64}(cs[1:2], std_noise, mean_θ, 
-           std_θ, 128, true, LM, "LS", false, 1e-6)
+OptimizationSettings{Float64}(cs[1:2], std_noise, mean_θ,
+           std_θ, 128, true, LM, "LS", Simple, false, 1e-6)
 end

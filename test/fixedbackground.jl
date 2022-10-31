@@ -73,7 +73,7 @@ basis ./= maximum(basis) * 2
 FB = FixedBackground(basis, 1., 10.)
 pm = PhaseModel([cs[1]], nothing, FB)
 c = optimize!(pm, x, noisy_data, std_noise, mean_θ, std_θ,
-            objective = "LS", method = LM, maxiter = maxiter,
+            objective = "LS", method = LM, maxiter = maxiter, optimize_mode = Simple,
             regularization = true, verbose = verbose)
 
 # Check MSE
