@@ -37,19 +37,19 @@ end
 
 # TODO: allow change in some parameters
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-	std_θ::AbstractVector = [1., Inf, 5.];
-	method::OptimizationMethods,
-	optimize_mode::OptimizationMode=Simple,
-	objective::String = "LS",
-	regularization::Bool = true,
-	loop_num::Int=8,
-	peak_shift_iter::Int = 32,
-	mod_peak_num::Int = 32,
-	peak_mod_mean::AbstractVector = [1.],
-	peak_mod_std::AbstractVector = [.5],
-	peak_mod_iter::Int=32,
-	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+						std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+						std_θ::AbstractVector = [1., Inf, 5.];
+						method::OptimizationMethods = LeastSquares(),
+						optimize_mode::OptimizationMode=Simple,
+						objective::String = "LS",
+						regularization::Bool = true,
+						loop_num::Int=8,
+						peak_shift_iter::Int = 32,
+						mod_peak_num::Int = 32,
+						peak_mod_mean::AbstractVector = [1.],
+						peak_mod_std::AbstractVector = [.5],
+						peak_mod_iter::Int=32,
+						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
 	# have_bg = !isnothing(pm.background)
 	c = pm
@@ -157,17 +157,15 @@ end
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 	θ = get_free_params(pm)
 	if opt_stn.optimize_mode == Simple
-		θ = optimize!(θ, pm, x, y, opt_stn)
+		return simple_optimize!(θ, pm, x, y, opt_stn)
 	elseif opt_stn.optimize_mode == EM
-		θ = EM_optimize!(θ, pm, x, y, opt_stn)
+		return EM_optimize!(θ, pm, x, y, opt_stn)
     elseif opt_stn.optimize_mode == WithUncer
-        θ = optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
+        return optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
 	end
-	pm = reconstruct!(pm, θ)
-	return pm
 end
 
-function optimize!(θ::AbstractVector, pm::PhaseModel,
+function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 	if eltype(pm.CPs) <: CrystalPhase
 	    θ = initialize_activation!(θ, pm, x, y)
@@ -192,7 +190,7 @@ function optimize!(θ::AbstractVector, pm::PhaseModel,
 
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
-	return θ
+	return reconstruct!(pm, θ)
 end
 
 # TODO: include EM as an option in opt_stn
@@ -215,51 +213,9 @@ function EM_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	return c, std_noise
 end
 
-
-function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-		std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-		std_θ::AbstractVector = [1., Inf, 5.];
-		method::OptimizationMethods, objective::String = "LS",
-		maxiter::Int = 32,
-		regularization::Bool = true,
-		verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
-    objective == "LS" || error("Invalid objective!")
-	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ,
-				maxiter, regularization,
-				method, objective, verbose, tol)
-
-	optimize_with_uncertainty!(pm, x, y, opt_stn)
-end
-
-function optimize_with_uncertainty!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
-	θ = get_free_params(pm)
-	θ, uncer = optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
-
-	pm = reconstruct!(pm, θ)
-	return pm, uncer#, test_uncer
-end
-
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector,
 									opt_stn::OptimizationSettings)
-	# if eltype(pm.CPs) <: CrystalPhase
-	# 	θ = initialize_activation!(θ, pm, x, y)
-	# end
-
-	# θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
-	# log_θ = θ
-	# (any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
-
-	# if opt_stn.method == LM
-	# 	log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
-	# elseif opt_stn.method == Newton
-	# 	log_θ = newton!(log_θ, pm, x, y, opt_stn)
-	# elseif opt_stn.method == bfgs
-	# 	log_θ = BFGS!(log_θ, pm, x, y, opt_stn)
-	# elseif opt_stn.method == l_bfgs
-	# 	log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
-	# end
-
 	# # Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
 	# phase_params = get_param_nums(pm.CPs) + get_param_nums(pm.wildcard)
 	# # _, new_bg = reconstruct_BG!(log_θ[phase_params+1:end], pm.background)
@@ -279,42 +235,22 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
     # t = zeros(Real, length(y) + phase_params)
 	# # rr = f(t, phase_log_θ)
-	# # plt = plot(x,y)
-	# # plot!(x, rr*sqrt(2)*opt_stn.priors.std_noise)
-	# # # plot!(x, y .- rr*sqrt(2)*opt_stn.priors.std_noise)
-	# # display(plt)
 	# H = ForwardDiff.hessian(res, phase_log_θ)
 	# g = ForwardDiff.gradient(res, phase_log_θ)
-	# # plt = plot(x, signal)
-	# # plot!(x, evaluate!(zero(x), phases, x))
-	# # display(plt)
 	# display(g)
 	# display(diag(H))
 	# val = res(phase_log_θ)
 	# dof = length(x) - length(phase_log_θ)
 	# uncer = diag((log((dof-1)*val) - log(dof)) * inverse(H))
 	# # uncer = diag((val/dof) * inverse(H))
-    # println(val)
 	# evecs = eigvecs(H)
 	# evals = eigvals(H)
-
     # test_uncer = zeros(Float64, length(evals))
 	# for i in 1:size(H, 1)
 	# 	for j in 1:size(H, 1)
     #         test_uncer[i] += 1/evals[j] * (evecs[i,j] )^2
 	# 	end
 	# end
-
-	# log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
-	# θ = log_θ
-
-	# uncer = get_eight_params(pm.CPs, uncer)
-	# for i in eachindex(uncer)
-	# 	if uncer[i] == pi/2
-	# 		uncer[i] = 0
-	# 	end
-	# end
-	# return θ, uncer, test_uncer
 	if eltype(pm.CPs) <: CrystalPhase
 		θ = initialize_activation!(θ, pm, x, y)
 	end
@@ -364,12 +300,13 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
     println(uncer)
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
+	pm = reconstruct!(pm, θ)
 
 	# setting fill_angle to zero since structurally determined angles have
 	# no uncertainty
 	fill_angle = 0
 	uncer = get_eight_params(pm.CPs, uncer, fill_angle)
-	return θ, uncer
+	return pm, uncer
 end
 
 

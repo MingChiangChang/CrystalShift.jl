@@ -21,7 +21,7 @@ mean_θ = [1., .5, .2]
 std_θ = [.05, 2., 1.]
 # newton_lambda = 1e-2 TODO: make this passable to the newton optimization
 
-test_path = "../data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
+test_path = "data/Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test
 f = open(test_path, "r")
 
 if Sys.iswindows()
@@ -40,8 +40,8 @@ y += noise
 # evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
 evaluate!(y, cs[1], x)
 evaluate!(y, cs[2], x)
-pm, uncer = optimize_with_uncertainty!(PhaseModel(cs[15:15], nothing, nothing), x, y, std_noise, mean_θ, std_θ;
-                            method = LM,
+pm, uncer = optimize!(PhaseModel(cs[13:15], nothing, nothing), x, y, std_noise, mean_θ, std_θ;
+                            method = LM, optimize_mode = WithUncer,
                             maxiter = maxiter,
                             regularization = true,
                             verbose=true)
