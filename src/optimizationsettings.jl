@@ -3,6 +3,7 @@ const PRIOR_LENGTH = 3
 const PEAK_PRIOR_LENGTH = 1
 const DEFAULT_TOL = 1e-8
 @exported_enum OptimizationMethods LM Newton bfgs l_bfgs
+@exported_enum OptimizationMode Simple EM WithUncer
 
 # function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 #     phases::AbstractVector{<:AbstractPhase})
@@ -115,30 +116,33 @@ struct OptimizationSettings{T}
     regularization::Bool
     method::OptimizationMethods
     objective::String
+    optimize_mode::OptimizationMode
     verbose::Bool
     tol::Float64
 
     function OptimizationSettings{V}(priors::Priors{V}, maxiter::Int, regularization::Bool,
-                                     method::OptimizationMethods, objective::String,
+                                     method::OptimizationMethods, objective::String, optimize_mode::OptimizationMode,
                                      verbose::Bool, tol::Float64) where V<:Real
         maxiter > 0 || error("max_iter must be > 0")
         objective in ALLOWED_OBJECTIVE || ("Objective string not in allowed objective")
-        new{V}(priors, maxiter, regularization, method, objective, verbose, tol)
+        new{V}(priors, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
     end
 end
 
 function OptimizationSettings{V}(phases::AbstractVector{<:CrystalPhase},
-                                 std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}, 
-                                 maxiter::Int, regularization::Bool, method::OptimizationMethods, 
-                                 objective::String, verbose::Bool, tol::Float64) where V<:Real
+                                 std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
+                                 maxiter::Int, regularization::Bool, method::OptimizationMethods,
+                                 objective::String, optimize_mode::OptimizationMode,
+                                 verbose::Bool, tol::Float64) where V<:Real
     pr = Priors{V}(phases, std_noise, mean_θ, std_θ)
-    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, verbose, tol)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
 end
 
 function OptimizationSettings{V}(pm::PhaseModel,
-                                std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V}, 
-                                maxiter::Int, regularization::Bool, method::OptimizationMethods, 
-                                objective::String, verbose::Bool, tol::Float64) where V<:Real
+                                std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
+                                maxiter::Int, regularization::Bool, method::OptimizationMethods,
+                                objective::String, optimize_mode::OptimizationMode,
+                                verbose::Bool, tol::Float64) where V<:Real
     pr = Priors{V}(pm.CPs, std_noise, mean_θ, std_θ)
-    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, verbose, tol)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
 end

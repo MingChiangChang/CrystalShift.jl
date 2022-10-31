@@ -1,7 +1,7 @@
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, Lorentz
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, PseudoVoigt
-using CrystalShift: evaluate!,get_param_nums, FixedPseudoVoigt
+using CrystalShift: evaluate!,get_param_nums, FixedPseudoVoigt, EM_optimize!
 
 using LinearAlgebra
 using Random: rand
@@ -45,15 +45,15 @@ x = collect(8:.1:60)
 y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
-# test = evaluate!(zero(x), cs[1], params, x)
-# @benchmark c = optimize!(cs[1], x, test, std_noise, mean_θ, std_θ;
-#                   method =LM,
-#                   maxiter = maxiter, regularization = true, verbose=false)
+test = evaluate!(zero(x), cs[1], params, x)
+c, std_noise = EM_optimize!(PhaseModel(cs[1]), x, test, std_noise, mean_θ, std_θ;
+                  method =LM,
+                  maxiter = maxiter, regularization = true, verbose=false)
 
 @benchmark evaluate!(zero(x), cs[1], x)
-# plt = plot(x, test)
-# plot!(x, evaluate!(y, c, x))
-# display(plt)
+plt = plot(x, test)
+plot!(x, evaluate!(y, c, x))
+display(plt)
 
 # t = rand(get_param_nums(cs[1]))
 # tt = rand(get_param_nums(cs[1:3]))
