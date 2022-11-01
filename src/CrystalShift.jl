@@ -12,11 +12,13 @@ using ForwardDiff
 using LazyInverses
 using StatsBase
 
-export CrystalPhase, AbstractPhase, PeakModCP, Wildcard
+# TODO: Update export list
+export CrystalPhase, AbstractPhase, PeakModCP, Wildcard, Peak, PhaseModel, BackgroundModel
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
-export OptimizationMethods, Peak, PhaseModel, BackgroundModel
-export evaluate!, evaluate_residual!, optimize!, full_optimize!
+export OptimizationMethods, OptimizationMode # enums
+export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
+export get_free_params
 
 
 include("util.jl")

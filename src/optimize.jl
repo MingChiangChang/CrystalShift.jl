@@ -23,12 +23,13 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 					optimize_mode::OptimizationMode=Simple,
 					maxiter::Int = 32,
 					regularization::Bool = true,
+					em_loop_num::Integer = 8,
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
 
     pm = PhaseModel(W, BG)
 	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.],
 											maxiter, regularization,
-											method, objective, optimize_mode, verbose, tol)
+											method, objective, optimize_mode, em_loop_num, verbose, tol)
 
 	y ./= maximum(y) * 2
 	opt_pm = optimize!(pm, x, y, opt_stn)
@@ -194,15 +195,15 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 	return reconstruct!(pm, θ)
 end
 
-# TODO: include EM as an option in opt_stn
-
 function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 
+    c = 0 # As existing local to make this thread safe
+	std_noise = 0
 	for i in 1:opt_stn.em_loop_num
-		global c = simple_optimize!(θ, pm, x, y, opt_stn)
-        global std_noise = std(y - evaluate(c, get_free_params(c), x))
-		θ = get_free_params(pm)
+		c = simple_optimize!(θ, pm, x, y, opt_stn)
+        std_noise = std(y - evaluate(c, get_free_params(c), x))
+		θ = get_free_params(c)
 	end
 	return c, std_noise
 end
