@@ -146,10 +146,11 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 					optimize_mode::OptimizationMode,
 					maxiter::Int = 32,
 					regularization::Bool = true,
+					em_loop_num::Integer = 8,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ,
 							maxiter, regularization,
-							method, objective, optimize_mode, verbose, tol)
+							method, objective, optimize_mode, em_loop_num, verbose, tol)
 
 	optimize!(pm, x, y, opt_stn)
 end
@@ -195,20 +196,13 @@ end
 
 # TODO: include EM as an option in opt_stn
 
-function EM_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-						std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-						std_θ::AbstractVector = [1., .1, 5.];
-						method::OptimizationMethods, objective::String = "LS",
-						maxiter::Int = 32, loop_num=1,
-						regularization::Bool = true,
-						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
+	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 
-	c = pm
-	for i in 1:loop_num
-		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
-			method=method, objective=objective, maxiter=maxiter,
-			regularization=regularization, verbose=verbose, tol=tol)
-        std_noise = std(y - evaluate(c, get_free_params(c), x))
+	for i in 1:opt_stn.em_loop_num
+		global c = simple_optimize!(θ, pm, x, y, opt_stn)
+        global std_noise = std(y - evaluate(c, get_free_params(c), x))
+		θ = get_free_params(pm)
 	end
 	return c, std_noise
 end

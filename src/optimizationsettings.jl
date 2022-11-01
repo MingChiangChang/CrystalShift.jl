@@ -117,32 +117,49 @@ struct OptimizationSettings{T}
     method::OptimizationMethods
     objective::String
     optimize_mode::OptimizationMode
+    em_loop_num::Integer
     verbose::Bool
     tol::Float64
 
-    function OptimizationSettings{V}(priors::Priors{V}, maxiter::Int, regularization::Bool,
-                                     method::OptimizationMethods, objective::String, optimize_mode::OptimizationMode,
-                                     verbose::Bool, tol::Float64) where V<:Real
+    function OptimizationSettings{V}(priors::Priors{V},
+                                     maxiter::Int = 128,
+                                     regularization::Bool =true,
+                                     method::OptimizationMethods = LM,
+                                     objective::String = "LS",
+                                     optimize_mode::OptimizationMode = Simple,
+                                     em_loop_num::Integer=8,
+                                     verbose::Bool=false,
+                                     tol::Float64=DEFAULT_TOL) where V<:Real
         maxiter > 0 || error("max_iter must be > 0")
         objective in ALLOWED_OBJECTIVE || ("Objective string not in allowed objective")
-        new{V}(priors, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
+        new{V}(priors, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
     end
 end
 
 function OptimizationSettings{V}(phases::AbstractVector{<:CrystalPhase},
                                  std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
-                                 maxiter::Int, regularization::Bool, method::OptimizationMethods,
-                                 objective::String, optimize_mode::OptimizationMode,
-                                 verbose::Bool, tol::Float64) where V<:Real
+                                 maxiter::Int = 128,
+                                 regularization::Bool =true,
+                                 method::OptimizationMethods = LM,
+                                 objective::String = "LS",
+                                 optimize_mode::OptimizationMode = Simple,
+                                 em_loop_num::Integer=8,
+                                 verbose::Bool=false,
+                                 tol::Float64=DEFAULT_TOL) where V<:Real
     pr = Priors{V}(phases, std_noise, mean_θ, std_θ)
-    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
 end
 
 function OptimizationSettings{V}(pm::PhaseModel,
                                 std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
-                                maxiter::Int, regularization::Bool, method::OptimizationMethods,
-                                objective::String, optimize_mode::OptimizationMode,
-                                verbose::Bool, tol::Float64) where V<:Real
+                                maxiter::Int = 128,
+                                regularization::Bool =true,
+                                method::OptimizationMethods = LM,
+                                objective::String = "LS",
+                                optimize_mode::OptimizationMode = Simple,
+                                em_loop_num::Integer=8,
+                                verbose::Bool=false,
+                                tol::Float64=DEFAULT_TOL) where V<:Real
     pr = Priors{V}(pm.CPs, std_noise, mean_θ, std_θ)
-    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, verbose, tol)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
 end

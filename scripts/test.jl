@@ -46,9 +46,9 @@ y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 test = evaluate!(zero(x), cs[1], params, x)
-c, std_noise = EM_optimize!(PhaseModel(cs[1]), x, test, std_noise, mean_θ, std_θ;
+c, std_noise = optimize!(PhaseModel(cs[1]), x, test, std_noise, mean_θ, std_θ;
                   method =LM,
-                  maxiter = maxiter, regularization = true, verbose=false)
+                  maxiter = 128, optimize_mode=EM, em_loop_num=2, regularization = true, verbose=false)
 
 @benchmark evaluate!(zero(x), cs[1], x)
 plt = plot(x, test)
