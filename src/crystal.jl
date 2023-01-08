@@ -3,6 +3,7 @@ abstract type Crystal{T} end
 
 # Unit in angstrom and radians
 # TODO use Base.getproperty to make things easier
+# TODO: Include precalculation factors to improve speed
 struct Triclinic{T}<:Crystal{T}
     a::T
     b::T
@@ -314,7 +315,7 @@ function (cl::Rhombohedral)(P::Peak)
     * (P.h * P.k + P.k * P.l + P.h * P.l) )))
 end
 
-function (cl::Monoclinic)(P::Peak)
+@fastmath function (cl::Monoclinic)(P::Peak)
     (2pi/cl.volume *
     sqrt(P.h^2 * cl.b^2 * cl.c^2
     + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2

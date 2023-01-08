@@ -54,7 +54,7 @@ function special_exp(x::Real)
     if x < -10.
         return 1E-12
     else
-        return exp(x)
+        return @fastmath exp(x)
     end
 end
 

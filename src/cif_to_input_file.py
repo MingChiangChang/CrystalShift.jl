@@ -55,7 +55,7 @@ def write_peaks_info(f, lattice, q_range, wvlen):
         q = xrd[peak]['qpos']*10
         I = xrd[peak]['r']
         print(q, I)
-        if q_range[0] < q < q_range[1] and I>0.1:
+        if q_range[0] < q < q_range[1] and I>0.0001:
             f.write(f'\n{peak[0]},{peak[1]},{peak[2]},{q},{I}')
     f.write('#\n')
 
@@ -136,11 +136,12 @@ if __name__ == "__main__":
     path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
     path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
     path = home / "Downloads" / "tio2"
-    path = home / "Downloads" / "test_cif"
+    path = home / "Downloads" / "test"
+    #path = home / "Downloads" / "AlLiFeO copy"
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 
     # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
     out_path = path #/ 'Ta-Sn-O'
     print(cif_paths)
-    cif_to_input(cif_paths, out_path, (10, 50))
+    cif_to_input(cif_paths, out_path, (10, 80))

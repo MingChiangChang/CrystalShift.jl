@@ -21,6 +21,8 @@ else
 end
 
 cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
+f = open(test_path, "r")
+cs2 = CrystalPhase(f)
 gauss_cs = CrystalPhase(String(s[1]), 0.1, Gauss())
 x = collect(8:.1:60)
 y = zero(x)

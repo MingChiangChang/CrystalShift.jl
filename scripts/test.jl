@@ -1,5 +1,5 @@
 using CrystalShift
-using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, Lorentz
+using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, Lorentz, Gauss
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, PseudoVoigt
 using CrystalShift: evaluate!,get_param_nums, FixedPseudoVoigt, EM_optimize!
 
@@ -40,20 +40,21 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Lorentz(),))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Gauss(),))
 x = collect(8:.1:60)
 y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 test = evaluate!(zero(x), cs[1], params, x)
-c, std_noise = optimize!(PhaseModel(cs[1]), x, test, std_noise, mean_θ, std_θ;
-                  method =LM,
-                  maxiter = 128, optimize_mode=EM, em_loop_num=2, regularization = true, verbose=false)
-
-@benchmark evaluate!(zero(x), cs[1], x)
-plt = plot(x, test)
-plot!(x, evaluate!(y, c, x))
-display(plt)
+@time c, std_noise = optimize!(PhaseModel(cs[1:3]), x, test, std_noise, mean_θ, std_θ;
+                  method =LM, maxiter = 128,
+                  optimize_mode=Simple, em_loop_num=8,
+                  regularization = true, verbose = false)
+yy = zero(x)
+evaluate!(yy, cs[1], x)
+# plt = plot(x, test)
+# plot!(x, evaluate!(y, c, x))
+# display(plt)
 
 # t = rand(get_param_nums(cs[1]))
 # tt = rand(get_param_nums(cs[1:3]))

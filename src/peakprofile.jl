@@ -1,6 +1,6 @@
 ##################
 # This code is taken from https://github.com/SebastianAment/PhaseMapping.jl
-# With author's permission so remove the dependency of this module on PhaseMapping.jl
+# With author's permission to remove the dependency of this module on PhaseMapping.jl
 ##################
 abstract type PeakProfile{T} end
 
@@ -12,6 +12,7 @@ get_param_nums(P::PeakProfile) = 0
 get_free_params(P::PeakProfile) = []
 
 ############################### Lorentzian function ##############################
+# Unnormlized Lorentzian
 struct LorentzianProfile{T} <: PeakProfile{T} end
 const Lorentz = LorentzianProfile
 Lorentz() = Lorentz{Float64}()
@@ -35,6 +36,7 @@ function inverse_sig()
 end
 
 ############################# pseudo-voigt function ############################
+# A mix of Gaussian and Lorentzian
 struct PseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
    sig_α::T
@@ -50,8 +52,8 @@ PseudoVoigt(a::Float64) = PseudoVoigt{Float64}(a)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
 get_free_params(P::PseudoVoigtProfile) = [P.sig_α] # This is in sigmoid space!!
 
-function PseudoVoigt(a::AbstractVector) 
-   length(a) == 1 || error("PseudoVoigt receive more than one params")
+function PseudoVoigt(a::AbstractVector)
+   length(a) == 1 || error("PseudoVoigt receive more than one parameters")
    PseudoVoigt{eltype(a)}(a[1])
 end
 
@@ -59,6 +61,7 @@ struct FixedPseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
 end
 
+# FixedPseudoVoigt does not provide fit for the mixture parameter α
 const FixedPseudoVoigt = FixedPseudoVoigtProfile
 FixedPseudoVoigt(a::Float64) = FixedPseudoVoigt{Float64}(a)
 (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)

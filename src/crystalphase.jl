@@ -2,18 +2,17 @@ abstract type AbstractPhase end
 
 struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
     cl::C # crystal object
-    origin_cl::CL # save for later comparison
+    origin_cl::CL # save for comparison
     peaks::V # Vector of peak object
 
-    id::Int64 # Just index
-    name::String # For printing
+    id::Int64 # For indexing phases
+    name::String # Phase name
 
-    act::K # Activation
-    σ::M # Width of peaks
+    act::K # Activation parameter
+    σ::M # Peak width parameter
     profile::P # Peak profile
-               # Do import from PhaseMapping if
-               # other peak profiles are needed
-    norm_constant::N
+    norm_constant::N # Normalization constant. Stored when phase is created.
+                     # Use to calculate phase fraction
 end
 
 function Base.show(io::IO, CP::CrystalPhase)
@@ -32,6 +31,19 @@ Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
 get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
 get_param_nums(APs::AbstractVector{<:AbstractPhase}) = sum(get_param_nums.(APs))
 # get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
+
+## Constrcutors
+function CrystalPhase(io::IOStream,
+                      width_init::Real=.1,
+                      profile::PeakProfile=FixedPseudoVoigt(0.5))
+    if Sys.iswindows()
+        s = split(read(io, String), "#\r\n")
+    else
+        s = split(read(io, String), "#\n")
+    end
+
+    CrystalPhase.(String.(s[1:end-1]), (width_init), (profile,))
+end
 
 function CrystalPhase(_stn::String, wid_init::Real=.1,
                       profile::PeakProfile=PseudoVoigt(0.5))
@@ -53,7 +65,7 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
     t = eltype(θ)
-    if profile_param_num >0
+    if profile_param_num > 0
         c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
         # θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
                     θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:fp+2+profile_param_num]...),
@@ -100,7 +112,8 @@ end
 function get_fraction(CPs::AbstractVector{<:CrystalPhase})
     moles = zeros(size(CPs, 1))
     @. moles = get_moles(CPs)
-    return moles./sum(moles)
+
+    moles./sum(moles)
 end
 
 function get_free_params(CP::CrystalPhase)
@@ -144,7 +157,7 @@ function get_eight_params(CP::AbstractPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
 # ignore fill angle if the method is independent of it:
-get_eight_params(CP::AbstractPhase, θ::AbstractVector, ::Real) = get_eight_params(CP, θ)
+# get_eight_params(CP::AbstractPhase, θ::AbstractVector, ::Real) = get_eight_params(CP, θ)
 
 function get_eight_params(CP::AbstractPhase, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
     get_eight_params(CP.cl, θ, fill_angle)
@@ -211,6 +224,9 @@ collect_crystals(CPs::AbstractVector{<:CrystalPhase}) = [CP.cl for CP in CPs]
 
 # Preallocating
 # Functor comes in handy but use evaluate! when you can to be clear
+
+
+# TODO: Vectorize all peak location calculation
 function (CP::AbstractPhase)(x::AbstractVector, y::AbstractVector)
     evaluate!(y, CP, x)
 end
@@ -230,17 +246,17 @@ function evaluate!(y::AbstractVector, CP::AbstractPhase, peak::Peak, x::Abstract
 end
 
 function evaluate!(y::AbstractMatrix, CP::AbstractPhase, peaks::AbstractVector{<:Peak}, x::AbstractVector)
+    peak_locs = (CP.cl).(CP.peaks) .* 10
     @simd for i in eachindex(peaks)
-        q = (CP.cl)(peaks[i]) * 10 # account for unit difference
-        @. y[:,i] = CP.act * peaks[i].I * CP.profile((x-q)/CP.σ)
+        @. y[:,i] = CP.act * peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
     end
     y
 end
 
 function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
-    @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        @. y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+    peak_locs = (CP.cl).(CP.peaks) .* 10
+    @fastmath @inbounds @simd for i in eachindex(CP.peaks)
+        @. y += CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ) # Main bottle neck
     end
     y
 end
@@ -254,12 +270,6 @@ end
 
 function evaluate!(y::AbstractVector, CP::CrystalPhase, θ::AbstractVector,
                    x::AbstractVector)
-    # fp = CP.cl.free_param
-    # new_param = get_eight_params(CP, θ)[1:6]
-    # CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ = new_param
-    # CP.act = θ[fp+1]
-    # CP.σ = θ[fp+2]
-    # CP(x, y)
     CrystalPhase(CP, θ)(x, y)
 end
 
@@ -304,18 +314,12 @@ end
 
 function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
-    # fp = CP.cl.free_param
-    # new_param = get_eight_params(CP, θ)[1:6]
-    # CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ = new_param
-    # CP.act = θ[fp+1]
-    # CP.σ = θ[fp+2]
-    # evaluate_residual!(CP, x, r)
     evaluate_residual!(CrystalPhase(CP, θ), x, r)
 end
 
 function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
               x::AbstractVector, r::AbstractVector)
-    @simd for i in eachindex(CPs)
+    @inbounds @simd for i in eachindex(CPs)
         evaluate_residual!(CPs[i], x, r)
     end
     r
@@ -323,7 +327,7 @@ end
 
 function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
     x::AbstractVector, r::AbstractVector)
-    @simd for i in eachindex(CPs)
+    @inbounds @simd for i in eachindex(CPs)
         if isinf(CPs[i].cl.volume)
             return Inf
         end
@@ -333,12 +337,12 @@ function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
 end
 
 function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
-    @simd for i in eachindex(CP.peaks)
-        q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
-        if isinf(q)
+    peak_locs = (CP.cl).(CP.peaks) .* 10
+    @inbounds @simd for i in eachindex(CP.peaks)
+        if isinf(peak_locs[i])
             return Inf
         end
-        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
+        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ) # Main bottle neck
     end
     r
 end
@@ -358,7 +362,7 @@ end
 # Without preallocation, useful at times....
 function (CP::CrystalPhase)(x::Real)
     y = zero(x)
-    @simd for i in eachindex(CP.peaks)
+    @inbounds @simd for i in eachindex(CP.peaks)
         q = (CP.cl)(CP.peaks[i]) * 10 # account for unit difference
         y += CP.act * CP.peaks[i].I * CP.profile((x-q)/CP.σ) # Main bottle neck
     end
@@ -367,7 +371,7 @@ end
 
 function (CPs::AbstractVector{<:AbstractPhase})(x::Real)
     y = zero(x)
-    @simd for i in eachindex(CPs) #
+    @inbounds @simd for i in eachindex(CPs) #
         y += CPs[i](x)
     end
     y

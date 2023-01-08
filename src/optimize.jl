@@ -190,7 +190,7 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 		log_θ = LBFGS!(log_θ, pm, x, y, opt_stn)
 	end
 
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] = @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 	return reconstruct!(pm, θ)
 end

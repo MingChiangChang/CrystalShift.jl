@@ -6,10 +6,12 @@ import re
 home = Path.home()
 
 path = home / 'Desktop' / 'AlLiFe_data' / 'sticks' / 'AlLiFe_oxides'
-path = home / 'Downloads' / 'AlLiFeO' 
-path = home / 'Downloads' / 'CrFeV_toCornell' / 'icdd' 
+path = home / 'Downloads' / 'AlLiFeO_assembled_icdd'
+#path = home / 'Downloads' / 'AlLiFeO'
+#path = home / 'Downloads' / 'CrFeV_toCornell' / 'icdd'
+#path = home / 'Downloads' / 'AlLiFeO copy'
 
-xmls = list(path.glob("*.xml"))
+xmls = sorted(list(path.glob("*.xml")))
 
 def check_none(*arg):
     for i in arg:
@@ -28,7 +30,7 @@ with open(f'{str(path)}/_sticks.csv', 'w') as f:
         xstal_sys = pdf.find('xstal_system').text
         if pdf.find('xtlsg') is not None:
             sg = pdf.find('xtlsg').text
-            print(sg)
+            print(idx, chem_form, sg)
             if ' ' in sg:
                 sg = sg[:sg.index(' ')]
         else:
