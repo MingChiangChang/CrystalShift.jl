@@ -12,7 +12,7 @@ using Random: rand
 using Test
 
 verbose = false
-residual_tol = 0.1 # tolerance for residual norm after optimization
+residual_tol = 0.01 # tolerance for residual norm after optimization
 maxiter = 2000 # appears to be required for phase combinations in particular
 
 # Global
