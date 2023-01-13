@@ -18,6 +18,12 @@ struct Triclinic{T}<:Crystal{T}
     sincos_γ::Tuple{T, T}
 
     # Precalculate
+    b_square_c_square_sin_α_square::T
+    a_square_c_square_sin_β_square::T
+    a_square_b_square_sin_γ_square::T
+    a_b_c_square_cos_α_cos_β_minus_cos_γ::T
+    b_c_a_square_cos_β_cos_γ_minus_cos_α::T
+    a_c_b_square_cos_α_cos_γ_minus_cos_β::T
     volume::T
 
     free_param::Int8
@@ -27,6 +33,10 @@ struct Triclinic{T}<:Crystal{T}
         #check_not_equal(a, b, c) ||  error("a,b,c should be different for triclinic")
         #check_not_equal(α, β, γ, pi/2) || error("α, β, γ, pi/2 should be different for triclinic")
         new{T}(a, b, c, α, β, γ, sincos(α), sincos(β), sincos(γ),
+              (b*c*sin(α))^2, (a*c*sin(β))^2, (a*b*sin(γ))^2,
+              a*b*c^2*(cos(α)*cos(β)-cos(γ)),
+              b*c*a^2*(cos(β)*cos(γ)-cos(α)),
+              a*c*b^2*(cos(α)*cos(γ)-cos(β)),
               volume(a, b, c, α, β, γ), 6)
     end
 end
@@ -142,9 +152,6 @@ struct Hexagonal{T}<:Crystal{T}
     β::T
     γ::T
 
-    sincos_α::Tuple{T, T}
-    sincos_β::Tuple{T, T}
-    sincos_γ::Tuple{T, T}
     # Precalculate terms
     a_square_c_square::T
     a_quad_sin_γ_square::T
@@ -156,7 +163,6 @@ struct Hexagonal{T}<:Crystal{T}
     function Hexagonal{T}(a::T, c::T) where {T<:Real}
         #check_not_equal(a, c) || error("a, c should be different for hexagonal")
         new{T}(a, a, c, pi/2, pi/2, 2*pi/3,
-               (1., 0.), (1., 0.), sincos(2*pi/3),
                a^2*c^2, a^4*0.75,
                volume(a, a, c, pi/2, pi/2, 2*pi/3), 2)
     end
@@ -171,10 +177,6 @@ struct Cubic{T}<:Crystal{T}
     β::T
     γ::T
 
-    sincos_α::Tuple{T, T}
-    sincos_β::Tuple{T, T}
-    sincos_γ::Tuple{T, T}
-
     volume::T
 
     free_param::Int8
@@ -182,7 +184,6 @@ struct Cubic{T}<:Crystal{T}
     # get_property to get b,c, α, β, γ
     function Cubic{T}(a::T) where {T<:Real}
         new{T}(a, a, a, pi/2, pi/2, pi/2,
-               (1., 0.), (1., 0.), (1., 0.),
                a^3, 1)
     end
 end
@@ -274,12 +275,12 @@ end
 function (cl::Crystal)(P::Peak)
     try
         (2pi/cl.volume *
-        sqrt(P.h^2 * cl.b^2 * cl.c^2 * cl.sincos_α[1]^2
-        + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2
-        + P.l^2 * cl.a^2 * cl.b^2 * cl.sincos_γ[1]^2
-        + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cl.sincos_α[2]*cl.sincos_β[2] - cl.sincos_γ[2])
-        + 2*P.k * P.l * cl.a^2 * cl.b * cl.c * (cl.sincos_β[2]*cl.sincos_γ[2] - cl.sincos_α[2])
-        + 2*P.h * P.l * cl.a * cl.b^2 * cl.c * (cl.sincos_α[2]*cl.sincos_γ[2] - cl.sincos_β[2])
+        sqrt(P.h^2 * cl.b_square_c_square_sin_α_square
+        + P.k^2 * cl.a_square_c_square_sin_β_square
+        + P.l^2 * cl.a_square_b_square_sin_γ_square
+        + 2*P.h * P.k * cl.a_b_c_square_cos_α_cos_β_minus_cos_γ
+        + 2*P.k * P.l * cl.b_c_a_square_cos_β_cos_γ_minus_cos_α
+        + 2*P.h * P.l * cl.a_c_b_square_cos_α_cos_γ_minus_cos_β
         ))
     catch DomainError
         return Inf
