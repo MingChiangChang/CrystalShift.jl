@@ -338,12 +338,16 @@ end
 
 function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
     peak_locs = (CP.cl).(CP.peaks) .* 10
+    #y = zero(r)
     @inbounds @simd for i in eachindex(CP.peaks)
         if isinf(peak_locs[i])
             return Inf
         end
-        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ) # Main bottle neck
+        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
+        # Note: For Dual type, plus and minus are more expensive than multiply..
+        #@. y += CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
     end
+    #@. r -= y * CP.act
     r
 end
 

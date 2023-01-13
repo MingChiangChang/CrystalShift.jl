@@ -21,9 +21,10 @@ std_θ = [.05, 2., 1.]
 function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     params = get_free_lattice_params(cp)
     interval_size = 0.025
-    scaling = (interval_size.*rand(size(params, 1),) .- interval_size/2) .+ 1
+    scaling = (interval_size.*[0.1, 0.4, 0.5, 0.8] .- interval_size/2) .+ 1
     @. params = params*scaling
-    params = [params..., 1., 0.2, 0.5*rand(1)...]
+    params = [params..., 1., 0.2, 0.5*1]
+    #params = [params..., 1., 0.2, 0.5*rand(1)...]
     r = zero(x)
     evaluate!(r, cp, params, x)
     normalization = maximum(r)
@@ -46,12 +47,12 @@ y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 test = evaluate!(zero(x), cs[1], params, x)
-@time c, std_noise = optimize!(PhaseModel(cs[1:3]), x, test, std_noise, mean_θ, std_θ;
+@time t = optimize!(PhaseModel(cs[[1,3,6]]), x, test, std_noise, mean_θ, std_θ;
                   method =LM, maxiter = 128,
                   optimize_mode=Simple, em_loop_num=8,
                   regularization = true, verbose = false)
-yy = zero(x)
-evaluate!(yy, cs[1], x)
+# yy = zero(x)
+# evaluate!(yy, cs[1], x)
 # plt = plot(x, test)
 # plot!(x, evaluate!(y, c, x))
 # display(plt)

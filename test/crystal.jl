@@ -100,7 +100,7 @@ end
     peak = Peak(2, -1, 0, 27.3554, 100.)
     @test typeof(cl) <: Triclinic{Float64}
     @test isapprox(cl(peak), twoθ2q(peak.q), rtol=0.01)
-    
+
     peak = Peak(1, 1, -2, 27.9523, 100.)
     @test isapprox(cl(peak), twoθ2q(peak.q), rtol=0.01)
 end

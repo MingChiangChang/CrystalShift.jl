@@ -73,7 +73,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
 
     for cp in cps
         params = get_free_lattice_params(cp)
-        
+
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
         params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), (rand(1)))
