@@ -72,7 +72,7 @@ end
         sol[i,:] ./= maximum(sol[i,:])
         evaluate!(e, cs[pn[i]], x)
         e ./= maximum(e)
-        println(maximum(sol[i,:] .-e))
+        # println(maximum(sol[i,:] .-e))
         @test isapprox(sol[i,:], e, atol=0.05)
     end
 end
@@ -90,19 +90,19 @@ end
 
 t = zero(x)
 evaluate!(t, cs[1], x)
-println(get_free_params(cs[1]))
+# println(get_free_params(cs[1]))
 evaluate_residual!(cs[1], get_free_params(cs[1]), x, t)
 @test norm(t) < 10^-10
 
 t = zero(x)
 evaluate!(t, cs[1], get_free_params(cs[1]), x)
-println(get_free_params(cs[1]))
+# println(get_free_params(cs[1]))
 evaluate_residual!(cs[1], get_free_params(cs[1]), x, t)
 @test norm(t) < 10^-10
 
 t = zero(x)
 evaluate!(t, cs[1:2], get_free_params(cs[1:2]), x)
-println(get_free_params(cs[1:2]))
+# println(get_free_params(cs[1:2]))
 evaluate_residual!(cs[1:2], get_free_params(cs[1:2]), x, t)
 @test norm(t) < 10^-10
 

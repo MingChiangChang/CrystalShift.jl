@@ -38,9 +38,9 @@ pm = PhaseModel(cs[1], bg)
 @test size(pm2, 1) == 2
 @test pm3==pm
 
-for i in pm2
-    println(i.name)
-end
+# for i in pm2
+#     println(i.name)
+# end
 
 @test isnothing(Nothing(nothing, 3))
 @test evaluate!([1,2,3], nothing, [1.,.3,2.], x) == [1,2,3]

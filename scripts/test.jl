@@ -47,7 +47,7 @@ y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 test = evaluate!(zero(x), cs[1], params, x)
-@time t = optimize!(PhaseModel(cs[[1,3,6]]), x, test, std_noise, mean_θ, std_θ;
+@time t = optimize!(PhaseModel(cs[1:1]), x, test, std_noise, mean_θ, std_θ;
                   method =LM, maxiter = 128,
                   optimize_mode=Simple, em_loop_num=8,
                   regularization = true, verbose = false)

@@ -43,7 +43,7 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector,
         println(c[1].origin_cl)
     end
 
-    println(get_free_params(c))
+    # println(get_free_params(c))
 
     norm(c.(x).-y)
 end
@@ -60,7 +60,7 @@ function synthesize_data(cp::CrystalPhase, x::AbstractVector)
     if verbose
         println("synthesize_data: ", params)
     end
-    println("sol: $(params)")
+    #println("sol: $(params)")
 
     return r/normalization, params
 end
@@ -77,7 +77,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
         params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), (rand(1)))
-        println("sol: $(params)")
+        #println("sol: $(params)")
         full_params = vcat(full_params, params)
     end
     r = evaluate(cps, full_params, x)
@@ -98,10 +98,10 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
     if verbose
         println(c)
     end
-    for i in c
-        println(get_free_params(i))
-    end
-    println(full_params)
+    #for i in c
+    #    println(get_free_params(i))
+    #end
+    #println(full_params)
     # plt = plot(x, y)
     # plot!(x, evaluate!(zero(x), c, x))
     # display(plt)
@@ -123,7 +123,7 @@ end
             correct_counts += 1
         end
     end
-    println(correct_counts)
+    #println(correct_counts)
     @test correct_counts >= size(cs, 1) - 1
 end
 
@@ -164,12 +164,12 @@ end
     correct_counts = 0
     for _ in 1:5
         t = test_multiphase_optimize(cs, x, 2, LM, "LS", verbose)
-        println(t)
+        # println(t)
         if t < 0.1
             correct_counts += 1
         end
     end
-    println(correct_counts)
+    #println(correct_counts)
     @test correct_counts >= 3
 end
 
@@ -187,7 +187,7 @@ end
     correct_counts = 0
     for _ in 1:5
         t = test_multiphase_optimize(cs, x, 2, Newton, "LS", verbose)
-        println(t)
+        # println(t)
         if t < 0.1
             correct_counts += 1
         end
