@@ -22,6 +22,75 @@ function get_weighted_center(H::AbstractMatrix)
     sum(avg)/length(avg)
 end
 
+# Helper functions for creating CrystalPhase object from CIFs
+_get_key(cif_dict) = collect(keys(cif_dict))[1]
+function _get_phase_name(info_dict)
+    phase_name = ""
+    space_group = ""
+    if "_chemical_formula_structural" in keys(info_dict)
+        phase_name = remove_blank!(info_dict["_chemical_formula_structural"])
+    else
+        phase_name = remove_blank!(info_dict["_chemical_formula_moiety"])
+    end
+    try
+        space_group = remove_blank!(info_dict["_space_group_name_H-M_alt"])
+    catch KeyError
+        println("No _space_group_name_H-M_alt for $(phase_name)")
+    end
+    return phase_name * "_" * space_group
+end
+
+function _get_crystal_system(info_dict)
+    try
+        global sg_num = int(info_dict["_space_group_IT_number"])
+    catch KeyError
+        println("No space group info in cif. Default to triclinic")
+        return "triclinic"
+    end
+    if sg_num in [1,2]
+        return "triclinic"
+    elseif 3 <= sg_num <= 15
+        return "monoclinic"
+    elseif 16 <= sg_num <= 74
+        return "orthohombic"
+    elseif 75 <= sg_num <= 142
+        return "tetragonal"
+    elseif 143 <= sg_num <= 167
+        return "trigonal"
+    elseif 168 <= sg_num <= 194
+        return "hexagonal"
+    elseif 195 <= sg_num <= 230
+        return "cubic"
+    end
+end
+
+function _get_lattice_parameters(info_dict)
+    a, b, c = _get_cell_length(info_dict)
+    alpha, beta, gamma = _get_cell_angle(info_dict)
+    map(x->parse(Float64, x), [a, b, c, alpha, beta, gamma])
+end
+
+function _get_cell_length(info_dict)
+    return (remove_parentheses(info_dict["_cell_length_a"]),
+            remove_parentheses(info_dict["_cell_length_b"]),
+            remove_parentheses(info_dict["_cell_length_c"]))
+end
+
+function _get_cell_angle(info_dict)
+    return (remove_parentheses(info_dict["_cell_angle_alpha"]),
+            remove_parentheses(info_dict["_cell_angle_beta"]),
+            remove_parentheses(info_dict["_cell_angle_gamma"]))
+end
+
+remove_blank!(a::AbstractString) = replace(a, " "=>"")
+
+function remove_parentheses(a::AbstractString)
+    if occursin("(", a)
+        return a[1:collect(findfirst("(", a))[1]-1]
+    end
+    a
+end
+
 ## convenient macros
 macro exported_enum(name, args...)
     esc(quote

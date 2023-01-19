@@ -77,6 +77,48 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     return c
 end
 
+function CrystalPhase(path::AbstractString,
+                     q_range::Tuple, id::Integer,
+                     wid_init::Real=.1,
+                     profile::PeakProfile=FixedPseudoVoigt(0.5))
+    cif = CifParser(path)
+    lattice = CIFFile(path).SGLattice()
+
+    cif_dict = cif.as_dict()
+    key = _get_key(cif_dict)
+    info_dict = cif_dict[key]
+
+    # Getting names
+    phase_name = _get_phase_name(info_dict)
+    crystal_sys = _get_crystal_system(info_dict)
+    name = phase_name * "_" * crystal_sys
+    lattice_params = _get_lattice_parameters(info_dict)
+    crystal = get_crystal(lattice_params)
+
+    # Getting peaks
+    peaks, norm_constant = _get_peaks(lattice, q_range )
+    sort!(peaks, rev=true)
+
+    CrystalPhase(crystal, crystal, peaks, id, name, 1.0,
+                 wid_init, profile, norm_constant)
+end
+
+# Helper function
+function _get_peaks(lattice, q_range)
+    xtal = Xtal("test", lattice)
+    xrd = PowderDiffraction(xtal).data
+
+    peaks = Vector{Peak}()
+    for peak in keys(xrd)
+        q = xrd[peak]["qpos"] * 10
+        I = xrd[peak]["r"]
+        if q_range[1] < q < q_range[2] && I>0.0001
+           push!(peaks, Peak(peak[1], peak[2], peak[3], q, I))
+        end
+    end
+    normalize_peaks!(peaks)
+end
+
 function get_intrinsic_profile_type(profile_type::Type)
     if profile_type <: PseudoVoigt
         return PseudoVoigt
