@@ -27,7 +27,7 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
 
     pm = PhaseModel(W, BG)
-	opt_stn = OptimizationSettings{Float64}(pm, std_noise, [1., 1., 1.], [1., 1., 1.],
+	opt_stn = OptimizationSettings{Float64}(std_noise, [1., 1., 1.], [1., 1., 1.],
 											maxiter, regularization,
 											method, objective, optimize_mode, em_loop_num, verbose, tol)
 
@@ -149,7 +149,7 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 					regularization::Bool = true,
 					em_loop_num::Integer = 8,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
-	opt_stn = OptimizationSettings{Float64}(pm, std_noise, mean_θ, std_θ,
+	opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ,
 							maxiter, regularization,
 							method, objective, optimize_mode, em_loop_num, verbose, tol)
 
@@ -343,13 +343,14 @@ function get_lm_objective_func(pm::PhaseModel,
 							   x::AbstractVector, y::AbstractVector,
 							   opt_stn::OptimizationSettings)
 	pr = opt_stn.priors
+	mean_θ, std_θ = extend_priors(pr, pm)
 
 	function residual!(r::AbstractVector, log_θ::AbstractVector)
 		_residual!(pm, log_θ, x, y, r, pr.std_noise)
 	end
 
 	function prior!(p::AbstractVector, log_θ::AbstractVector)
-		_prior(p, log_θ, pr.mean_θ, pr.std_θ)
+		_prior(p, log_θ, mean_θ, std_θ)
 	end
 
 	# Regularized cost function
@@ -420,7 +421,8 @@ function get_newton_objective_func(pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector,
 									opt_stn::OptimizationSettings)
 	pr = opt_stn.priors
-	mean_log_θ = log.(pr.mean_θ)
+	mean_θ, std_θ = extend_priors(pr, pm)
+	mean_log_θ = log.(mean_θ)
 
 	function prior(log_θ::AbstractVector)
 		bg_param_num = get_param_nums(pm.background)
@@ -430,7 +432,7 @@ function get_newton_objective_func(pm::PhaseModel,
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		p = zero(eltype(log_θ))
 		@inbounds @simd for i in eachindex(θ_cp)
-			p += ((θ_cp[i] - mean_log_θ[i]) / (sqrt(2)*pr.std_θ[i]))^2
+			p += ((θ_cp[i] - mean_log_θ[i]) / (sqrt(2)*std_θ[i]))^2
 		end
 		p += _prior(pm.background, θ_bg)
 		p += _prior(pm.wildcard, θ_w)
@@ -470,7 +472,7 @@ function get_newton_objective_func(pm::PhaseModel,
 		θ_w  = log_θ[end - w_param_num-bg_param_num+1 : end-bg_param_num]
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		p = zero(θ_cp)
-		return (sum(abs2, _prior(p, θ_cp, pr.mean_θ, pr.std_θ))
+		return (sum(abs2, _prior(p, θ_cp, mean_θ, std_θ))
 		        + _prior(pm.background, θ_bg)
 				+ _prior(pm.wildcard, θ_w) )
 	end
