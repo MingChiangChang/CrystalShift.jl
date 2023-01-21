@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: '00 00 * * *'
   workflow_dispatch:
+env:
+    GITHUB_WORKFLOW: true
 jobs:
   CompatHelper:
     runs-on: ubuntu-latest

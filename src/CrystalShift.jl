@@ -23,8 +23,12 @@ export get_free_params
 
 # Python imports
 # IDEA: Should be a github CI flag that can decern this
-ci = true # Change this to false once PyCall is properly install in the right env
-if !ci
+try
+    global github = ENV["GITHUB_WORKFLOW"]
+catch
+    global github = false
+end
+if !github
     global CifParser = pyimport("pymatgen.io.cif")["CifParser"]
     global CIFFile = pyimport("xrayutilities.materials.cif")["CIFFile"]
     global Xtal = pyimport("xrayutilities.materials.material")["Crystal"]
