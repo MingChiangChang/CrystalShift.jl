@@ -17,7 +17,7 @@ using PyCall
 export CrystalPhase, AbstractPhase, PeakModCP, Wildcard, Peak, PhaseModel, BackgroundModel
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
-export OptimizationMethods, OptimizationMode # enums
+export OptimizationMethods, OptimizationMode, OptimizationSettings # enums
 export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
 export get_free_params
 
