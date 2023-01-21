@@ -119,16 +119,7 @@ function OptimizationSettings{V}(
     OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
 end
 
-# function OptimizationSettings{V}(
-#                                 std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
-#                                 maxiter::Int = 128,
-#                                 regularization::Bool =true,
-#                                 method::OptimizationMethods = LM,
-#                                 objective::String = "LS",
-#                                 optimize_mode::OptimizationMode = Simple,
-#                                 em_loop_num::Integer=8,
-#                                 verbose::Bool=false,
-#                                 tol::Float64=DEFAULT_TOL) where V<:Real
-#     pr = Priors{V}(std_noise, mean_θ, std_θ)
-#     OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
-# end
+function OptimizationSettings{Float64}()
+    pr = Priors{Float64}()
+    OptimizationSettings{Float64}(pr, 128, true, LM, "LS", Simple, 8, false, DEFAULT_TOL)
+end
