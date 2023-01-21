@@ -26,9 +26,9 @@ export get_free_params
 try
     global github = ENV["GITHUB_WORKFLOW"]
 catch
-    global github = false
+    global github = "false"
 end
-if github == "true"
+if github == "false"
     global CifParser = pyimport("pymatgen.io.cif")["CifParser"]
     global CIFFile = pyimport("xrayutilities.materials.cif")["CIFFile"]
     global Xtal = pyimport("xrayutilities.materials.material")["Crystal"]
