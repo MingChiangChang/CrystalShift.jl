@@ -28,7 +28,7 @@ try
 catch
     global github = false
 end
-if !github
+if github == "true"
     global CifParser = pyimport("pymatgen.io.cif")["CifParser"]
     global CIFFile = pyimport("xrayutilities.materials.cif")["CIFFile"]
     global Xtal = pyimport("xrayutilities.materials.material")["Crystal"]
