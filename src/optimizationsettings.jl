@@ -120,6 +120,6 @@ function OptimizationSettings{V}(
 end
 
 function OptimizationSettings{Float64}()
-    pr = Priors{Float64}()
+    pr = Priors{Float64}() 
     OptimizationSettings{Float64}(pr, 128, true, LM, "LS", Simple, 8, false, DEFAULT_TOL)
 end
