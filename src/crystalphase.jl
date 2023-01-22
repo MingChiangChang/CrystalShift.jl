@@ -59,16 +59,16 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile, norm_constant)
 end
 
-# function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5))
-#     cl_params = get_free_lattice_params(CP.origin_cl)
-#     profile_param_num = get_param_nums(CP.profile)
-#     cl = get_intrinsic_crystal_type(typeof(CP.origin_cl))
-#     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
-#     t = eltype(cl_params)
-#     c = CrystalPhase(cl{t}(cl_params...), CP.origin_cl, CP.peaks, CP.id, CP.name,
-#                 0.1, wid_init, profile, CP.norm_constant)
-#     return c
-# end
+function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5))
+    cl_params = get_free_lattice_params(CP.origin_cl)
+    profile_param_num = get_param_nums(CP.profile)
+    cl = get_intrinsic_crystal_type(typeof(CP.origin_cl))
+    profile_type = get_intrinsic_profile_type(typeof(CP.profile))
+    t = eltype(cl_params)
+    c = CrystalPhase(cl{t}(cl_params...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+                0.1, wid_init, profile, CP.norm_constant)
+    return c
+end
 
 function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     fp = CP.cl.free_param
