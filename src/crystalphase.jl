@@ -88,10 +88,11 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     return c
 end
 
-function CrystalPhase(path::AbstractString,
+function CrystalPhase(path::String,
                      q_range::Tuple, id::Integer,
                      wid_init::Real=.1,
                      profile::PeakProfile=FixedPseudoVoigt(0.5))
+    println(CifParser)
     cif = CifParser(path)
     lattice = CIFFile(path).SGLattice()
 
@@ -112,6 +113,10 @@ function CrystalPhase(path::AbstractString,
 
     CrystalPhase(crystal, crystal, peaks, id, name, 1.0,
                  wid_init, profile, norm_constant)
+end
+
+function CrystalPhase(paths::AbstractVector{String}, q_range::Tuple, ids::AbstractVector, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5 ))
+    CrystalPhase.(paths, (q_range,), ids, (wid_init, ), (profile, )) # Helper for broadcast in pyjulia
 end
 
 # Helper function
