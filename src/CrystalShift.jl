@@ -22,18 +22,11 @@ export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
 export get_free_params, CifParser, CIFFile, Xtal, PowderDiffraction
 
 # Python imports
-# IDEA: Should be a github CI flag that can decern this
 try
     global github = ENV["GITHUB_WORKFLOW"]
 catch KeyError
     global github = "false"
 end
-# if github == "false"
-
-# CifParser = pyimport("pymatgen.io.cif")["CifParser"]
-# CIFFile = pyimport("xrayutilities.materials.cif")["CIFFile"]
-# Xtal = pyimport("xrayutilities.materials.material")["Crystal"]
-# PowderDiffraction = pyimport("xrayutilities.simpack")["PowderDiffraction"]
 
 const CifParser = PyNULL()
 const CIFFile = PyNULL()
@@ -49,11 +42,6 @@ function __init__()
     end
 end
 
-# CifParser = pyimport("pymatgen.io.cif")["CifParser"]
-# CIFFile = pyimport("xrayutilities.materials.cif")["CIFFile"]
-# Xtal = pyimport("xrayutilities.materials.material")["Crystal"]
-# PowderDiffraction = pyimport("xrayutilities.simpack")["PowderDiffraction"]
-# end
 
 include("util.jl")
 include("peakprofile.jl")
