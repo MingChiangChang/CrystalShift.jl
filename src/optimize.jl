@@ -313,7 +313,7 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 	for phase in pm.CPs
         param_num = get_param_nums(phase)
 		p = evaluate(phase, θ[start:start+param_num-1], x)
-		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = dot(p, y) / sum(abs2, p)
+		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = max(0.01, dot(p, y) / sum(abs2, p)) # To avoid crashing with negative value
         start += param_num
 	end
 	return new_θ
