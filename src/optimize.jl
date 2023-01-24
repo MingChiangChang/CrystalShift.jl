@@ -175,8 +175,6 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
     # TODO: Don't take log of profile parameters
 	# @views test
 	# or . test
-	println("y: $(y)")
-	println("θ: $(θ)")
 	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
 	(any(isnan, log_θ) || any(isinf, log_θ)) && throw("any(isinf, θ) = $(any(isinf, θ)), any(isnan, θ) = $(any(isnan, θ))")
