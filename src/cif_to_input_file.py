@@ -137,6 +137,7 @@ if __name__ == "__main__":
     path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
     path = home / "Downloads" / "tio2"
     path = home / "Downloads" / "test"
+    path = home / "Downloads" / "YourCustomFileName"
     #path = home / "Downloads" / "AlLiFeO copy"
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
