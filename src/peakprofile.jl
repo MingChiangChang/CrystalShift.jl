@@ -16,7 +16,7 @@ get_free_params(P::PeakProfile) = []
 struct LorentzianProfile{T} <: PeakProfile{T} end
 const Lorentz = LorentzianProfile
 Lorentz() = Lorentz{Float64}()
-(P::Lorentz)(x::Real) = special_inv(1 + x^2)
+@inline (P::Lorentz)(x::Real) = special_inv(1 + x^2)
 
 ############################### Gaussian function ##############################
 struct GaussianProfile{T} <: PeakProfile{T} end
@@ -26,7 +26,7 @@ function Gauss(a::AbstractArray)
     isempty(a) || error("Gauss recieves a parameter")
     Gauss()
 end
-(P::Gauss)(x::Real) = special_exp(-x^2/2)
+@inline (P::Gauss)(x::Real) = special_exp(-x^2/2)
 
 @inline sigmoid(a::Real) = 1/(1+exp(-a))
 @inline inverse_sig(a::Real) = -log((1-a)/a)
@@ -34,6 +34,16 @@ end
 function inverse_sig()
     return []
 end
+
+
+######################### ApproxGaussian #########################
+## Adapted from Sebastian's code
+struct ApproxGaussian{T} <: PeakProfile{T} end
+ApproxGaussian() = ApproxGaussian{Float64}()
+
+# NOTE: this is probably not as accurate as I thought
+(G::ApproxGaussian)(x::Float32) = @fastpow inv(1 + x^2 / 16)^8 # devide by 2 to match width
+(G::ApproxGaussian)(x::Real) = @fastpow inv(1 + x^2 / 32)^16 # accurate to ?
 
 ############################# pseudo-voigt function ############################
 # A mix of Gaussian and Lorentzian
@@ -64,9 +74,20 @@ end
 # FixedPseudoVoigt does not provide fit for the mixture parameter α
 const FixedPseudoVoigt = FixedPseudoVoigtProfile
 FixedPseudoVoigt(a::Float64) = FixedPseudoVoigt{Float64}(a)
-(P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+@inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
 get_param_nums(P::FixedPseudoVoigt) = 0
 get_free_params(P::FixedPseudoVoigt) = []
+
+struct FixedApproxPseudoVoigtProfile{T} <: PeakProfile{T}
+   α::T
+end
+
+const FixedApproxPseudoVoigt = FixedApproxPseudoVoigtProfile
+FixedApproxPseudoVoigt(a::Float64) = FixedApproxPseudoVoigt{Float64}(a)
+(P::FixedApproxPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
+get_param_nums(P::FixedApproxPseudoVoigt) = 0
+get_free_params(P::FixedApproxPseudoVoigt) = []
+
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)

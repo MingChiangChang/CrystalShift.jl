@@ -488,7 +488,7 @@ function get_newton_objective_func(pm::PhaseModel,
 	end
 end
 
-function optimize!(phases::AbstractVector{<:AbstractPhase},
+function optimize!(phases::AbstractVector,
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
@@ -555,7 +555,7 @@ end
 
 # NOTE: candidates for removal?
 function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector{<:Crystal})
+	                      phases::AbstractVector)
 	θ_c = copy(θ)
     cursor = 0
 	for phase in phases
@@ -566,6 +566,6 @@ function remove_act_from_θ(θ::AbstractVector,
 end
 
 function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector{<:CrystalPhase})
+	                      phases::AbstractVector)
 	remove_act_from_θ(θ, collect_crystals(phases))
 end

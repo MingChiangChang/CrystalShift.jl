@@ -394,10 +394,12 @@ function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
     r
 end
 
-function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
-    # println(typeof(CP.cl))
+function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector{T}) where T
+    # println((length(CP.peaks)))
+    # println(eltype(r) <: ForwardDiff.Dual)
     peak_locs = (CP.cl).(CP.peaks) .* 10
     # y = zero(r)
+
     @inbounds @simd for i in eachindex(CP.peaks)
         if isinf(peak_locs[i])
             return Inf

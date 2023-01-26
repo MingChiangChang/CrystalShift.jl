@@ -10,6 +10,7 @@ using OptimizationAlgorithms
 using SpecialFunctions
 using ForwardDiff
 using LazyInverses
+using FastPow
 using StatsBase
 using PyCall
 
@@ -35,10 +36,10 @@ const PowderDiffraction = PyNULL()
 
 function __init__()
     if github == "false"
-        copy!(CifParser, pyimport("pymatgen.io.cif")["CifParser"])
-        copy!(CIFFile, pyimport("xrayutilities.materials.cif")["CIFFile"])
-        copy!(Xtal, pyimport("xrayutilities.materials.material")["Crystal"])
-        copy!(PowderDiffraction, pyimport("xrayutilities.simpack")["PowderDiffraction"])
+        copy!(CifParser, pyimport("pymatgen.io.cif")."CifParser")
+        copy!(CIFFile, pyimport("xrayutilities.materials.cif")."CIFFile")
+        copy!(Xtal, pyimport("xrayutilities.materials.material")."Crystal")
+        copy!(PowderDiffraction, pyimport("xrayutilities.simpack")."PowderDiffraction")
     end
 end
 

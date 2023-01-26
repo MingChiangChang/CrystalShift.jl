@@ -1,7 +1,7 @@
 module Testoptimize
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate!
-using CrystalShift: newton!, get_free_lattice_params, get_fraction
+using CrystalShift: newton!, get_free_lattice_params, get_fraction, FixedPseudoVoigt
 
 using LinearAlgebra
 using Random: rand
@@ -27,7 +27,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (FixedPseudoVoigt(0.5),))
 x = collect(8:.1:60)
 
 function test_optimize(cp::CrystalPhase, x::AbstractVector,

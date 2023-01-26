@@ -2,6 +2,7 @@ using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, Lorentz, Gauss
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, PseudoVoigt
 using CrystalShift: evaluate!,get_param_nums, FixedPseudoVoigt, EM_optimize!
+using CrystalShift: FixedApproxPseudoVoigt
 
 using LinearAlgebra
 using Random: rand
@@ -41,13 +42,13 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Gauss(),))
+cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (FixedPseudoVoigt(0.5),))
 x = collect(8:.1:60)
 y = zero(x)
 
 test, params = synthesize_data(cs[1], x)
 test = evaluate!(zero(x), cs[1], params, x)
-@time t = optimize!(PhaseModel(cs[1:1]), x, test, std_noise, mean_θ, std_θ;
+@time t = optimize!(PhaseModel(cs[1:3]), x, test, std_noise, mean_θ, std_θ;
                   method =LM, maxiter = 128,
                   optimize_mode=Simple, em_loop_num=8,
                   regularization = true, verbose = false)
