@@ -76,7 +76,7 @@ function synthesize_multiphase_data(cps::AbstractVector{<:CrystalPhase},
 
         scaling = (interval_size.*rand(size(params, 1)).-interval_size/2).+1
         @. params = params*scaling
-        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)), (rand(1)))
+        params = vcat(params, 0.5.+3rand(1), 0.1.+0.1(rand(1)))
         #println("sol: $(params)")
         full_params = vcat(full_params, params)
     end
@@ -164,7 +164,7 @@ end
     correct_counts = 0
     for _ in 1:5
         t = test_multiphase_optimize(cs, x, 2, LM, "LS", verbose)
-        # println(t)
+        #println(t)
         if t < 0.1
             correct_counts += 1
         end
