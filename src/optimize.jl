@@ -296,7 +296,7 @@ end
 """
 Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters
 """
-function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, verbose::Bool=false)
 	phase_log_θ = log.(get_free_params(CPs))
 
 	# This is hessian in log space, TODO: change to real sapce
@@ -308,7 +308,7 @@ function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::
 
 	H = ForwardDiff.hessian(res, phase_log_θ)
 	val = sum(abs2, y .- evaluate!(zero(x), CPs, x))
-	if opt_stn.verbose
+	if verbose
 	    println("residual: $(val)")
 		display(H)
 	end
