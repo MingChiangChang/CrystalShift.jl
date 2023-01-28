@@ -52,6 +52,7 @@ test = evaluate!(zero(x), cs[1], params, x)
                   method =LM, maxiter = 128,
                   optimize_mode=Simple, em_loop_num=8,
                   regularization = true, verbose = false)
+uncer = uncertatinty(t.CPs, x, test)
 # yy = zero(x)
 # evaluate!(yy, cs[1], x)
 # plt = plot(x, test)

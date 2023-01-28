@@ -5,8 +5,8 @@
 abstract type PeakProfile{T} end
 
 @inline locationscale(f, x, μ, σ) = f((x-μ)/σ)
-(P::PeakProfile)(x::Real, μ::Real, σ::Real) = locationscale(P, x, μ, σ)
-(P::PeakProfile)(x::Real, c::Real, μ::Real, σ::Real) = c*P(x, μ, σ)
+@inline (P::PeakProfile)(x::Real, μ::Real, σ::Real) = locationscale(P, x, μ, σ)
+@inline (P::PeakProfile)(x::Real, c::Real, μ::Real, σ::Real) = c*P(x, μ, σ)
 
 get_param_nums(P::PeakProfile) = 0
 get_free_params(P::PeakProfile) = []
@@ -42,8 +42,8 @@ struct ApproxGaussian{T} <: PeakProfile{T} end
 ApproxGaussian() = ApproxGaussian{Float64}()
 
 # NOTE: this is probably not as accurate as I thought
-(G::ApproxGaussian)(x::Float32) = @fastpow inv(1 + x^2 / 16)^8 # devide by 2 to match width
-(G::ApproxGaussian)(x::Real) = @fastpow inv(1 + x^2 / 32)^16 # accurate to ?
+@inline (G::ApproxGaussian)(x::Float32) = @fastpow inv(1 + x^2 / 16)^8 # devide by 2 to match width
+@inline (G::ApproxGaussian)(x::Real) = @fastpow inv(1 + x^2 / 32)^16 # accurate to ?
 
 ############################# pseudo-voigt function ############################
 # A mix of Gaussian and Lorentzian

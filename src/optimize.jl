@@ -208,25 +208,11 @@ function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 	return c, std_noise
 end
 
+
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector,
 									opt_stn::OptimizationSettings)
 	# # Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
-	# phase_params = get_param_nums(pm.CPs) + get_param_nums(pm.wildcard)
-	# # _, new_bg = reconstruct_BG!(log_θ[phase_params+1:end], pm.background)
-	# signal = y #.- evaluate!(zero(y), new_bg, x)
-	# phases = PhaseModel(pm.CPs, pm.wildcard, nothing)
-	# phase_log_θ = log_θ[1:phase_params]
-    # println(exp.(phase_log_θ))
-	# if opt_stn.method == LM
-	# 	f = get_lm_objective_func(phases, x, signal, opt_stn)
-	# 	r = zeros(Real, length(y) + phase_params)
-	# 	function res(log_θ)
-	# 		sum(abs2, f(r, log_θ).*sqrt(2).*opt_stn.priors.std_noise)
-	# 	end
-	# else
-	# 	res = get_newton_objective_func(pm, x, y, opt_stn)
-	# end
 
     # t = zeros(Real, length(y) + phase_params)
 	# # rr = f(t, phase_log_θ)
@@ -273,26 +259,29 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	phase_log_θ = log_θ[1:phase_params]
 
 	# This is hessian in log space, TODO: change to real sapce
-	if opt_stn.method == LM
-		f = get_lm_objective_func(phases, x, signal, opt_stn)
-		r = zeros(Real, length(y) + phase_params)
-		function res(log_θ)
-			sum(abs2, f(r, log_θ))
-		end
-	else
-		res = get_newton_objective_func(pm, x, y, opt_stn)
+	# if opt_stn.method == LM
+	# 	f = get_lm_objective_func(phases, x, signal, opt_stn)
+	# 	r = zeros(Real, length(y) + phase_params)
+	# 	function res(log_θ)
+	# 		sum(abs2, f(r, log_θ))
+	# 	end
+	# else
+	# 	res = get_newton_objective_func(pm, x, y, opt_stn)
+	# end
+
+	r = zeros(Real, length(y))
+	function t(log_θ)
+        sum(abs2, y .- evaluate!(r, reconstruct!(pm, exp.(log_θ)), x))
 	end
 
-	H = ForwardDiff.hessian(res, phase_log_θ)
-	println(typeof(H))
+	H = ForwardDiff.hessian(t, phase_log_θ)
 	# val = res(phase_log_θ) * sqrt(2) * opt_stn.priors.std_noise
-	val = sum(abs2, y .- evaluate!(zero(x), reconstruct!(pm, log_θ), x))
+	val = sum(abs2, y .- evaluate!(zero(x), reconstruct!(pm, exp.(log_θ)), x))
 	if opt_stn.verbose
 	    println("residual: $(val)")
 		display(H)
 	end
 	uncer = diag(val / (length(x) - length(phase_log_θ)) * inverse(H))
-    println(uncer)
 	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	θ = log_θ
 	pm = reconstruct!(pm, θ)
@@ -304,6 +293,30 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	return pm, uncer
 end
 
+"""
+Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters
+"""
+function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+	phase_log_θ = log.(get_free_params(CPs))
+
+	# This is hessian in log space, TODO: change to real sapce
+	r = zeros(Real, length(y))
+	function res(log_θ)
+		_, new_CP = reconstruct_CPs!(exp.(log_θ), CPs)
+        sum(abs2, y .- evaluate!(r, new_CP, x))
+	end
+
+	H = ForwardDiff.hessian(res, phase_log_θ)
+	val = sum(abs2, y .- evaluate!(zero(x), CPs, x))
+	if opt_stn.verbose
+	    println("residual: $(val)")
+		display(H)
+	end
+	uncer = diag(val / (length(x) - length(phase_log_θ)) * inverse(H))
+	fill_angle = 0
+	uncer = get_eight_params(CPs, uncer, fill_angle)
+	return  uncer
+end
 
 function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector)
     new_θ = copy(θ) # make a copy

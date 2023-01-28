@@ -2,7 +2,7 @@ module TestBackground
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
-using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt
+using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt, FixedPseudoVoigt
 using CrystalShift: _prior, get_param_nums, lm_prior!
 using CovarianceFunctions
 using CovarianceFunctions: EQ
@@ -30,7 +30,7 @@ else
     s = split(read(f, String), "#\n")
 end
 
-cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (PseudoVoigt(0.5), ))
+cs = @. CrystalPhase(String(s[1:end-1]), (0.1, ), (FixedPseudoVoigt(0.5), ))
 x = collect(8:.1:60)
 
 
