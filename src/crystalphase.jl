@@ -211,13 +211,13 @@ Returns:
 """
 const FILL_ANGLE = pi / 2
 
-function get_eight_params(CP::AbstractPhase)
+function get_eight_params(CP::CrystalPhase)
     vcat([CP.cl.a, CP.cl.b, CP.cl.c, CP.cl.α, CP.cl.β, CP.cl.γ, CP.act, CP.σ], get_free_params(CP.profile))
 end
 # ignore fill angle if the method is independent of it:
 # get_eight_params(CP::AbstractPhase, θ::AbstractVector, ::Real) = get_eight_params(CP, θ)
 
-function get_eight_params(CP::AbstractPhase, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+function get_eight_params(CP::CrystalPhase, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
     get_eight_params(CP.cl, θ, fill_angle)
 end
 
@@ -248,7 +248,7 @@ end
 
 get_eight_params(crystal::Triclinic, θ::AbstractVector, fill_angle::Real) = θ
 
-function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
+function get_free_lattice_params(CPs::AbstractVector{<:CrystalPhase})
     p = Vector{Float64}()
     for cp in CPs
         push!(p, get_free_lattice_params(cp)...) # Preallocation?
@@ -256,7 +256,7 @@ function get_free_lattice_params(CPs::AbstractVector{<:AbstractPhase})
     p
 end
 
-function get_eight_params(CP::AbstractVector{<:AbstractPhase}, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
+function get_eight_params(CP::AbstractVector{<:CrystalPhase}, θ::AbstractVector, fill_angle::Real = FILL_ANGLE)
     start = 1
     params = zeros(Float64, 8*length(CP))
     for i in eachindex(CP)
@@ -267,8 +267,8 @@ function get_eight_params(CP::AbstractVector{<:AbstractPhase}, θ::AbstractVecto
     params
 end
 
-get_free_lattice_params(CP::AbstractPhase) = get_free_lattice_params(CP.cl)
-get_free_lattice_params(CP::AbstractPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
+get_free_lattice_params(CP::CrystalPhase) = get_free_lattice_params(CP.cl)
+get_free_lattice_params(CP::CrystalPhase, θ::AbstractVector) = get_free_lattice_params(CP.cl, θ)
 get_free_lattice_params(cl::Cubic, θ::AbstractVector) = [θ[1]]
 get_free_lattice_params(cl::Tetragonal, θ::AbstractVector) = [θ[1], θ[3]]
 get_free_lattice_params(cl::Hexagonal, θ::AbstractVector) = [θ[1], θ[3]]

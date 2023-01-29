@@ -1,7 +1,7 @@
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate!, Lorentz
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, optimize_with_uncertainty!
-using CrystalShift: var_lognormal, get_eight_params, uncertainty
+using CrystalShift: var_lognormal, get_eight_params, uncertainty, get_fraction_with_uncertainty
 using CovarianceFunctions: EQ
 using LinearAlgebra
 using Random: rand
@@ -40,7 +40,7 @@ y += noise
 # evaluate!(y, CrystalPhase(cs[1], [17.0, 4.86, 5.55, 1.58, 1.0, 0.2]), x)
 evaluate!(y, cs[1], x)
 evaluate!(y, cs[2], x)
-pm, uncer = optimize!(PhaseModel(cs[2:2], nothing, nothing), x, y, std_noise, mean_θ, std_θ;
+pm, uncer = optimize!(PhaseModel(cs[1:2], nothing, nothing), x, y, std_noise, mean_θ, std_θ;
                             method = LM, optimize_mode = WithUncer,
                             maxiter = maxiter,
                             regularization = true,
@@ -50,10 +50,11 @@ plot!(x, evaluate!(zero(x), pm, x))
 display(plt)
 println(uncer)
 opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ)
+#println(get_fraction_with_uncertainty(pm.CPs, x, y, false))
 uncer = uncertainty(pm.CPs, x, y, opt_stn)
 mean = log.(reduce(vcat, get_eight_params.(pm.CPs)))
 std = sqrt.(var_lognormal.(mean, sqrt.(uncer)))
-v = mean .± sqrt.(uncer)
+v = mean .± std
 
-exp.(mean .± std)
-# exp.(v)
+# exp.(mean .± std)
+exp.(v)
