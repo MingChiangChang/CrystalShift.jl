@@ -27,6 +27,10 @@ struct Priors{T}
     # end
 end
 
+function Priors{V}(priors::Priors{V}, std_noise::Real) where V
+    Priors{V}(std_noise, priors.mean_θ, priors.std_θ)
+end
+
 extend_priors(pr::Priors, phases::AbstractVector{<:AbstractPhase}) = extend_priors(pr.mean_θ, pr.std_θ, phases)
 extend_priors(pr::Priors, phase_model::PhaseModel) = extend_priors(pr, phase_model.CPs)
 extend_priors(pr::Priors, phases::Nothing) = [], []
@@ -120,6 +124,13 @@ function OptimizationSettings{V}(
 end
 
 function OptimizationSettings{Float64}()
-    pr = Priors{Float64}() 
+    pr = Priors{Float64}()
     OptimizationSettings{Float64}(pr, 128, true, LM, "LS", Simple, 8, false, DEFAULT_TOL)
+end
+
+function OptimizationSettings{Float64}(opt_stn::OptimizationSettings, std_noise::Real)
+   pr = Priors{Float64}(opt_stn.priors, std_noise)
+   OptimizationSettings{Float64}(pr, opt_stn.maxiter, opt_stn.regularization, opt_stn.method,
+                                opt_stn.objective, opt_stn.optimize_mode, opt_stn.em_loop_num,
+                                opt_stn.verbose, opt_stn.tol)
 end

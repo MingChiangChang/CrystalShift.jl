@@ -169,7 +169,7 @@ end
 
 function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
-	if eltype(pm.CPs) <: CrystalPhase
+	if eltype(pm.CPs) <: CrystalPhase && opt_stn.optimize_mode != EM
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
     # TODO: Don't take log of profile parameters
@@ -195,15 +195,18 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 	return reconstruct!(pm, θ)
 end
 
+using Plots
 function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 
     c = 0 # As existing local to make this thread safe
-	std_noise = 0
+	std_noise = 0.05
 	for i in 1:opt_stn.em_loop_num
 		c = simple_optimize!(θ, pm, x, y, opt_stn)
         std_noise = std(y - evaluate(c, get_free_params(c), x))
 		θ = get_free_params(c)
+		opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise)
+		pm = c
 	end
 	return c, std_noise
 end
