@@ -33,7 +33,7 @@ end
 
 extend_priors(pr::Priors, phases::AbstractVector{<:AbstractPhase}) = extend_priors(pr.mean_θ, pr.std_θ, phases)
 extend_priors(pr::Priors, phase_model::PhaseModel) = extend_priors(pr, phase_model.CPs)
-extend_priors(pr::Priors, phases::Nothing) = [], []
+extend_priors(pr::Priors, phases::Nothing) = Float64[], Float64[]
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
                         phases::AbstractVector{<:CrystalPhase})
