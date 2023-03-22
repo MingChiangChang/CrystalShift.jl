@@ -58,7 +58,7 @@ end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
                        phases::Nothing)
-    return [], []
+    return Float64[], Float64[]
 end
 
 function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
