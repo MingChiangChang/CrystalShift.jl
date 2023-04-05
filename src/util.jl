@@ -24,25 +24,30 @@ end
 
 # Helper functions for creating CrystalPhase object from CIFs
 _get_key(cif_dict) = collect(keys(cif_dict))[1]
+
 function _get_phase_name(info_dict)
     phase_name = ""
     space_group = ""
+
     if "_chemical_formula_structural" in keys(info_dict)
         phase_name = remove_blank!(info_dict["_chemical_formula_structural"])
     else
         phase_name = remove_blank!(info_dict["_chemical_formula_moiety"])
     end
-    try
-        space_group = remove_blank!(info_dict["_space_group_name_H-M_alt"])
+
+    try # TODO: check key existence instead of using try-catch block
+        space_group = remove_blank!(info_dict["_space_group_name_H-M_alt"]) # _symmetry_space_group_name_H-M
     catch KeyError
         println("No _space_group_name_H-M_alt for $(phase_name)")
     end
+
     return phase_name * "_" * space_group
 end
 
 function _get_crystal_system(info_dict)
+    println(info_dict["_space_group_IT_number"])
     try
-        global sg_num = int(info_dict["_space_group_IT_number"])
+        global sg_num = parse(Int64, info_dict["_space_group_IT_number"])
     catch KeyError
         println("No space group info in cif. Default to triclinic")
         return "triclinic"

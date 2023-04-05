@@ -71,8 +71,12 @@ def _get_key(cif_dict):
 def _get_phase_name(info_dict):
     if "_chemical_formula_structural" in info_dict.keys():
         phase_name = remove_blank(info_dict["_chemical_formula_structural"])
-    else:
+    elif "_chemical_formula_moiety" in info_dict.keys():
         phase_name = remove_blank(info_dict["_chemical_formula_moiety"])
+    elif "_chemical_formula_sum" in info_dict.keys():
+        phase_name = remove_blank(info_dict["_chemical_formula_sum"])
+    else:
+        error("cannot find phase name in cif")
     try:
         space_group = remove_blank(info_dict["_space_group_name_H-M_alt"])
     except KeyError:
@@ -138,6 +142,8 @@ if __name__ == "__main__":
     path = home / "Downloads" / "tio2"
     path = home / "Downloads" / "test"
     path = home / "Downloads" / "YourCustomFileName"
+    path = home / "Downloads" / "CIFs-2" / "LaOx"
+    path = home / "Desktop" / "All_CIFs"
     #path = home / "Downloads" / "AlLiFeO copy"
     cif_paths = list(path.glob('*.cif'))
     #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
