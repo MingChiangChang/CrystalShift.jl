@@ -42,35 +42,20 @@ function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
     full_std_θ = zeros(totl_params)
     start = 1
 
-    # Obviously duplicate, can reduce later
-    if length(mean_θ)/3 == length(phases) # Phase specific prior
-        for i in eachindex(phases)
-            n = phases[i].cl.free_param
-            full_mean_θ[start:start+n-1] = mean_θ[1+3(i-1)].*get_free_lattice_params(phases[i])
-            full_std_θ[start:start+n-1] = std_θ[1+3(i-1)].*get_free_lattice_params(phases[i])
-            full_mean_θ[start + n:start + n + 1] = mean_θ[2+3(i-1):3i]
-            full_std_θ[start + n:start + n + 1] = std_θ[2+3(i-1):3i]
-            if phases[i].profile isa PseudoVoigt
-                full_mean_θ[start + n + 2] = 0.5
-                full_std_θ[start + n + 2] = 10.
-            end
-            start += get_param_nums(phases[i])
-        end
-        return full_mean_θ, full_std_θ
-    end
-
-    for phase in phases
-        n = phase.cl.free_param
-        full_mean_θ[start:start+n-1] = mean_θ[1].*get_free_lattice_params(phase)
-        full_std_θ[start:start+n-1] = std_θ[1].*get_free_lattice_params(phase)#repeat(std_θ[1, :], n)
-        full_mean_θ[start + n:start + n + 1] = mean_θ[2:3]
-        full_std_θ[start + n:start + n + 1] = std_θ[2:3]
-        if phase.profile isa PseudoVoigt
+    for i in eachindex(phases)
+        n = phases[i].cl.free_param
+        p = length(mean_θ)/3 == length(phases) ? i : 1
+        full_mean_θ[start:start+n-1] = mean_θ[1+3(p-1)].*get_free_lattice_params(phases[i])
+        full_std_θ[start:start+n-1] = std_θ[1+3(p-1)].*get_free_lattice_params(phases[i])
+        full_mean_θ[start + n:start + n + 1] = mean_θ[2+3(p-1):3p]
+        full_std_θ[start + n:start + n + 1] = std_θ[2+3(p-1):3p]
+        if phases[i].profile isa PseudoVoigt
             full_mean_θ[start + n + 2] = 0.5
             full_std_θ[start + n + 2] = 10.
         end
-        start += get_param_nums(phase)
+        start += get_param_nums(phases[i])
     end
+
     return full_mean_θ, full_std_θ
 end
 
