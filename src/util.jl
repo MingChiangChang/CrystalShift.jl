@@ -45,7 +45,7 @@ function _get_phase_name(info_dict)
 end
 
 function _get_crystal_system(info_dict)
-    println(info_dict["_space_group_IT_number"])
+    # println(info_dict["_space_group_IT_number"])
     try
         global sg_num = parse(Int64, info_dict["_space_group_IT_number"])
     catch KeyError
