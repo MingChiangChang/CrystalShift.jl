@@ -12,7 +12,7 @@ using ForwardDiff
 using LazyInverses
 using FastPow
 using StatsBase
-using PyCall
+# using PyCall
 
 # TODO: Update export list
 export CrystalPhase, AbstractPhase, PeakModCP, Wildcard, Peak, PhaseModel, BackgroundModel
@@ -23,25 +23,27 @@ export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
 export get_free_params, CifParser, CIFFile, Xtal, PowderDiffraction
 
 # Python imports
-try
-    global github = ENV["GITHUB_WORKFLOW"]
-catch KeyError
-    global github = "false"
-end
+# Note: Deprecated for ease of python wrapper installation
+# Could be fixed by wrapping into docker image
+# try
+#     global github = ENV["GITHUB_WORKFLOW"]
+# catch KeyError
+#     global github = "false"
+# end
 
-const CifParser = PyNULL()
-const CIFFile = PyNULL()
-const Xtal = PyNULL()
-const PowderDiffraction = PyNULL()
+# const CifParser = PyNULL()
+# const CIFFile = PyNULL()
+# const Xtal = PyNULL()
+# const PowderDiffraction = PyNULL()
 
-function __init__()
-    if github == "false"
-        copy!(CifParser, pyimport("pymatgen.io.cif")."CifParser")
-        copy!(CIFFile, pyimport("xrayutilities.materials.cif")."CIFFile")
-        copy!(Xtal, pyimport("xrayutilities.materials.material")."Crystal")
-        copy!(PowderDiffraction, pyimport("xrayutilities.simpack")."PowderDiffraction")
-    end
-end
+# function __init__()
+#     if github == "false"
+#         copy!(CifParser, pyimport("pymatgen.io.cif")."CifParser")
+#         copy!(CIFFile, pyimport("xrayutilities.materials.cif")."CIFFile")
+#         copy!(Xtal, pyimport("xrayutilities.materials.material")."Crystal")
+#         copy!(PowderDiffraction, pyimport("xrayutilities.simpack")."PowderDiffraction")
+#     end
+# end
 
 
 include("util.jl")
