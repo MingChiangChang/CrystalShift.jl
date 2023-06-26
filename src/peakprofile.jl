@@ -17,6 +17,7 @@ struct LorentzianProfile{T} <: PeakProfile{T} end
 const Lorentz = LorentzianProfile
 Lorentz() = Lorentz{Float64}()
 @inline (P::Lorentz)(x::Real) = special_inv(1 + x^2)
+#@inline (P::Lorentz)(x::AbstractVector) = special_inv(1 .+ x.^2)
 
 ############################### Gaussian function ##############################
 struct GaussianProfile{T} <: PeakProfile{T} end
@@ -27,6 +28,7 @@ function Gauss(a::AbstractArray)
     Gauss()
 end
 @inline (P::Gauss)(x::Real) = special_exp(-x^2/2)
+@inline (P::Gauss)(x::AbstractVector) = AppleAccelerate.exp(-x.^2 ./ 2)
 
 @inline sigmoid(a::Real) = 1/(1+exp(-a))
 @inline inverse_sig(a::Real) = -log((1-a)/a)
@@ -42,7 +44,7 @@ struct ApproxGaussian{T} <: PeakProfile{T} end
 ApproxGaussian() = ApproxGaussian{Float64}()
 
 # NOTE: this is probably not as accurate as I thought
-@inline (G::ApproxGaussian)(x::Float32) = @fastpow inv(1 + x^2 / 16)^8 # devide by 2 to match width
+@inline (G::ApproxGaussian)(x::Float64) = @fastpow inv(1 + x^2 / 16)^8 # devide by 2 to match width
 @inline (G::ApproxGaussian)(x::Real) = @fastpow inv(1 + x^2 / 32)^16 # accurate to ?
 
 ############################# pseudo-voigt function ############################
@@ -57,7 +59,7 @@ struct PseudoVoigtProfile{T} <: PeakProfile{T}
 end
 
 const PseudoVoigt = PseudoVoigtProfile
-PseudoVoigt(a::Float64) = PseudoVoigt{Float64}(a)
+PseudoVoigt(a::T) where T = PseudoVoigt{T}(a)
 (P::PseudoVoigt)(x::Real) = (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
 get_free_params(P::PseudoVoigtProfile) = [P.sig_α] # This is in sigmoid space!!
@@ -73,8 +75,11 @@ end
 
 # FixedPseudoVoigt does not provide fit for the mixture parameter α
 const FixedPseudoVoigt = FixedPseudoVoigtProfile
-FixedPseudoVoigt(a::Float64) = FixedPseudoVoigt{Float64}(a)
-@inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+FixedPseudoVoigt(a::T) where T = FixedPseudoVoigt{T}(a)
+@inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) #ApproxGaussian()(x)
+#@inline (P::FixedPseudoVoigt)(x::AbstractVector) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
+# @inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
+# @inline (P::FixedPseudoVoigt)(x::Float64) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
 get_param_nums(P::FixedPseudoVoigt) = 0
 get_free_params(P::FixedPseudoVoigt) = []
 
@@ -83,7 +88,7 @@ struct FixedApproxPseudoVoigtProfile{T} <: PeakProfile{T}
 end
 
 const FixedApproxPseudoVoigt = FixedApproxPseudoVoigtProfile
-FixedApproxPseudoVoigt(a::Float64) = FixedApproxPseudoVoigt{Float64}(a)
+FixedApproxPseudoVoigt(a::T) where T = FixedApproxPseudoVoigt{T}(a)
 (P::FixedApproxPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
 get_param_nums(P::FixedApproxPseudoVoigt) = 0
 get_free_params(P::FixedApproxPseudoVoigt) = []

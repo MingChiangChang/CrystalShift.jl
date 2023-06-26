@@ -64,7 +64,7 @@ with open(f'{str(path)}/_sticks.csv', 'w') as f:
             intensities.append(intensity)
 
 
-        intensities = np.array(intensities).astype('float64')
+        intensities = np.array(intensities).astype('Float64')
         intensities = intensities/np.max(intensities)
         intensities = intensities * 100
 

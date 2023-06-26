@@ -49,7 +49,7 @@ struct Monoclinic{T}<:Crystal{T}
     function Monoclinic{T}(a::T, b::T, c::T, β::T) where {T<:Real}
         #check_not_equal(a, b, c) || error("a,c should be different for monoclinic")
         #check_not_equal(β, pi/2) || error("β, pi/2 should be different for monoclinic")
-        new{T}(a, b, c, pi/2, β, pi/2, 
+        new{T}(a, b, c, pi/2, β, pi/2,
                (1., 0.), sincos(β), (1., 0.),
                a * b * c * sin(β), 4)
     end

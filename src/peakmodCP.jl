@@ -68,6 +68,15 @@ function evaluate_residual!(IM::PeakModCP, x::AbstractVector, r::AbstractVector)
     r
 end
 
+function evaluate_residual!(IM::PeakModCP, θ::AbstractVector,
+                            x::AbstractVector, r::AbstractVector)
+    @simd for i in eachindex(θ)
+        @. r -= IM.basis[:,i] * θ[i]
+    end
+    @. r -= IM.const_basis
+    r
+end
+
 function PeakModCP(IM::PeakModCP, θ::AbstractVector)
     PeakModCP(IM.basis, IM.const_basis, θ)
 end

@@ -384,6 +384,7 @@ function get_lm_objective_func(pm::PhaseModel,
 		if (any(isinf, log_θ) || any(isnan, log_θ))
 			return Inf
 		end
+		cp_param_num = get_param_nums(pm.CPs)
 		bg_param_num = get_param_nums(pm.background)
 		w_param_num = get_param_nums(pm.wildcard)
 		θ_cp = log_θ[1:end - w_param_num-bg_param_num]
@@ -391,11 +392,11 @@ function get_lm_objective_func(pm::PhaseModel,
 		θ_bg = log_θ[end - bg_param_num + 1 : end]
 		r = @view rp[1:length(y)] # residual term
 		residual!(r, log_θ)
-		p = @view rp[length(y)+1:length(y)+get_param_nums(pm.CPs)] # prior term
+		p = @view rp[length(y)+1:length(y)+cp_param_num] # prior term
 		prior!(p, θ_cp)
-		wp = @view rp[length(y)+get_param_nums(pm.CPs)+1:length(y)+get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]
+		wp = @view rp[length(y)+cp_param_num+1:length(y)+cp_param_num+w_param_num]
 		lm_prior!(wp, pm.wildcard, θ_w)
-		bg_p = @view rp[length(y)+get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)+1:end]
+		bg_p = @view rp[length(y)+cp_param_num+w_param_num+1:end]
 		lm_prior!(bg_p, pm.background, θ_bg)
 		return rp
 	end
@@ -471,14 +472,18 @@ function get_newton_objective_func(pm::PhaseModel,
 	# kl(r_θ, y) is more exclusive, i.e. it tends to fit peaks well that it can explain while ignoring others
 
 	function kl_objective(log_θ::AbstractVector) # TODO: Fix this for wildcard
-		log_θ[1:get_param_nums(pm.CPs)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)])
-		if (any(isinf, log_θ) || any(isnan, log_θ))
-			log_θ[1:get_param_nums(pm.CPs)] .= @views log.(log_θ[1:get_param_nums(pm.CPs)])
+		end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+	    temp_θ = copy(log_θ)
+	    @. temp_θ[1:end_idx] = exp(log_θ[1:end_idx])
+		if (any(isinf, temp_θ) || any(isnan, temp_θ))
 			return Inf
 		end
-		r_θ = evaluate(pm, log_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
+		# @time begin
+		r_θ = zeros(promote_type(eltype(log_θ), eltype(x), eltype(y)), length(x))
+		evaluate!(r_θ, pm, temp_θ, x)
+		# end
+		# r_θ = evaluate(pm, temp_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
-		log_θ[1:get_param_nums(pm.CPs)] .= @views log.(log_θ[1:get_param_nums(pm.CPs)])
 		p_θ = prior(log_θ)
 		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
 		kl(r_θ, y) + λ * p_θ
@@ -556,21 +561,41 @@ function _prior(p::AbstractVector, log_θ::AbstractVector,
 	return p # IDEA: Is this too small??
 end
 
+# function _residual!(pm::PhaseModel,
+# 					log_θ::AbstractVector,
+# 					x::AbstractVector, y::AbstractVector,
+# 					r::AbstractVector,
+# 					std_noise::Real)
+#     end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+# 	log_θ[1:end_idx] .= @views exp.(log_θ[1:end_idx])
+# 	if (any(isinf, log_θ) || any(isnan, log_θ))
+# 		log_θ[1:end_idx] .=  @views log.(log_θ[1:end_idx])
+# 		return Inf
+# 	end
+# 	@. r = y
+# 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
+# 	r ./= sqrt(2) * std_noise # trade-off between prior and
+# 	# actual residual
+# 	log_θ[1:end_idx] .=  @views log.(log_θ[1:end_idx])
+# 	return r
+# end
+
+# This actually does not improve much, just cleaner
 function _residual!(pm::PhaseModel,
 					log_θ::AbstractVector,
 					x::AbstractVector, y::AbstractVector,
 					r::AbstractVector,
 					std_noise::Real)
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views exp.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
-	if (any(isinf, log_θ) || any(isnan, log_θ))
-		log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .=  @views log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
+	end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+	temp_θ = copy(log_θ)
+	@. temp_θ[1:end_idx] = exp(log_θ[1:end_idx])
+	if (any(isinf, temp_θ) || any(isnan, temp_θ))
 		return Inf
 	end
 	@. r = y
-	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
+	evaluate_residual!(pm, temp_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
-	log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .=  @views log.(log_θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)])
 	return r
 end
 

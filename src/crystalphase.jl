@@ -5,6 +5,7 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
     origin_cl::CL # save for comparison
     peaks::V # Vector of peak object
 
+    param_num::Int64
     id::Int64 # For indexing phases
     name::String # Phase name
 
@@ -28,7 +29,7 @@ end
 Base.Bool(CP::AbstractPhase) = true
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
-get_param_nums(CP::CrystalPhase) = CP.cl.free_param + 2 + get_param_nums(CP.profile)
+get_param_nums(CP::CrystalPhase) = CP.param_num #CP.cl.free_param + 2 + get_param_nums(CP.profile)
 get_param_nums(APs::AbstractVector{<:AbstractPhase}) = sum(get_param_nums.(APs))
 # get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
 
@@ -56,7 +57,7 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     name = String(lattice_info[2])
     act = 1.0
 
-    CrystalPhase(crystal, crystal, peaks, id, name, act, wid_init, profile, norm_constant)
+    CrystalPhase(crystal, crystal, peaks, crystal.free_param + 2 + get_param_nums(profile), id, name, act, wid_init, profile, norm_constant)
 end
 
 function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5))
@@ -65,7 +66,7 @@ function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=
     cl = get_intrinsic_crystal_type(typeof(CP.origin_cl))
     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
     t = eltype(cl_params)
-    c = CrystalPhase(cl{t}(cl_params...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+    c = CrystalPhase(cl{t}(cl_params...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
                 0.1, wid_init, profile, CP.norm_constant)
     return c
 end
@@ -77,12 +78,12 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
     t = eltype(θ)
     if profile_param_num > 0
-        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
         # θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
                     θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:fp+2+profile_param_num]...),
                     CP.norm_constant)
     else
-        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.id, CP.name,
+        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
         θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     end
     return c
@@ -372,6 +373,20 @@ end
 #     y
 # end
 
+function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
+                            θ::AbstractVector, x::AbstractVector, r::AbstractVector)
+    s = 1
+    #y = zero(r)
+    #evaluate!(y, CPs, θ, x)
+    @inbounds @simd for i in eachindex(CPs)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s : s+num_of_param-1]
+        evaluate_residual!(CPs[i], θ_temp, x, r)
+        s += num_of_param
+    end
+    r
+end
+
 function evaluate_residual!(CP::CrystalPhase, θ::AbstractVector,
               x::AbstractVector, r::AbstractVector)
     evaluate_residual!(CrystalPhase(CP, θ), x, r)
@@ -386,7 +401,7 @@ function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
 end
 
 function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
-    x::AbstractVector, r::AbstractVector)
+                        x::AbstractVector, r::AbstractVector)
     @inbounds @simd for i in eachindex(CPs)
         if isinf(CPs[i].cl.volume)
             return Inf
@@ -408,24 +423,14 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
         end
         @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
         # Note: For Dual type, plus and minus are more expensive than multiply..
-        # Slight improvement for 3 phase case
+        # ~ 10 % improvement for 3 phase case but uses 3-4 times more memory
         # @. y += CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
     end
     # @. r -= y * CP.act
     r
 end
 
-function evaluate_residual!(CPs::AbstractVector{<:AbstractPhase},
-             θ::AbstractVector, x::AbstractVector, r::AbstractVector)
-    s = 1
-    @inbounds @simd for i in eachindex(CPs)
-        num_of_param = get_param_nums(CPs[i])
-        θ_temp = @view θ[s : s+num_of_param-1]
-        evaluate_residual!(CPs[i], θ_temp, x, r)
-        s += num_of_param
-    end
-    r
-end
+
 
 # Without preallocation, useful at times....
 function (CP::CrystalPhase)(x::Real)

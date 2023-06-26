@@ -1,8 +1,9 @@
 using Plots
 using NPZ
+using CubicSplines
 
 using CrystalShift
-using CrystalShift: Gauss
+using CrystalShift: Gauss, q2twoθ
 
 using Base.Threads
 
@@ -46,6 +47,8 @@ end
 cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (Gauss(),))
 # cs = cs[end-5:end]
 x = collect(15:.1:79.9)
+twoθ = q2twoθ.(x./10)
+reg_itval_twoθ = collect(LinRange(minimum(twoθ), maximum(twoθ), 650))
 ys = zeros(Float64, (231, 650))
 
 # for i in eachindex(cs)
@@ -54,18 +57,18 @@ ys = zeros(Float64, (231, 650))
 # end
 
 
-# p = Gauss()
-# for i in 1:231
-#     y = zero(x)
-#     for j in 1:6
-#         peak_locs = cs[j].cl.(cs[j].peaks) * 10 * shift[i, j]
-#         for idx in eachindex(peak_locs)
-#             y += cs[j].peaks[idx].I .* composition[i, j] .* p.((x .- peak_locs[idx])./(width[i, j]/2))
-#         end
-#     end
-#     ys[i, :] = y
-#     plt = plot(x, y, title="$(i)")
-#     display(plt)
-# end
+p = Gauss()
+for i in 1:231
+    y = zero(x)
+    for j in 1:6
+        peak_locs = cs[j].cl.(cs[j].peaks) * 10 * shift[i, j]
+        for idx in eachindex(peak_locs)
+            y += cs[j].peaks[idx].I .* composition[i, j] .* p.((x .- peak_locs[idx])./(width[i, j]/4))
+        end
+    end
+    ys[i, :] = y
+    plt = plot(x, y, title="$(i)")
+    display(plt)
+end
 
-# npzwrite("alfeli.npy", ys)
+npzwrite("alfeli_narrow.npy", ys)

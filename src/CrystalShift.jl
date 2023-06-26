@@ -21,6 +21,7 @@ export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMono
 export OptimizationMethods, OptimizationMode, OptimizationSettings # enums
 export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
 export get_free_params, CifParser, CIFFile, Xtal, PowderDiffraction
+export Gauss, Lorentz
 
 # Python imports
 # Note: Deprecated for ease of python wrapper installation
