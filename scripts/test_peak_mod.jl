@@ -4,11 +4,12 @@ using CrystalShift
 using CrystalShift: get_free_params, extend_priors, Lorentz, evaluate_residual!, PseudoVoigt
 using CrystalShift: Gauss, FixedPseudoVoigt, optimize!, evaluate!, full_optimize!
 using CrystalShift: PhaseModel, PeakModCP, get_PeakModCP
-using PhaseMapping: load
+# using PhaseMapping: load
 using Plots
 using LinearAlgebra
 using BenchmarkTools
 using CovarianceFunctions: EQ
+using NPZ
 
 using Base.Threads
 
@@ -45,19 +46,26 @@ cs = Vector{CrystalPhase}(undef, size(s))
 cs = @. CrystalPhase(String(s), (0.1, ), (FixedPseudoVoigt(0.01), ))
 # println("$(size(cs, 1)) phase objects created!")
 max_num_phases = 3
-data, _ = load("AlLiFe", "/Users/ming/Downloads/")
-x = data.Q
-x = x[1:400]
+# data, _ = load("AlLiFe", "/Users/ming/Downloads/")
+t = npzread("alfeli_noise=5e-2.npy")
+# x = data.Q
+# x = x[1:400]
+x = collect(15:.1:79.9)
 
-y = data.I[1:400, 1]
+y = t[1, :]
 y /= maximum(y)
 
 # for i in eachindex(cs)
 # c = optimize()
 bg = BackgroundModel(x, EQ(), 5, rank_tol=1e-2)
+# @time c = full_optimize!(PhaseModel(cs[17], bg), x, y, std_noise, mean_θ, std_θ;
+#                 objective = objective, method = method, maxiter = 128,
+#                 regularization = true, verbose = true, tol=1E-5)
 @time c = full_optimize!(PhaseModel(cs[17], bg), x, y, std_noise, mean_θ, std_θ;
-                objective = objective, method = method, maxiter = 128,
-                regularization = true, verbose = true, tol=1E-5)
+                            mod_peak_num = 200, loop_num=32,
+                            method=LM, peak_shift_iter=256, peak_mod_iter=16,
+                            objective="LS", regularization=true, peak_mod_mean=[1., 1.] , peak_mod_std=[.5, .05]
+)
 plot(x, y)
 plt = plot(x, y)
 plot!(x, evaluate!(zero(x), c, x))

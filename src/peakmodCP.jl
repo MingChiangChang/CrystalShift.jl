@@ -43,9 +43,7 @@ end
 
 
 function evaluate!(y::AbstractVector, IM::PeakModCP, x::AbstractVector) 
-    @simd for i in eachindex(IM.peak_int)
-        y .+= IM.basis[:,i] .* IM.peak_int[i]
-    end
+    y .+= IM.basis * IM.peak_int
     @. y += IM.const_basis
     y
 end
@@ -53,26 +51,20 @@ end
 function evaluate!(y::AbstractVector, IM::PeakModCP, θ::AbstractVector,
                   x::AbstractVector)
     @. IM.peak_int = θ
-    @simd for i in eachindex(IM.peak_int)
-        @. y += IM.basis[:,i] * IM.peak_int[i]
-    end
+    y .+= IM.basis * IM.peak_int
     @. y += IM.const_basis
     y
 end
 
 function evaluate_residual!(IM::PeakModCP, x::AbstractVector, r::AbstractVector)
-    @simd for i in eachindex(IM.peak_int)
-        @. r -= IM.basis[:,i] * IM.peak_int[i]
-    end
+    r .-= IM.basis * IM.peak_int
     @. r -= IM.const_basis
     r
 end
 
 function evaluate_residual!(IM::PeakModCP, θ::AbstractVector,
                             x::AbstractVector, r::AbstractVector)
-    @simd for i in eachindex(θ)
-        @. r -= IM.basis[:,i] * θ[i]
-    end
+    r .-= IM.basis[:,i] *θ
     @. r -= IM.const_basis
     r
 end
