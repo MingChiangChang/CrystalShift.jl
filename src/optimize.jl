@@ -24,12 +24,13 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					em_loop_num::Integer = 8,
+					λ::Float64 = 1.,
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
 
     pm = PhaseModel(W, BG)
 	opt_stn = OptimizationSettings{Float64}(std_noise, [1., 1., 1.], [1., 1., 1.],
 											maxiter, regularization,
-											method, objective, optimize_mode, em_loop_num, verbose, tol)
+											method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 
 	y ./= maximum(y) * 2
 	opt_pm = optimize!(pm, x, y, opt_stn)
@@ -50,6 +51,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 						peak_mod_mean::AbstractVector = [1.],
 						peak_mod_std::AbstractVector = [.5],
 						peak_mod_iter::Int=32,
+						λ::Float64=1.,
 						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
 	# have_bg = !isnothing(pm.background)
@@ -57,14 +59,14 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 	for i in 1:loop_num
 		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
 			method=method, objective=objective, maxiter=peak_shift_iter,
-			regularization=regularization, optimize_mode=optimize_mode,
+			regularization=regularization, optimize_mode=optimize_mode, λ=λ,
 			verbose=verbose, tol=tol)
 
 		IMs = get_PeakModCP(c, x, mod_peak_num)
 
 		Mod_IMs = optimize!(IMs, x, y, std_noise, peak_mod_mean, peak_mod_std;
 					method=bfgs, objective=objective, maxiter=peak_mod_iter,
-					regularization=regularization, optimize_mode=optimize_mode,
+					regularization=regularization, optimize_mode=optimize_mode,λ=λ,
 					verbose=verbose, tol=tol)
 		# change_peak_int!.(c.CPs, Mod_IMs[1:end-Int64(have_bg)])
 		change_peak_int!.(c.CPs, Mod_IMs)
@@ -72,7 +74,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
 			method=method, objective=objective, optimize_mode=optimize_mode,
 			maxiter=peak_shift_iter,
-			regularization=regularization, verbose=verbose, tol=tol)
+			regularization=regularization, λ=λ, verbose=verbose, tol=tol)
 	end
 	return c
 end
@@ -89,6 +91,7 @@ function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y
 						peak_mod_mean::AbstractVector = [1.],
 						peak_mod_std::AbstractVector = [.5],
 						peak_mod_iter::Int=32,
+						λ::Float64=1.,
 						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
     pm = PhaseModel(cp)
 	pm = full_optimize!(pm, x, y, std_noise, mean_θ, std_θ;
@@ -101,6 +104,7 @@ function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y
 						peak_mod_mean=peak_mod_mean,
 						peak_mod_std=peak_mod_std,
 						peak_mod_iter=peak_mod_iter,
+						λ=λ,
 						verbose=verbose, tol=tol)
 	pm.CPs
 end
@@ -116,7 +120,7 @@ function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 	mod_peak_num::Int = 32,
 	peak_mod_mean::AbstractVector = [1.],
 	peak_mod_std::AbstractVector = [.5],
-	peak_mod_iter::Int=32,
+	peak_mod_iter::Int=32, λ::Float64=1.,
 	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
 	full_optimize!([cp], x, y, std_noise, mean_θ, std_θ;
@@ -129,6 +133,7 @@ function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 			peak_mod_mean=peak_mod_mean,
 			peak_mod_std=peak_mod_std,
 			peak_mod_iter=peak_mod_iter,
+			λ=λ,
 			verbose=verbose, tol=tol)
 end
 """
@@ -147,11 +152,11 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 					optimize_mode::OptimizationMode,
 					maxiter::Int = 32,
 					regularization::Bool = true,
-					em_loop_num::Integer = 8,
+					em_loop_num::Integer = 8, λ::Float64=1.,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 	opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ,
 							maxiter, regularization,
-							method, objective, optimize_mode, em_loop_num, verbose, tol)
+							method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 
 	optimize!(pm, x, y, opt_stn)
 end
@@ -448,6 +453,7 @@ function get_newton_objective_func(pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector,
 									opt_stn::OptimizationSettings)
 	pr = opt_stn.priors
+	λ = opt_stn.λ
 	mean_θ, std_θ = extend_priors(pr, pm)
 	mean_log_θ = log.(mean_θ)
 
@@ -485,7 +491,7 @@ function get_newton_objective_func(pm::PhaseModel,
 		# r_θ = evaluate(pm, temp_θ, x) # reconstruction of phases, TODO: pre-allocate result (one for Dual, one for Float)
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		p_θ = prior(log_θ)
-		λ = 0 #TODO: Fix the prior optimization problem and add it to the setting
+		# λ = 1 #TODO: Fix the prior optimization problem and add it to the setting
 		kl(r_θ, y) + λ * p_θ
 	end
 
@@ -527,11 +533,12 @@ function optimize!(phases::AbstractVector,
 				   optimize_mode::OptimizationMode=Simple,
 				   maxiter::Int = 32,
 				   regularization::Bool = true,
+				   λ::Float64 = 1.,
 				   verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 	pm = PhaseModel(phases)
 	pm = optimize!(pm, x, y, std_noise, mean_θ, std_θ, method=method,
 	             objective=objective, maxiter= maxiter,regularization=regularization,
-				 optimize_mode=optimize_mode,
+				 optimize_mode=optimize_mode, λ=λ,
 				 verbose=verbose, tol=tol)
     pm.CPs
 end

@@ -95,6 +95,7 @@ struct OptimizationSettings{T}
     objective::String
     optimize_mode::OptimizationMode
     em_loop_num::Integer
+    λ::Float64
     verbose::Bool
     tol::Float64
 
@@ -105,11 +106,12 @@ struct OptimizationSettings{T}
                                      objective::String = "LS",
                                      optimize_mode::OptimizationMode = Simple,
                                      em_loop_num::Integer=8,
+                                     λ::Float64=1,
                                      verbose::Bool=false,
                                      tol::Float64=DEFAULT_TOL) where V<:Real
         maxiter > 0 || error("max_iter must be > 0")
         objective in ALLOWED_OBJECTIVE || ("Objective string not in allowed objective")
-        new{V}(priors, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
+        new{V}(priors, maxiter, regularization, method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
     end
 end
 
@@ -121,10 +123,11 @@ function OptimizationSettings{V}(
                                  objective::String = "LS",
                                  optimize_mode::OptimizationMode = Simple,
                                  em_loop_num::Integer=8,
+                                 λ::Real=1,
                                  verbose::Bool=false,
                                  tol::Float64=DEFAULT_TOL) where V<:Real
     pr = Priors{V}(std_noise, mean_θ, std_θ)
-    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, verbose, tol)
+    OptimizationSettings{V}(pr, maxiter, regularization, method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 end
 
 function OptimizationSettings{Float64}()
@@ -136,5 +139,6 @@ function OptimizationSettings{Float64}(opt_stn::OptimizationSettings, std_noise:
    pr = Priors{Float64}(opt_stn.priors, std_noise)
    OptimizationSettings{Float64}(pr, opt_stn.maxiter, opt_stn.regularization, opt_stn.method,
                                 opt_stn.objective, opt_stn.optimize_mode, opt_stn.em_loop_num,
+                                opt_stn.λ,
                                 opt_stn.verbose, opt_stn.tol)
 end

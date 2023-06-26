@@ -92,7 +92,7 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
     phase = rand(1:size(cps, 1), num_phase)
     y, full_params = synthesize_multiphase_data(cps[phase], x)
     c = optimize!(cps[phase], x, y, std_noise, mean_θ, std_θ;
-                  objective = objective, method = method, maxiter = maxiter,
+                  objective = objective, method = method, maxiter = maxiter, λ=0.1,
                   regularization = true, verbose = verbose)
 
     if verbose
