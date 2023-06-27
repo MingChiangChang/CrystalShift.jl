@@ -492,8 +492,8 @@ function get_newton_objective_func(pm::PhaseModel,
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		p_θ = prior(log_θ)
 		# λ = 1 #TODO: Fix the prior optimization problem and add it to the setting
-		println("p_θ: $(p_θ)")
-		println("kl: $(kl(r_θ, y))")
+		# println("p_θ: $(p_θ)")
+		# println("kl: $(kl(r_θ, y))")
 		kl(r_θ, y) + λ * p_θ
 	end
 
