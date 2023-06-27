@@ -429,7 +429,7 @@ function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Ab
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
-	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10) # default to 10
+	N = LBFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, 10, check=false) # default to 10
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=verbose)
@@ -441,7 +441,7 @@ function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Abs
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
-	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ)
+	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, check=false)
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=verbose)
@@ -492,6 +492,8 @@ function get_newton_objective_func(pm::PhaseModel,
 		r_θ ./= exp(1) # since we are not normalizing the inputs, this rescaling has the effect that kl(α*y, y) has the optimum at α = 1
 		p_θ = prior(log_θ)
 		# λ = 1 #TODO: Fix the prior optimization problem and add it to the setting
+		println("p_θ: $(p_θ)")
+		println("kl: $(kl(r_θ, y))")
 		kl(r_θ, y) + λ * p_θ
 	end
 
