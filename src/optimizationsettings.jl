@@ -106,7 +106,7 @@ struct OptimizationSettings{T}
                                      objective::String = "LS",
                                      optimize_mode::OptimizationMode = Simple,
                                      em_loop_num::Integer=8,
-                                     λ::Float64=1,
+                                     λ::Float64=1.,
                                      verbose::Bool=false,
                                      tol::Float64=DEFAULT_TOL) where V<:Real
         maxiter > 0 || error("max_iter must be > 0")
@@ -123,7 +123,7 @@ function OptimizationSettings{V}(
                                  objective::String = "LS",
                                  optimize_mode::OptimizationMode = Simple,
                                  em_loop_num::Integer=8,
-                                 λ::Real=1,
+                                 λ::Float64=1.,
                                  verbose::Bool=false,
                                  tol::Float64=DEFAULT_TOL) where V<:Real
     pr = Priors{V}(std_noise, mean_θ, std_θ)
