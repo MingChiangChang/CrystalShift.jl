@@ -570,24 +570,6 @@ function _prior(p::AbstractVector, log_θ::AbstractVector,
 	return p # IDEA: Is this too small??
 end
 
-# function _residual!(pm::PhaseModel,
-# 					log_θ::AbstractVector,
-# 					x::AbstractVector, y::AbstractVector,
-# 					r::AbstractVector,
-# 					std_noise::Real)
-#     end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
-# 	log_θ[1:end_idx] .= @views exp.(log_θ[1:end_idx])
-# 	if (any(isinf, log_θ) || any(isnan, log_θ))
-# 		log_θ[1:end_idx] .=  @views log.(log_θ[1:end_idx])
-# 		return Inf
-# 	end
-# 	@. r = y
-# 	evaluate_residual!(pm, log_θ, x, r) # Avoid allocation, put everything in here??
-# 	r ./= sqrt(2) * std_noise # trade-off between prior and
-# 	# actual residual
-# 	log_θ[1:end_idx] .=  @views log.(log_θ[1:end_idx])
-# 	return r
-# end
 
 # This actually does not improve much, just cleaner
 function _residual!(pm::PhaseModel,
@@ -611,21 +593,4 @@ end
 ########################### parameter helpers ##################################
 function check_objective(objective::String)
 	objective in ALLOWED_OBJECTIVE || error("objective $(objective) not a allowed objective string")
-end
-
-# NOTE: candidates for removal?
-function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector)
-	θ_c = copy(θ)
-    cursor = 0
-	for phase in phases
-	    deleteat!(θ_c, cursor + phase.free_param + 1)
-        cursor += phase.free_param + 1
-	end
-	θ_c
-end
-
-function remove_act_from_θ(θ::AbstractVector,
-	                      phases::AbstractVector)
-	remove_act_from_θ(θ, collect_crystals(phases))
 end

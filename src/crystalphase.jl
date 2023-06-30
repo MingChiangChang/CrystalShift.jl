@@ -71,19 +71,19 @@ function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=
     return c
 end
 
-function CrystalPhase(CP::CrystalPhase, θ::AbstractVector)
+function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{T}) where T
     fp = CP.cl.free_param
     profile_param_num = get_param_nums(CP.profile)
     cl = get_intrinsic_crystal_type(typeof(CP.cl))
     profile_type = get_intrinsic_profile_type(typeof(CP.profile))
-    t = eltype(θ)
+    # t = eltype(θ)
     if profile_param_num > 0
-        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
+        c = CrystalPhase(cl{T}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
         # θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
-                    θ[fp+1], θ[fp+2], profile_type{t}(θ[fp+3:fp+2+profile_param_num]...),
+                    θ[fp+1], θ[fp+2], profile_type{T}(θ[fp+3:fp+2+profile_param_num]...),
                     CP.norm_constant)
     else
-        c = CrystalPhase(cl{t}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
+        c = CrystalPhase(cl{T}(θ[1:fp]...), CP.origin_cl, CP.peaks, CP.param_num, CP.id, CP.name,
         θ[fp+1], θ[fp+2], CP.profile, CP.norm_constant)
     end
     return c
@@ -411,6 +411,10 @@ function evaluate_residual!(CPs::AbstractVector{<:CrystalPhase},
     r
 end
 
+# @generated function evaluate_residual!(CP::CrytsalPhase, )
+
+# end
+
 function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector{T}) where T
     # println((length(CP.peaks)))
     # println(eltype(r) <: ForwardDiff.Dual)
@@ -421,6 +425,7 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
         if isinf(peak_locs[i])
             return Inf
         end
+        # @. r -= get_phase_pattern(CP.act, CP.peaks[i].I, (x.-peak_locs[i])./CP.σ, (CP.profile,))
         @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
         # Note: For Dual type, plus and minus are more expensive than multiply..
         # ~ 10 % improvement for 3 phase case but uses 3-4 times more memory
@@ -428,6 +433,11 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
     end
     # @. r -= y * CP.act
     r
+end
+
+# Doesn't help
+@generated function get_phase_pattern(act::T, I::Float64, x::T, profile) where T<:Real
+    :(act * I * profile(x))
 end
 
 

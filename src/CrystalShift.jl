@@ -46,6 +46,12 @@ export Gauss, Lorentz
 #     end
 # end
 
+# Can be implemented to use AppleAccelerate
+# function AppleAccelerate.exp(d::Vector{<:Dual{T}}) where T 
+#     c = AppleAccelerate.exp(value.(d))
+#     [Dual{T}(ci, ci*partials(di)) for (ci, di) in zip(c, d)]
+# end
+
 
 include("util.jl")
 include("peakprofile.jl")
