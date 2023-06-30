@@ -363,9 +363,9 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 
 	stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-6, max_iter = opt_stn.maxiter,
-						decrease_factor = 7, increase_factor = 10, max_step = 1.)
+						decrease_factor = 7, increase_factor = 10, max_step = .1)
 
-	λ = 1#e-6
+	λ = 1e-6
 	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
 	return log_θ
 end
