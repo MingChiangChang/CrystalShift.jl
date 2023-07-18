@@ -89,6 +89,20 @@ function CrystalPhase(CP::CrystalPhase, θ::AbstractVector{T}) where T
     return c
 end
 
+function save(CP::CrystalPhase, filename::String)
+    lattice_params = get_eight_params(CP)[1:6]
+    lattice_params[4:6] *= 180. / π
+    name = CP.name
+
+    open(filename, "w") do f
+        write(f, "0,$(name),saved,"*join(lattice_params, ","))
+        for peak in CP.peaks
+            write(f, "\n$(peak.h),$(peak.k),$(peak.l),$(CP.cl(peak)),$(peak.I)")
+        end
+        write(f, "#\n")
+    end
+end
+
 ################ PyCall block (deprecated) ################
 # function CrystalPhase(path::String,
 #                      q_range::Tuple, id::Integer,
