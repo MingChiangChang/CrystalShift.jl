@@ -97,7 +97,7 @@ function save(CP::CrystalPhase, filename::String)
     open(filename, "w") do f
         write(f, "0,$(name),saved,"*join(lattice_params, ","))
         for peak in CP.peaks
-            write(f, "\n$(peak.h),$(peak.k),$(peak.l),$(CP.cl(peak)),$(peak.I)")
+            write(f, "\n$(peak.h),$(peak.k),$(peak.l),$(CP.cl(peak)*10),$(peak.I*CP.norm_constant)")
         end
         write(f, "#\n")
     end
