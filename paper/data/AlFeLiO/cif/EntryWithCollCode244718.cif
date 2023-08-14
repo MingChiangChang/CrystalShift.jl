@@ -1,0 +1,76 @@
+
+#(C) 2022 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_244718-ICSD
+_database_code_ICSD 244718
+_audit_creation_date 2018-08-01
+_chemical_name_common 'Aluminium iron oxide (0.31/2.35/4)'
+_chemical_formula_structural '(Al0.31 Fe2.35) O4'
+_chemical_formula_sum 'Al0.31 Fe2.35 O4'
+_chemical_name_structure_type AlFeO3#FeGaO3
+_chemical_name_mineral Luogufengite
+_exptl_crystal_density_diffrn 4.9
+_citation_title
+'Luogufengite: A new nano-mineral of Fe2O3 polymorph with giant coercive field'
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'American Mineralogist' 2017 102 711 719 AMMIAY
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Xu, Huifang'
+primary 'Lee, Seungyeol'
+primary 'Xu, Hongwu'
+_cell_length_a 5.0647(5)
+_cell_length_b 8.7131(14)
+_cell_length_c 9.3842(13)
+_cell_angle_alpha 90.0000(0)
+_cell_angle_beta 90.0000(0)
+_cell_angle_gamma 90.0000(0)
+_cell_volume 414.11
+_cell_formula_units_Z 6
+_space_group_name_H-M_alt 'P n a 21'
+_space_group_IT_number 33
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x+1/2, -y+1/2, z'
+2 '-x+1/2, y+1/2, z+1/2'
+3 '-x, -y, z+1/2'
+4 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Fe3+ 3
+Al3+ 3
+Fe3+ 3
+Al3+ 3
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Fe1 Fe3+ 4 a 0.1941(3) 0.1569(4) 0.5789(6) . 1.
+Fe2 Fe3+ 4 a 0.6844(5) 0.0228(3) 0.7893(7) . 1.
+Fe3 Fe3+ 4 a 0.1878(3) 0.1531(6) 0.0000(2) . 0.73
+Al1 Al3+ 4 a 0.1878(3) 0.1531(6) 0.0000(2) . 0.27
+Fe4 Fe3+ 4 a 0.8081(4) 0.1602(2) 0.3044(6) . 0.8
+Al2 Al3+ 4 a 0.8081(4) 0.1602(2) 0.3044(6) . 0.2
+O1 O2- 4 a 0.9812(3) 0.3356(3) 0.4396(5) . 1.
+O2 O2- 4 a 0.5106(2) 0.4953(3) 0.4154(5) . 1.
+O3 O2- 4 a 0.6477(3) 0.9869(7) 0.1961(6) . 1.
+O4 O2- 4 a 0.1569(5) 0.1568(6) 0.1902(3) . 1.
+O5 O2- 4 a 0.8325(5) 0.1705(4) 0.6651(3) . 1.
+O6 O2- 4 a 0.5391(4) 0.1717(2) 0.9423(6) . 1.
+#End of TTdata_244718-ICSD

@@ -1,0 +1,78 @@
+
+#(C) 2022 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_151590-ICSD
+_database_code_ICSD 151590
+_audit_creation_date 2006-10-01
+_chemical_name_common 'Aluminium oxide - HP'
+_chemical_formula_structural 'Al2 O3'
+_chemical_formula_sum 'Al2 O3'
+_chemical_name_structure_type Rh2S3
+_exptl_crystal_density_diffrn 5.35
+_diffrn_ambient_temperature 300.
+_diffrn_ambient_pressure 113000000.
+_citation_title
+
+;
+Crystal structure of a high-pressure/high-temperature phase of alumina by in
+situ X-ray diffraction
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Nature Materials' 2004 3 389 393 NMAACR
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Lin Jungfu'
+primary 'Degtyareva, O.'
+primary 'Prewitt, C.T.'
+primary 'Dera, P.'
+primary 'Sata, N.'
+primary 'Gregoryanz, E.'
+primary 'Mao Hokwang'
+primary 'Hemley, R.J.'
+_cell_length_a 6.393(1)
+_cell_length_b 4.362(1)
+_cell_length_c 4.543(1)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 126.69
+_cell_formula_units_Z 4
+_space_group_name_H-M_alt 'P b c n'
+_space_group_IT_number 60
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x, -y, z+1/2'
+2 '-x+1/2, y+1/2, z'
+3 'x+1/2, y+1/2, -z+1/2'
+4 '-x, -y, -z'
+5 '-x, y, -z+1/2'
+6 'x+1/2, -y+1/2, -z'
+7 '-x+1/2, -y+1/2, z+1/2'
+8 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Al3+ 3
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Al1 Al3+ 8 d 0.114 0.758 0.028 . 1.
+O1 O2- 8 d 0.849 0.619 0.12 . 1.
+O2 O2- 4 c 0 0.046 0.25 . 1.
+#End of TTdata_151590-ICSD
