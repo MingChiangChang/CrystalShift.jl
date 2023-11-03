@@ -200,7 +200,6 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 	return reconstruct!(pm, θ)
 end
 
-using Plots
 function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
 
