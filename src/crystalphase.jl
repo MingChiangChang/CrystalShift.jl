@@ -449,6 +449,112 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
     r
 end
 
+
+function evaluate_residual_in_sqrt!(CPs::AbstractVector{<:AbstractPhase},
+    θ::AbstractVector, x::AbstractVector, r::AbstractVector)
+    s = 1
+    #y = zero(r)
+    #evaluate!(y, CPs, θ, x)
+    @inbounds @simd for i in eachindex(CPs)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s : s+num_of_param-1]
+        evaluate_residual_in_sqrt!(CPs[i], θ_temp, x, r)
+        s += num_of_param
+    end
+    r
+end
+
+function evaluate_residual_in_sqrt!(CP::CrystalPhase, θ::AbstractVector,
+                                x::AbstractVector, r::AbstractVector)
+    evaluate_residual_in_sqrt!(CrystalPhase(CP, θ), x, r)
+end
+
+function evaluate_residual_in_sqrt!(CPs::AbstractVector{<:AbstractPhase},
+                                x::AbstractVector, r::AbstractVector)
+    @inbounds @simd for i in eachindex(CPs)
+        evaluate_residual!(CPs[i], x, r)
+    end
+    r
+end
+
+function evaluate_residual_in_sqrt!(CPs::AbstractVector{<:CrystalPhase},
+                            x::AbstractVector, r::AbstractVector)
+    y = zero(r)
+    @inbounds @simd for i in eachindex(CPs)
+        if isinf(CPs[i].cl.volume)
+            return Inf
+        end
+        peak_locs = (CPs[i].cl).(CPs[i].peaks) .* 10
+        for j in eachindex(CPs[i].peaks)
+            @. y += CPs[i].act * CPs[i].peaks[j].I * CPs[i].profile((x-peak_locs[j])/CPs[i].σ)
+        end
+    end
+    # plt = plot(x, y)
+    # display(plt)
+    @. r -= sqrt(y)
+    r
+end
+
+# function evaluate_residual_in_sqrt!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector)
+#     # r already in sqrt space
+#     peak_locs = (CP.cl).(CP.peaks) .* 10
+#     y = zero(r)
+
+#     @inbounds @simd for i in eachindex(CP.peaks)
+#         if isinf(peak_locs[i])
+#             return Inf
+#         end
+#         @. y += CP.act * CP.peaks[i].I * CP.profile.((x.-peak_locs[i])/CP.σ)
+#         # r .-= sqrt.( (CP.act * CP.peaks[i].I * CP.profile.((x.-peak_locs[i])/CP.σ)))
+#     end
+#     @. y = sqrt
+#     @. r -= y * CP.act
+#     r
+# end
+
+function evaluate_in_sqrt!(y::AbstractVector, CP::AbstractPhase, peak::Peak, x::AbstractVector)
+    q = (CP.cl)(peak) * 10 # account for unit difference
+    @. y += sqrt.(CP.act * peak.I * CP.profile((x-q)/CP.σ))
+    y
+end
+
+function evaluate_in_sqrt!(y::AbstractMatrix, CP::AbstractPhase, peaks::AbstractVector{<:Peak}, x::AbstractVector)
+    peak_locs = (CP.cl).(CP.peaks) .* 10
+    @simd for i in eachindex(peaks)
+        @. y[:,i] = sqrt.(CP.act * peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ))
+    end
+    y
+end
+
+function evaluate_in_sqrt!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+    peak_locs = (CP.cl).(CP.peaks) .* 10
+    @fastmath @inbounds @simd for i in eachindex(CP.peaks)
+        @. y += sqrt(CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)) # Main bottle neck
+    end
+    y
+end
+
+function evaluate_in_sqrt!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase}, x::AbstractVector)
+    for CP in CPs
+        evaluate_in_sqrt!(y, CP, x)
+    end
+    y
+end
+
+
+function evaluate_in_sqrt!(y::AbstractVector, CPs::AbstractVector{<:AbstractPhase},
+                   θ::AbstractVector, x::AbstractVector)
+    s = 1
+    for i in eachindex(CPs)
+        num_of_param = get_param_nums(CPs[i])
+        θ_temp = @view θ[s : s+num_of_param-1]
+        evaluate_in_sqrt!(y, CPs[i], θ_temp, x)
+        s += num_of_param
+    end
+    y
+end
+
+
 # Doesn't help
 @generated function get_phase_pattern(act::T, I::Float64, x::T, profile) where T<:Real
     :(act * I * profile(x))

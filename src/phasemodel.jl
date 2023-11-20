@@ -131,6 +131,13 @@ function evaluate!(y::AbstractVector, PM::PhaseModel, x::AbstractVector)
     y
 end
 
+function evaluate_in_sqrt!(y::AbstractVector, PM::PhaseModel, x::AbstractVector)
+    evaluate_in_sqrt!(y, PM.CPs, x)
+    evaluate!(y, PM.wildcard, x)
+    evaluate!(y, PM.background, x)
+    y
+end
+
 function evaluate!(y::AbstractVector, PM::PhaseModel, θ::AbstractVector,
                    x::AbstractVector)
     PhaseModel(PM, θ)(x, y)
@@ -142,6 +149,21 @@ function evaluate_residual!(PM::PhaseModel, θ::AbstractVector,
     # println(typeof(r))
     # evaluate_residual!(PM.CPs, θ, x, r) # TODO: Implement these for background and wildcard
 end
+
+function evaluate_residual_in_sqrt!(PM::PhaseModel, θ::AbstractVector,
+                                    x::AbstractVector, r::AbstractVector)
+    evaluate_residual_in_sqrt!(PhaseModel(PM, θ), x, r)
+    # println(typeof(r))
+    # evaluate_residual!(PM.CPs, θ, x, r) # TODO: Implement these for background and wildcard
+end
+
+function evaluate_residual_in_sqrt!(PM::PhaseModel, x::AbstractVector, r::AbstractVector)
+    evaluate_residual_in_sqrt!(PM.CPs, x, r)
+    evaluate_residual!(PM.wildcard, x, r)
+    evaluate_residual!(PM.background, x, r)
+end
+
+
 
 function evaluate_residual!(PM::PhaseModel, x::AbstractVector, r::AbstractVector)
     evaluate_residual!(PM.CPs, x, r)

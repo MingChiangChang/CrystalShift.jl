@@ -145,7 +145,7 @@ end
 
 	Return: a PhaseModel object
 """
-function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, # Both y and y_uncer will not be further normalized
 					std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 					std_θ::AbstractVector = [1., Inf, 5.];
 					method::OptimizationMethods, objective::String = "LS",
@@ -158,13 +158,34 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 							maxiter, regularization,
 							method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 
-	optimize!(pm, x, y, opt_stn)
+	optimize!(pm, x, y, y_uncer, opt_stn)
 end
 
-function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+				std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
+				std_θ::AbstractVector = [1., Inf, 5.];
+				method::OptimizationMethods, objective::String = "LS",
+				optimize_mode::OptimizationMode,
+				maxiter::Int = 32,
+				regularization::Bool = true,
+				em_loop_num::Integer = 8, λ::Float64=1.,
+				verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
+    y_uncer = zero(y)
+	optimize!(pm, x, y, y_uncer, std_noise, mean_θ, std_θ,
+	          method=method,
+			  objective=objective,
+	          optimize_mode=optimize_mode,
+			  maxiter=maxiter,
+	          regularization=regularization,
+			  em_loop_num=em_loop_num,
+			  verbose=verbose,
+			  tol=tol)
+end
+
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
 	θ = get_free_params(pm)
 	if opt_stn.optimize_mode == Simple
-		return simple_optimize!(θ, pm, x, y, opt_stn)
+		return simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.optimize_mode == EM
 		return EM_optimize!(θ, pm, x, y, opt_stn)
     elseif opt_stn.optimize_mode == WithUncer
@@ -172,8 +193,13 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn
 	end
 end
 
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+	y_uncer = zero(y)
+	optimize!(pm, x, y, y_uncer, opt_stn)
+end
+
 function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
-				   x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+				   x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
 	if eltype(pm.CPs) <: CrystalPhase && opt_stn.optimize_mode != EM
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
@@ -186,7 +212,7 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 
 	# TODO use Match.jl, or just use multiple dispatch on method?
 	if opt_stn.method == LM
-		log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
+		log_θ = lm_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.method == Newton
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
 	elseif opt_stn.method == bfgs
@@ -347,11 +373,11 @@ function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractV
 	return new_θ
 end
 
-function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 	                 opt_stn::OptimizationSettings)
 	opt_stn.objective == "LS" || error("LM only work with LS for now")
 
-	f = get_lm_objective_func(pm, x, y, opt_stn)
+	f = get_lm_objective_func(pm, x, y, y_uncer, opt_stn)
 	if opt_stn.regularization
 		r = zeros(eltype(log_θ), length(y) + length(log_θ) )
 		LM = LevenbergMarquart(f, log_θ, r)
@@ -370,13 +396,15 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 end
 
 function get_lm_objective_func(pm::PhaseModel,
-							   x::AbstractVector, y::AbstractVector,
+							   x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 							   opt_stn::OptimizationSettings)
 	pr = opt_stn.priors
 	mean_θ, std_θ = extend_priors(pr, pm)
 
 	function residual!(r::AbstractVector, log_θ::AbstractVector)
-		_residual!(pm, log_θ, x, y, r, pr.std_noise)
+		# _sqrt_residual!(pm, log_θ, x, y, r, pr.std_noise)
+		_weighted_residual!(pm, log_θ, x, y, y_uncer, r, pr.std_noise)
+		# _residual!(pm, log_θ, x, y, r, pr.std_noise)
 	end
 
 	function prior!(p::AbstractVector, log_θ::AbstractVector)
@@ -585,6 +613,56 @@ function _residual!(pm::PhaseModel,
 	@. r = y
 	evaluate_residual!(pm, temp_θ, x, r) # Avoid allocation, put everything in here??
 	r ./= sqrt(2) * std_noise # trade-off between prior and
+	# actual residual
+	return r
+end
+
+function _weighted_residual!(pm::PhaseModel,
+					log_θ::AbstractVector,
+					x::AbstractVector, y::AbstractVector,
+                    y_uncer::AbstractVector,
+					r::AbstractVector,
+					std_noise::Real)
+
+    end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+    temp_θ = copy(log_θ)
+    @. temp_θ[1:end_idx] = exp(log_θ[1:end_idx])
+    if (any(isinf, temp_θ) || any(isnan, temp_θ))
+		return Inf
+    end
+    @. r = y
+    evaluate_residual!(pm, temp_θ, x, r) # Avoid allocation, put everything in here??
+    @. r /= sqrt(2) * sqrt(y_uncer^2 + std_noise^2) # trade-off between prior and
+    # actual residual
+    return r
+end
+
+using Plots
+
+function _sqrt_residual!(pm::PhaseModel,
+						log_θ::AbstractVector,
+						x::AbstractVector, y::AbstractVector,
+						r::AbstractVector,
+						std_noise::Real)
+
+	end_idx = get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)
+	temp_θ = copy(log_θ)
+	@. temp_θ[1:end_idx] = exp(log_θ[1:end_idx])
+
+	if (any(isinf, temp_θ) || any(isnan, temp_θ))
+		return Inf
+	end
+
+	@. r = sqrt(y)
+	# @. r = y
+	evaluate_residual_in_sqrt!(pm, temp_θ, x, r) # Avoid allocation, put everything in here??
+	# if eltype(r) <: Float64
+	# 	plt = plot(x, sqrt.(y))
+	# 	plot!(x, r)
+	# 	display(plt)
+	# end
+	r ./= sqrt(2) * std_noise # trade-off between prior and
+
 	# actual residual
 	return r
 end

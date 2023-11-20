@@ -95,7 +95,7 @@ struct OptimizationSettings{T}
     objective::String
     optimize_mode::OptimizationMode
     em_loop_num::Integer
-    λ::Float64
+    λ::Float64 # Should seperate to newton optimization settings
     verbose::Bool
     tol::Float64
 
