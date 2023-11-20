@@ -637,7 +637,7 @@ function _weighted_residual!(pm::PhaseModel,
     return r
 end
 
-using Plots
+# using Plots
 
 function _sqrt_residual!(pm::PhaseModel,
 						log_θ::AbstractVector,
