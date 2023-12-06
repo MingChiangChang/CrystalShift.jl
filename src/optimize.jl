@@ -227,19 +227,26 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 end
 
 function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
-	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+	x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
+	opt_stn::OptimizationSettings)
 
     c = 0 # As existing local to make this thread safe
 	std_noise = 0.05
 	for i in 1:opt_stn.em_loop_num
-		c = simple_optimize!(θ, pm, x, y, opt_stn)
+		c = simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
         std_noise = std(y - evaluate(c, get_free_params(c), x))
 		θ = get_free_params(c)
 		opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise)
 		pm = c
 	end
-	return c, std_noise
+	return c
 end
+
+function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
+	x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+    EM_optimize!(θ, pm, x, y, zero(y), opt_stn)
+end
+
 
 
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
