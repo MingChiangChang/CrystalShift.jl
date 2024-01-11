@@ -180,9 +180,18 @@ function get_intrinsic_crystal_type(cl::Type)
     end
 end
 
+get_n(f::Gauss, σ) = σ*sqrt(2π)
+get_n(f::Lorentz, σ) = π*σ
+get_n(f::PseudoVoigt, σ) = (-0.5+f.sig_α) * π * σ +(1.5-f.sig_α) * σ * sqrt(2π)
+# (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
+get_n(f::FixedPseudoVoigt, σ) =f.α*σ  + (1-f.α) * σ * sqrt(2π)
+#  P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) 
+
+
 function get_moles(CP::CrystalPhase)
-    CP.act/CP.norm_constant
+    CP.act * get_n(CP.profile, CP.σ) / CP.norm_constant
 end
+
 
 function get_fraction(CPs::AbstractVector{<:CrystalPhase})
     moles = zeros(size(CPs, 1))

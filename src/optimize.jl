@@ -170,7 +170,7 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 				regularization::Bool = true,
 				em_loop_num::Integer = 8, λ::Float64=1.,
 				verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
-    y_uncer = zero(y)
+    y_uncer = zero(x)
 	optimize!(pm, x, y, y_uncer, std_noise, mean_θ, std_θ,
 	          method=method,
 			  objective=objective,
@@ -619,7 +619,7 @@ function _residual!(pm::PhaseModel,
 	end
 	@. r = y
 	evaluate_residual!(pm, temp_θ, x, r) # Avoid allocation, put everything in here??
-	r ./= sqrt(2) * std_noise # trade-off between prior and
+	@. r /= sqrt(2) * std_noise # trade-off between prior and
 	# actual residual
 	return r
 end
