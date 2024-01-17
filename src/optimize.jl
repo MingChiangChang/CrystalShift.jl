@@ -337,12 +337,12 @@ end
 """
 Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters
 """
-function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings, scaled::Bool=false)
+function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings, scaled::Bool=false)
 	phase_params = get_param_nums(CPs)
 	phase_log_θ = log.(get_free_params(CPs))
 
 	# This is hessian in log space, TODO: change to real sapce
-	f = get_lm_objective_func(PhaseModel(CPs, nothing, nothing), x, y, opt_stn)
+	f = get_lm_objective_func(PhaseModel(CPs, nothing, nothing), x, y, y_uncer, opt_stn)
 	r = zeros(Real, length(y) + phase_params)
 	function res(log_θ)
 		sum(abs2, f(r, log_θ))
@@ -367,6 +367,8 @@ function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::
 	uncer = get_eight_params(CPs, uncer, fill_angle)
 	return  uncer
 end
+
+uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings, scaled::Bool=false) = uncertainty(CPs, x, y, zero(x), opt_stn, scaled)
 
 function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector)
     new_θ = copy(θ) # make a copy
