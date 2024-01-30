@@ -60,6 +60,20 @@ function CrystalPhase(_stn::String, wid_init::Real=.1,
     CrystalPhase(crystal, crystal, peaks, crystal.free_param + 2 + get_param_nums(profile), id, name, act, wid_init, profile, norm_constant)
 end
 
+function CrystalPhase(lps::AbstractVector, peak_hkl::AbstractVector, peak_height::AbstractVector,
+                    name::String, id::Int, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5))
+    crystal = get_crystal(lps)
+    peaks = Vector{Peak}(undef, length(peak_hkl))
+    for i in eachindex(peak_hkl)
+        peaks[i] = Peak(peak_hkl[i][1], peak_hkl[i][2], peak_hkl[i][3], 0., peak_height[i])
+    end
+    peaks, norm_constant = normalize_peaks!(peaks)
+    act = 1.0
+
+    CrystalPhase(crystal, crystal, peaks, crystal.free_param + 2 + get_param_nums(profile),
+                 id, name, act, wid_init, profile, norm_constant)
+end
+
 function CrystalPhase(CP::CrystalPhase, wid_init::Real=.1, profile::PeakProfile=FixedPseudoVoigt(0.5))
     cl_params = get_free_lattice_params(CP.origin_cl)
     profile_param_num = get_param_nums(CP.profile)
