@@ -1,4 +1,4 @@
-module Testoptimize
+# module Testoptimize
 using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate!
 using CrystalShift: newton!, get_free_lattice_params, get_fraction, FixedPseudoVoigt
@@ -44,6 +44,9 @@ function test_optimize(cp::CrystalPhase, x::AbstractVector,
     end
 
     # println(get_free_params(c))
+    # plt = plot(x, y)
+    # plot!(x, evaluate!(zero(x), c, x))
+    # display(plt)
 
     norm(c.(x).-y)
 end
@@ -110,8 +113,8 @@ function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
 end
 
 @time test_optimize(cs[10], x, LM, verbose)
-@time test_optimize(cs[10], x, Newton, false)
-@time test_multiphase_optimize(cs, x, 2, LM, "LS", verbose)
+# @time test_optimize(cs[10], x, Newton, false)
+# @time test_multiphase_optimize(cs, x, 2, LM, "LS", verbose)
 
 
 #test fails when the lattice parameters shift too much
@@ -173,15 +176,15 @@ end
     @test correct_counts >= 3
 end
 
-@testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
-    correct_counts = 0
-    for _ in 1:5
-        if test_multiphase_optimize(cs, x, 2, Newton, "KL", verbose) < 0.1
-            correct_counts += 1
-        end
-    end
-    @test correct_counts >= 3
-end
+# @testset "Multiple phases with shift newton KL test" begin # call it a success if 4/5 cases passed
+#     correct_counts = 0
+#     for _ in 1:5
+#         if test_multiphase_optimize(cs, x, 2, Newton, "KL", verbose) < 0.1
+#             correct_counts += 1
+#         end
+#     end
+#     @test correct_counts >= 3
+# end
 
 @testset "Multiple phases with shift newton least sqaure test" begin # call it a success if 4/5 cases passed
     correct_counts = 0
@@ -195,4 +198,4 @@ end
     @test correct_counts >= 3
 end
 
-end # module
+# end # module

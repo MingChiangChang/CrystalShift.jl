@@ -207,6 +207,10 @@ function get_moles(CP::CrystalPhase)
     CP.act * get_n(CP.profile, CP.σ) / CP.norm_constant
 end
 
+# function get_moles(CP::CrystalPhase)
+#     CP.act  / CP.norm_constant
+# end
+
 
 function get_fraction(CPs::AbstractVector{<:CrystalPhase})
     moles = zeros(size(CPs, 1))

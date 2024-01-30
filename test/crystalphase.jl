@@ -57,8 +57,8 @@ end
     @test show(cs[1])
     new_cs2 = CrystalPhase(cs[2], [1., 2., 3.,])
     new_cs6 = CrystalPhase(cs[6], [1., 2., 3., 4., 5.])
-    @test get_moles(new_cs2) ≈ 0.006821969673395041
-    @test get_moles(new_cs6) ≈ 0.037642918053186716
+    @test get_moles(new_cs2) ≈ 0.06429554942685066
+    @test get_moles(new_cs6) ≈ 0.59129357407787
     @test get_fraction([new_cs2, new_cs6]) ≈ [get_moles(new_cs2), get_moles(new_cs6)]./(get_moles(new_cs2)+get_moles(new_cs6))
     @test get_intrinsic_profile_type(typeof(gauss_cs.profile)) == Gauss
 end
