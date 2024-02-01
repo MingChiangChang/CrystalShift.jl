@@ -1,6 +1,6 @@
 abstract type AbstractPhase end
 
-struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N, J} <: AbstractPhase
+struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
     cl::C # crystal object
     origin_cl::CL # save for comparison
     peaks::V # Vector of peak object
