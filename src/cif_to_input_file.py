@@ -11,6 +11,7 @@
 import glob
 import os
 from pathlib import Path
+import argparse
 
 from pymatgen.io.cif import CifParser
 from xrayutilities.materials.cif import CIFFile
@@ -18,14 +19,33 @@ from xrayutilities.materials.material import Crystal
 from xrayutilities.simpack import PowderDiffraction
 import numpy as np
 
-def cif_to_input(cif_paths, output_path, q_range, output_name='sticks',
-                 wvlen=0.15406, _type=float):
+def main():
+    parser = get_parser()
+    args = parser.parse_args()
+    cifs = list(Path(args.cif).glob('*.cif'))
+    if not args.outpath.endswith('.csv'):
+        args.outpath += '.csv'
+    cif_to_input(cifs, args.outpath, (args.qmin, args.qmax), args.wvlen)
+
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--cif', required=True, help='A folder that contain all the CIF files')
+    parser.add_argument('-w', '--wvlen', default=1.5406, help='Wavelength in angstrom of X-ray. Default to Cu Kα')
+    parser.add_argument('-o', '--outpath', required=True, help='Output path for csv input file for CrystalShift')
+    parser.add_argument('-qmin', '--qmin', default=10., help='Minimum Q value in nm-1')
+    parser.add_argument('-qmax', '--qmax', default=80., help='Maximum Q value in nm-1')
+    return parser
+
+
+
+def cif_to_input(cif_paths, output_path, q_range, wvlen=1.5406, _type=float):
     '''
     cif_to_input(cif_path, output_path, q_range, output_name='sticks')
 
     Main function that you should be interfacing with this module
     '''
-    with open(output_path / f'{output_name}.csv', 'w') as f:
+    with open(output_path, 'w') as f:
         for idx, cif_path in enumerate(cif_paths):
             print(cif_path)
             cif = CifParser(cif_path)
@@ -49,12 +69,12 @@ def write_crystal_info(f, cif, _type):
 
 def write_peaks_info(f, lattice, q_range, wvlen):
     crystal = Crystal('test', lattice)
-    xrd = PowderDiffraction(crystal).data
+    xrd = PowderDiffraction(crystal, wl=wvlen).data
 
-    for peak in xrd:
+    for i, peak in enumerate(xrd):
         q = xrd[peak]['qpos']*10
         I = xrd[peak]['r']
-        print(q, I)
+        print(i, q, I, flush=True)
         if q_range[0] < q < q_range[1] and I>0.0001:
             f.write(f'\n{peak[0]},{peak[1]},{peak[2]},{q},{I}')
     f.write('#\n')
@@ -133,29 +153,34 @@ def _get_crystal_system(info_dict):
         return "cubic"
 
 if __name__ == "__main__":
-    home = Path.home()
-    #path = home / 'Desktop' / 'github' /\
+    main()
+    # home = Path.home()
+    # path = home / 'Desktop' / 'github' /\
     #        'Crystallography_based_shifting' / 'data'
-    path = home / 'Downloads' / 'CIF-3'
-    path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
-    path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
-    path = home / "Downloads" / "tio2"
-    path = home / "Downloads" / "test"
-    path = home / "Downloads" / "YourCustomFileName"
-    path = home / "Downloads" / "CIFs-2" / "LaOx"
-    path = home / "Desktop" / "All_CIFs"
-    path = home / "Downloads" / "ino"
-    path = home / "Desktop" / "Code" / "SARA.jl" / "BiTiO" / "cifs"
-    path = home / "Downloads" / "toCornell_Ming" / "cifs"
-    #path = home / "Desktop" / "TaSnCoO" / "cifs"
-    path = home / "Downloads" / "igzo_2" 
-    path = home / "Desktop" / "test_cif"
-    path = Path("/Users/ming/Desktop/Code/SARA.jl/BiTiO/subcifs")
-    #path = home / "Downloads" / "AlLiFeO copy"
-    cif_paths = list(path.glob('*.cif'))
-    #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
+    # path = home / 'Downloads' / 'CIF-3'
+    # path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
+    # path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
+    # path = home / "Downloads" / "tio2"
+    # path = home / "Downloads" / "test"
+    # path = home / "Downloads" / "YourCustomFileName"
+    # path = home / "Downloads" / "CIFs-2" / "LaOx"
+    # path = home / "Desktop" / "All_CIFs"
+    # path = home / "Downloads" / "ino"
+    # path = home / "Desktop" / "Code" / "SARA.jl" / "BiTiO" / "cifs"
+    # path = home / "Downloads" / "toCornell_Ming" / "cifs"
+    # #path = home / "Desktop" / "TaSnCoO" / "cifs"
+    # path = home / "Downloads" / "igzo_2" 
+    # path = home / "Desktop" / "test_cif"
+    # path = Path("/Users/ming/Desktop/Code/SARA.jl/BiTiO/new_cifs")
+    # path = Path("/Users/ming/Downloads/drive-download-20230911T012020Z-001/cifs")
+    # path = Path("/Users/ming/Downloads/crfevo_cifs")
+    # #path = Path("/Users/ming/Downloads/test_sf")
+    # path = Path("/Users/ming/Desktop/cifsssss/CandidateCifs/ICSD/Ti-O")
+    # #path = home / "Downloads" / "AlLiFeO copy"
+    # cif_paths = list(path.glob('*.cif'))
+    # #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
 
-    # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
-    out_path = path #/ 'Ta-Sn-O'
-    print(cif_paths)
-    cif_to_input(cif_paths, out_path, (10, 80))
+    # # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
+    # out_path = path #/ 'Ta-Sn-O'
+    # print(cif_paths)
+    # cif_to_input(cif_paths, out_path, (10, 80))
