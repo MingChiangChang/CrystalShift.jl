@@ -63,6 +63,8 @@ Base.iterate(PM::PhaseModel) = iterate(PM.CPs)
 Base.iterate(PM::PhaseModel, state) = iterate(PM.CPs, state)
 Base.:(==)(PM1::PhaseModel, PM2::PhaseModel) = [p.id for p in PM1.CPs] == [p.id for p in PM2.CPs]
 
+get_strain(PM::PhaseModel) = get_strain.(PM.CPs)
+
 function reconstruct_CPs!(θ::AbstractVector, CPs::AbstractVector{<:CrystalPhase})
     start = 1
     new_CPs = Vector{CrystalPhase}(undef, length(CPs))

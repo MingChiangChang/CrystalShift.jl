@@ -326,6 +326,14 @@ get_free_lattice_params(cl::Rhombohedral) = [cl.a, cl.α]
 get_free_lattice_params(cl::Monoclinic) = [cl.a, cl.b, cl.c, cl.β]
 get_free_lattice_params(cl::Triclinic) = [cl.a, cl.b, cl.c, cl.α, cl.β, cl.γ]
 
+
+get_strain(cl::Crystal, origin_cl::Crystal) = [(cl.a-origin_cl.a)/origin_cl.a,
+                                               (cl.b-origin_cl.b)/origin_cl.b,
+                                               (cl.c-origin_cl.c)/origin_cl.c,
+                                               (cl.α-origin_cl.α)/origin_cl.α,
+                                               (cl.β-origin_cl.β)/origin_cl.β,
+                                               (cl.γ-origin_cl.γ)/origin_cl.γ]
+
 ## Abstract type to serve as supertype for 7 different crystal systems
 #abstract type Crystal{T} end
 #

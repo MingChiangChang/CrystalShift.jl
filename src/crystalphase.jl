@@ -202,7 +202,7 @@ get_n(f::PseudoVoigt, σ) = (-0.5 + f.sig_α) *π*σ + (1.5 - f.sig_α)*σ*sqrt(
 get_n(f::FixedPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
 #  P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) 
 get_n(CP::CrystalPhase) = get_n(CP.profile, CP.σ)
-
+get_strain(CP::CrystalPhase) = get_strain(CP.cl, CP.origin_cl)
 
 function get_moles(CP::CrystalPhase)
     CP.act * get_n(CP.profile, CP.σ) / CP.norm_constant
