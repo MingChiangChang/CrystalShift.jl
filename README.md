@@ -2,11 +2,13 @@
 [![CI](https://github.com/MingChiangChang/CrystalShift.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/MingChiangChang/CrystalShift.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/MingChiangChang/CrystalShift.jl/branch/main/graph/badge.svg?token=3A8XI43H0C)](https://codecov.io/gh/MingChiangChang/CrystalShift.jl)
 
-CrystalShift is a package for probabilistic phase labeling of X-ray diffraction(XRD) patterns.
+`CrystalShift.jl` is a package for probabilistic multi-phase labeling of X-ray diffraction(XRD) patterns. It is an efficient and flexible way to probabilistically label phases in XRD patterns based on pseudo-refinement optimzation, best-first tree search and Bayesian model comparison techniques.
 
 ## Installation
 ```
-Using Pkg; Pkg.add(url="https://github.com/MingChiangChang/CrystalShift.jl");Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
+Using Pkg
+Pkg.add(url="https://github.com/MingChiangChang/CrystalShift.jl")
+Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
 ```
 There are plans to merge these two module and add it to the julia general repo in the future.
 
@@ -28,7 +30,8 @@ The array of `CrystalPhase` object can then be passed to the pseudo-refinement o
 std_noise = .1
 mean_θ = [1., .5, .2]
 std_θ = [.05, 2., 1.]
-phasemodel = CrystalShift.optimize!(cs, q, y, std_noise, mean_θ, std_θ) # y is the target XRD, which has to be normalized to have maximum of 1
+# y is the target XRD, which has to be normalized to have maximum of 1
+phasemodel = CrystalShift.optimize!(cs, q, y, std_noise, mean_θ, std_θ) 
 ```
 This is the minimal setup for the optimization. User can also pass in the following named arguments:
 * `y_uncer::AbstractVector`: uncertainty of y that will be take into account when optimizing
@@ -58,21 +61,25 @@ background_length = 8.
 lt = LazyTree(cs, q)
 results = search!(lt, q, y, max_depth, k, amorphous, background, background_length)
 
-results = results[2:end]         # the result is a vector with (k+1) length, one for each level. If you did not try to optimize for amorphous phase, you will have to exclude the root node
+results = results[2:end]         # the result is a vector with (k+1) length, one for each level.
+                                 # If you did not try to optimize for amorphous phase, you will have to exclude the root node.
 results = reduce(vcat, results)  # flatten the result
 
-probibilities = get_probabilities(results, q, y, std_noise, mean_θ, std_θ, renormalize=true, normalization_constant=2.5) # std_noise is optional, can be calculated instead of a preset number
+# std_noise is optional, can be calculated instead of a preset number
+probibilities = get_probabilities(results, q, y, std_noise, mean_θ, std_θ, renormalize=true, normalization_constant=2.5)
 ```
 To obtain a proper normalization constant, one will have to go through the optimization procedure described in the paper.
 
 ## Cite this package
 When using this package for your work, please cite this package using the following Bibtex citation:
+```
 @misc{2308.07897,
 Author = {Ming-Chiang Chang and Sebastian Ament and Maximilian Amsler and Duncan R. Sutherland and Lan Zhou and John M. Gregoire and Carla P. Gomes and R. Bruce van Dover and Michael O. Thompson},
 Title = {Probabilistic Phase Labeling and Lattice Refinement for Autonomous Material Research},
 Year = {2023},
 Eprint = {arXiv:2308.07897},
 }
+```
 
 ## Other links
 * [CrystalTree.jl](https://github.com/MingChiangChang/crystaltree.jl) is a package based on `CrystalShift` that builds all of the tree search and probibilistic capabilities.
