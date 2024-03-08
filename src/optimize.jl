@@ -148,8 +148,8 @@ end
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, # Both y and y_uncer will not be further normalized
 					std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 					std_θ::AbstractVector = [1., Inf, 5.];
-					method::OptimizationMethods, objective::String = "LS",
-					optimize_mode::OptimizationMode,
+					method::OptimizationMethods=LM, objective::String = "LS",
+					optimize_mode::OptimizationMode=Simple,
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					em_loop_num::Integer = 8, λ::Float64=1.,
@@ -164,8 +164,8 @@ end
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 				std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 				std_θ::AbstractVector = [1., Inf, 5.];
-				method::OptimizationMethods, objective::String = "LS",
-				optimize_mode::OptimizationMode,
+				method::OptimizationMethods=LM, objective::String = "LS",
+				optimize_mode::OptimizationMode=Simple,
 				maxiter::Int = 32,
 				regularization::Bool = true,
 				em_loop_num::Integer = 8, λ::Float64=1.,
