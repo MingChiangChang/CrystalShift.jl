@@ -23,8 +23,10 @@ function Base.show(io::IO, CP::CrystalPhase)
     println("Activation: $(CP.act), Peak width: $(CP.σ)")
     println("Normalization: $(CP.norm_constant)")
     println("Lattice information:")
-    println(CP.cl)
+    println("a: $(CP.cl.a), b: $(CP.cl.b), c: $(CP.cl.c)")
+    println("α: $(CP.cl.α/pi*180), β: $(CP.cl.β/pi*180), γ: $(CP.cl.γ/pi*180)")
     println("Strain: a:$(@sprintf("%.4f", a)), b:$(@sprintf("%.4f", b)), c:$(@sprintf("%.4f", c)), α:$(@sprintf("%.4f", α)), β:$(@sprintf("%.4f", β)), γ:$(@sprintf("%.4f", γ))")
+    println("")
     return true
 end
 
