@@ -17,12 +17,14 @@ struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
 end
 
 function Base.show(io::IO, CP::CrystalPhase)
+    a, b, c, α, β, γ = get_strain(CP)
     println("Phase name: $(CP.name), ID: $(CP.id)")
     println("Optimization parameters:")
     println("Activation: $(CP.act), Peak width: $(CP.σ)")
     println("Normalization: $(CP.norm_constant)")
     println("Lattice information:")
     println(CP.cl)
+    println("Strain: a:$(@sprintf("%.4f", a)), b:$(@sprintf("%.4f", b)), c:$(@sprintf("%.4f", c)), α:$(@sprintf("%.4f", α)), β:$(@sprintf("%.4f", β)), γ:$(@sprintf("%.4f", γ))")
     return true
 end
 
