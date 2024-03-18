@@ -33,7 +33,6 @@ std_θ = [0.05,0.05,.05]
 maxiter = 256
 max_depth = 3
 k = 3
-norm_const = 1.
 amorphous = false
 background = false
 background_length = 5.
@@ -43,7 +42,9 @@ dl = "paper/data/TaSnO/"
 # data = npzread(dl * "TaSnO_data.npy")
 Ws = npzread(dl * "TaSnO_Ws.npy")
 Hs = npzread(dl * "TaSnO_Hs.npy")
+Ks = npzread(dl * "TaSnO_k.npy")
 q = npzread(dl * "TaSnO_Q.npy")
+uncer = npzread(dl * "TaSnO_uncer.npy")
 
 open(dl * "TaSnO_conds.json", "r") do f
     global conditions = JSON.parse(f)
@@ -77,6 +78,7 @@ for i in tqdm(1:size(Ws, 1))
 
     BW = Ws[i, :, :]'
     BH = Hs[i, :, :]
+    BK = Ks[i, :]
 
     stripe = Vector{Vector{PhaseResult}}(undef, 4)
     center = convert(Int64, round(get_weighted_center(BH)))
@@ -88,19 +90,21 @@ for i in tqdm(1:size(Ws, 1))
 
     for j in 1:RANK
         gt_names = sol[i][j]
-        BW[:, j] ./= maximum(BW[:, j])
+        nc = maximum(BW[:, j])
+        BW[:, j] ./= nc # maximum(BW[:, j])
         b = mcbl(BW[:, j], q[i,:], 7)
-        new = BW[:, j] - b
+        y_bg_sub = BW[:, j] - b
+        y_uncer = uncer[i, BK[j], :] ./ nc
         if "a" in gt_names
-            stripe[j] =  [ PhaseResult(cs[1], "non-crystalline", BH[j, :], new, isCenter[j])] # use cs[1] as dummy
+            stripe[j] =  [ PhaseResult(cs[1], "non-crystalline", BH[j, :], y_bg_sub, isCenter[j])] # use cs[1] as dummy
             continue
         end
-        @. new = max(new, 0)
+        @. y_bg_sub = max(y_bg_sub, 0)
 
         tree = Lazytree(cs, q[i,:])
 
 
-        results = search!(tree, q[i,:], new, max_depth, k, norm_const, amorphous, background, background_length,
+        results = search!(tree, q[i,:], y_bg_sub, y_uncer, max_depth, k, amorphous, background, background_length,
                             std_noise, mean_θ, std_θ,
                             method=LM, objective="LS", maxiter=maxiter, optimize_mode=EM, em_loop_num=5,
                             regularization=true)
@@ -108,7 +112,7 @@ for i in tqdm(1:size(Ws, 1))
         results = results[2:end]
         results = reduce(vcat, results)
 
-        probs = get_probabilities(results, q[i,:], new, mean_θ, std_θ)
+        probs = get_probabilities(results, q[i,:], y_bg_sub, mean_θ, std_θ)
 
         result_node = results[argmax(probs)]
         ########## Recording Metrics ###########
@@ -137,21 +141,21 @@ for i in tqdm(1:size(Ws, 1))
         end
 
         ########## Plotting ##########
-        # plt = plot(q[i,:], new, xtickfontsize=10, ytickfontsize=10, lw=4, label="Diffraction")
-        # n = ""
-        # # for p in result_node.phase_model
-        # #     n = n * p.name * "\n"
-        # # end
+        plt = plot(q[i,:], y_bg_sub, xtickfontsize=10, ytickfontsize=10, lw=4, label="Diffraction")
+        n = ""
         # for p in result_node.phase_model
-        #     plot!(q[i, :], p.(q[i, :]), label=p.name, ylims=(0.0, 1.0), lw=2)
+        #     n = n * p.name * "\n"
         # end
-        # title!("$(condition) $(j)")
-        # xlabel!("Q (1/nm)", fontsiz=10)
-        # ylabel!("a.u.", fintsize=10)
-        # # savefig("figures/$(condition) $(j).png")
-        # display(plt)
+        for p in result_node.phase_model
+            plot!(q[i, :], p.(q[i, :]), label=p.name, ylims=(0.0, 1.0), lw=2)
+        end
+        title!("$(condition) $(j)")
+        xlabel!("Q (1/nm)", fontsiz=10)
+        ylabel!("a.u.", fintsize=10)
+        # savefig("figures/$(condition) $(j).png")
+        display(plt)
 
-        stripe[j] =  [ PhaseResult(p, p.name, BH[j, :], new, isCenter[j])
+        stripe[j] =  [ PhaseResult(p, p.name, BH[j, :], y_bg_sub, isCenter[j])
                     for p in result_node.phase_model.CPs]
     end
     subdf = df[(df.Tpeak .== conds[i][1]) .& (df.dwell .== conds[i][2]), :]
