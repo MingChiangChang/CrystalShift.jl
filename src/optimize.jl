@@ -187,7 +187,7 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer
 	if opt_stn.optimize_mode == Simple
 		return simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.optimize_mode == EM
-		return EM_optimize!(θ, pm, x, y, opt_stn)
+		return EM_optimize!(θ, pm, x, y, y_uncer, opt_stn)
     elseif opt_stn.optimize_mode == WithUncer
         return optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
 	end
@@ -250,7 +250,7 @@ end
 
 
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
-									x::AbstractVector, y::AbstractVector,
+									x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 									opt_stn::OptimizationSettings)
 	# # Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
 
@@ -282,7 +282,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	# TODO use Match.jl, or just use multiple dispatch on method?
 	if opt_stn.method == LM
-		log_θ = lm_optimize!(log_θ, pm, x, y, opt_stn)
+		log_θ = lm_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.method == Newton
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
 	elseif opt_stn.method == bfgs
@@ -300,7 +300,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 
 	# This is hessian in log space, TODO: change to real sapce
 	if opt_stn.method == LM
-		f = get_lm_objective_func(phases, x, signal, opt_stn)
+		f = get_lm_objective_func(phases, x, signal, y_uncer, opt_stn)
 		r = zeros(Real, length(y) + phase_params)
 		function res(log_θ)
 			sum(abs2, f(r, log_θ))
@@ -333,6 +333,11 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	uncer = get_eight_params(pm.CPs, uncer, fill_angle)
 	return pm, uncer
 end
+
+function  optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
+    optimize_with_uncertainty!(θ, pm, x, y, zero(x), opt_stn)
+end
+
 
 """
 Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters
