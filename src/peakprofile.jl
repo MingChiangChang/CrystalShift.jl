@@ -75,7 +75,7 @@ end
 
 # FixedPseudoVoigt does not provide fit for the mixture parameter α
 const FixedPseudoVoigt = FixedPseudoVoigtProfile
-FixedPseudoVoigt(a::T) where T = FixedPseudoVoigt{T}(a)
+# FixedPseudoVoigt(a::T) where T = FixedPseudoVoigt{T}(a)
 @inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) #ApproxGaussian()(x)
 #@inline (P::FixedPseudoVoigt)(x::AbstractVector) = P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
 # @inline (P::FixedPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
