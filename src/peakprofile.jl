@@ -88,7 +88,7 @@ struct FixedApproxPseudoVoigtProfile{T} <: PeakProfile{T}
 end
 
 const FixedApproxPseudoVoigt = FixedApproxPseudoVoigtProfile
-FixedApproxPseudoVoigt(a::T) where T = FixedApproxPseudoVoigt{T}(a)
+# FixedApproxPseudoVoigt(a::T) where T = FixedApproxPseudoVoigt{T}(a)
 (P::FixedApproxPseudoVoigt)(x::Real) = P.α * Lorentz()(x) + (1-P.α) * ApproxGaussian()(x)
 get_param_nums(P::FixedApproxPseudoVoigt) = 0
 get_free_params(P::FixedApproxPseudoVoigt) = []

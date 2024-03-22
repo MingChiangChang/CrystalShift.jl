@@ -575,13 +575,14 @@ function optimize!(phases::AbstractVector,
                    method::OptimizationMethods, objective::String = "LS",
 				   optimize_mode::OptimizationMode=Simple,
 				   maxiter::Int = 32,
+				   em_loop_num::Int =1,
 				   regularization::Bool = true,
 				   λ::Float64 = 1.,
 				   verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 	pm = PhaseModel(phases)
 	pm = optimize!(pm, x, y, std_noise, mean_θ, std_θ, method=method,
 	             objective=objective, maxiter= maxiter,regularization=regularization,
-				 optimize_mode=optimize_mode, λ=λ,
+				 optimize_mode=optimize_mode, λ=λ, em_loop_num=em_loop_num,
 				 verbose=verbose, tol=tol)
     pm.CPs
 end
