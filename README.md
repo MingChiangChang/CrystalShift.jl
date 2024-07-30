@@ -49,7 +49,7 @@ One can also pass in `PhaseModel` array, of which each contains a list of `Cryst
 All three objects are jointly optimized if `PhaseModel` is passed in to `optimize!` function.
 
 ### Tree search and probability estimates
-```
+```julia
 using CrystalTree: LazyTree, search!, get_probabilities
 
 max_depth = 3         # maximum number of allowed phases
