@@ -466,7 +466,7 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
     # println((length(CP.peaks)))
     # println(eltype(r) <: ForwardDiff.Dual)
     peak_locs = (CP.cl).(CP.peaks) .* 10
-    # y = zero(r)
+    # y = zeros(Real, length(r))
 
     @inbounds @simd for i in eachindex(CP.peaks)
         if isinf(peak_locs[i])

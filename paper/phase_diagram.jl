@@ -5,6 +5,8 @@ using ProgressBars
 using CrystalShift
 using CrystalShift: Lorentz
 
+default(grid=false, frame=:box)
+
 function get_unique_phase_names(wafer_result)
     names = String[]
 
@@ -45,13 +47,13 @@ function get_lattice_params(phase_result, name)
 end
 
 # Fill in json path from running TaSnO.jl
-path = "data/TaSnO_metric_2023-11-23_11:17.json"
+path = "paper/data/TaSnO/TaSnO_EM=5.json"
 results = JSON.parsefile(path)
 names = get_unique_phase_names(results)
 
 plt = plot(legend=(0.65, 0.04), xlims=(0, 1), fontsize=10, size=(600, 400))
 phase_names = ["SnO2_P42/mnm", "Ta2O5_Pccm", "Pyrochlore_Fd-3mZ"]
-chem_names = ["SnO₂_P4₂/mnm", "Ta₂O₅_Pccm", "Ta₂Sn₂O₇_Fd-3mZ"] # For legends
+chem_names = ["SnO₂ (P4₂/mnm)", "Ta₂O₅ (Pccm)", "Ta₂Sn₂O₇ (Fd-3m)"] # For legends
 
 s = [12, 9, 7]
 color = [10, 8, 6]
@@ -81,4 +83,6 @@ for (idx, phase_name) in enumerate(phase_names)
     ylabel!("T peak (°C)")
     xlabel!("Ta/(Ta+Sn)")
 end
+plot!(title="Phase Diagram")
+xlims(plt)
 display(plt)

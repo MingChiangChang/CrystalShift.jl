@@ -33,14 +33,14 @@ std_noise = 5e-2 #5e-3
 mean_θ = [1., .5, .2]
 std_θ = [0.05, 0.05, .05]
 method = LM
-opt_mode = EM
+opt_mode = Simple
 objective = LeastSquares()
 amorphous = false
 K = 5
 max_num_phases = 3
 n_expand = 3
 noise_level = 0.03
-n_test=231
+n_test=10
 
 std_noise = 1e-2
 mean_θ = [1., .5, .5]

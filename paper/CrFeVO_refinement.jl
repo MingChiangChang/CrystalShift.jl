@@ -13,6 +13,9 @@ using Measurements
 using ForwardDiff
 using LinearAlgebra
 using LazyInverses
+using ProgressBars
+
+default(grid=false)
 
 function make_string_to_numbers(ls)
     ls = ls[findall(x->x=='=', ls)[1]+1:end]
@@ -33,8 +36,8 @@ sn = ["7134", "8743", "10205", "11853", "11845", "11836", "11828", "11819", "118
 
 
 
-path = "/Users/ming/Downloads/CrFeV_toCornell/V54_xrd_A2theta_Int.csv"
-df = CSV.read(path, DataFrame)
+# path = "/Users/ming/Downloads/CrFeV_toCornell/V54_xrd_A2theta_Int.csv"
+# df = CSV.read(path, DataFrame)
 
 phase_path = "paper/data/CrFeVO/sticks.csv"
 open(phase_path, "r") do f
@@ -94,7 +97,7 @@ for i in sn
                                             32, true,
                                             method, objective, Simple, 8, 1., false, 1e-6)
 
-    opt_pm = full_optimize!(pm, q, I, std_noise, mean_θ, std_θ,
+    @time opt_pm = full_optimize!(pm, q, I, std_noise, mean_θ, std_θ,
                             mod_peak_num = mod_peak_num,
                             loop_num=loop_num,
                             method=method,
@@ -114,18 +117,18 @@ for i in sn
     # savefig("raw_bg.png")
     plot!(q, evaluate!(zero(q), opt_pm.CPs[2], q), label="SnO₂", linewidth=6)
     # savefig("with_bg_sno.png")
-    plot!(q, evaluate!(zero(q), opt_pm.CPs[1], q), label="CrₐFeᵦVO₄", linewidth=6)
+    plot!(q, evaluate!(zero(q), opt_pm.CPs[1], q), label="CrₓFe₍₀.₅₋ₓ₎VO₄", linewidth=6)
     plot!(q, evaluate!(zero(q), opt_pm, q), color=:red, label="Optimized Result", linewidth=4)
 
     plot!(size=(900,900), left_margin=5Plots.mm, bottom_margin=5Plots.mm, dpi=300, framestyle = :box, legend=:topright)
-    # savefig("final.png")
+    savefig("final.svg")
     display(plt)
 
     ##### Uncertainty evaluateion #####
     I = I - evaluate!(zero(q), opt_pm.background, q)
     opt_pm = PhaseModel(opt_pm.CPs, nothing, nothing)
     params = get_free_params(pm)
-    f = get_lm_objective_func(opt_pm, q, I, opt_stn)
+    f = get_lm_objective_func(opt_pm, q, I, zero(I), opt_stn)
     r = zeros(Real, length(I) + length(params))
     function res(log_θ)
         sum(abs2, f(r, log_θ)/maximum(I))
@@ -172,7 +175,7 @@ p4 = plot(comp, getproperty.(c_β, :val).* 180 ./pi, xerr=x_err, yerr=getpropert
 scatter!(comp, getproperty.(c_β, :val).* 180 ./pi, color=:cornflowerblue)
 plt = plot(p1, p2, p3, p4, layout = (2, 2), legend=false, left_margin=5Plots.mm, bottom_margin=2Plots.mm)
 plot!(size=(800,1000), dpi=300, framestyle = :box ,xticks=[0.2, 0.4, 0.6, 0.8], xlims=(0.2, 0.85))
-# savefig("CrFeVO.png")
+# savefig("CrFeVO_lattice")
 display(plt)
 
 uncer_v = Vector{Measurement}()
@@ -192,8 +195,14 @@ function rectangle(pos, w, h)
     Plots.Shape([x-w/2, x+w/2, x+w/2, x-w/2], [y, y, y+h, y+h])
 end
 
-plt = plot(size=(900, 200), xlim=(16.5, 32.535), ylim=(0, 1), xtickfontsize=16, legendfontsize=12, frame=:box, bottom_margin=10Plots.mm, left_margin=26.8Plots.mm, yticks=false, labelfontsize=20, ylabel="(a.u)", xlabel="q (nm⁻¹)")
-names = ["SnO₂ 01-070-6153", "CrₐFeᵦVO₄ 04-011-4573"]
+phase_path = "paper/data/CrFeVO/sticks.csv"
+open(phase_path, "r") do f
+    global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.5))
+end
+
+plt = plot(size=(900, 200), xlim=(16.5, 32.535), ylim=(0, 1), xtickfontsize=16,
+          legendfontsize=9, frame=:box, bottom_margin=10Plots.mm, left_margin=26.8Plots.mm, yticks=false, labelfontsize=20, ylabel="(a.u)", xlabel="q (nm⁻¹)")
+names = ["SnO₂ 01-070-6153", "Cr₀.₅Fe₀.₅VO₄ 04-011-4573"]
 rcs = reverse(cs)
 for i in eachindex(rcs)
     peak_qs = (rcs[i].cl).(rcs[i].peaks).*10
@@ -206,4 +215,45 @@ for i in eachindex(rcs)
         plot!(rectangle([peak_qs[j], 0.001], 0.1, rcs[i].peaks[j].I), c=palette(:auto)[i+2], linewidth=0, label=false)
     end
 end
+savefig("reference_sticks.svg")
+display(plt)
+
+lattice_a = CSV.read("/Users/ming/Downloads/CrFeVO_a.csv", DataFrame)
+lattice_b = CSV.read("/Users/ming/Downloads/CrFeVO_b.csv", DataFrame)
+lattice_c = CSV.read("/Users/ming/Downloads/CrFeVO_c.csv", DataFrame)
+a = lattice_a[!, 2] ./= 9.8245
+b = lattice_b[!, 2] ./= 8.8776
+c = lattice_c[!, 2] ./= 6.8252
+
+a .-= 1
+b .-= 1
+c .-= 1
+a .*= 100
+b .*= 100
+c .*= 100
+a = reverse(a)
+b = reverse(b)
+c = reverse(c)
+
+default(labelfontsize=20, xtickfontsize=16, ytickfontsize=16, titlefontsize=20,linewidth=6)
+x_val = getproperty.(comp, :val)
+x_err = getproperty.(comp, :err)
+p1 = plot(comp, cl[1], xerr=x_err, yerr=getproperty.(c_a, :err)./norm_a.*100, title="a", xlabel="Fe/(Fe+Cr)", ylabel="Lattice Strain (%)", color=:red,ylims=(-1.0, 1.0), label="CrystalShift")
+scatter!(comp, cl[1], color=:pink, label=nothing)
+plot!(comp, a, color=:pink, alpha=0.5, label="Zhou et al.")
+scatter!(comp, a, color=:pink, alpha=0.5, label=nothing)
+p2 = plot(comp, cl[2], xerr=x_err, yerr=getproperty.(c_b, :err)./norm_b.*100, title="b", xlabel="Fe/(Fe+Cr)", ylabel="Lattice Strain (%)", color=:orange, ylims=(-1.0, 1.0), label="CrystalShift")
+scatter!(comp, cl[2], color=:gold, label=nothing)
+plot!(comp, b, color=:gold, markershape=:circle, alpha=0.5, label="Zhou et al.")
+scatter!(comp, b, color=:gold, label=nothing)
+p3 = plot(comp, cl[3], xerr=x_err, yerr=getproperty.(c_c, :err)./norm_c.*100, title="c", ylabel="Lattice Strain (%)", xlabel="Fe/(Fe+Cr)", color=:green, ylims=(-1.0, 1.0), label="CrystalShift")
+scatter!(comp, cl[3], color=:lightgreen, label=nothing)
+plot!(comp, c, color=:lightgreen, markershape=:circle, alpha=0.5, label="Zhou et al.")
+scatter!(comp, c, color=:lightgreen, label=nothing)
+p4 = plot(comp, getproperty.(c_β, :val).* 180 ./pi, xerr=x_err, yerr=getproperty.(c_β, :err).* 180 ./pi, title="β", xlabel="Fe/(Fe+Cr)",ylabel="β (°)", color=:blue,
+       ylim=(mean(getproperty.(c_β, :val).* 180 ./pi)*0.99, mean(getproperty.(c_β, :val).* 180 ./pi)*1.01 ), ytickfontsize=12)
+scatter!(comp, getproperty.(c_β, :val).* 180 ./pi, color=:cornflowerblue)
+plt = plot(p1, p2, p3, layout = (1, 3), legend=false, left_margin=5Plots.mm, bottom_margin=5Plots.mm)
+plot!(size=(1200,600), dpi=300, framestyle = :box ,xticks=[0.2, 0.4, 0.6, 0.8], xlims=(0.2, 0.85), legend=true)
+# savefig("CrFeVO_lattice")
 display(plt)

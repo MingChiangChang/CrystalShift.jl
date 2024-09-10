@@ -200,6 +200,7 @@ end
 
 function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
+	# TODO: Add option for whether to estimate this
 	if eltype(pm.CPs) <: CrystalPhase && opt_stn.optimize_mode != EM
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
@@ -232,12 +233,17 @@ function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 
     c = 0 # As existing local to make this thread safe
 	std_noise = 0.05
+	xrd_temp = zero(y)
 	for i in 1:opt_stn.em_loop_num
 		c = simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
-        std_noise = std(y - evaluate(c, get_free_params(c), x))
-		θ = get_free_params(c)
-		opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise)
-		pm = c
+
+		if i != opt_stn.em_loop_num
+		    evaluate!(xrd_temp, c, get_free_params(c), x)
+		    std_noise = std(y .- xrd_temp)
+            xrd_temp .= 0
+		    opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise)
+		    pm = c
+		end
 	end
 	return c
 end
@@ -252,29 +258,9 @@ end
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 									opt_stn::OptimizationSettings)
-	# # Background is linear. Hessian is always 0. Need to remove to prevent a weird inexact error
-
-    # t = zeros(Real, length(y) + phase_params)
-	# # rr = f(t, phase_log_θ)
-	# H = ForwardDiff.hessian(res, phase_log_θ)
-	# g = ForwardDiff.gradient(res, phase_log_θ)
-	# display(g)
-	# display(diag(H))
-	# val = res(phase_log_θ)
-	# dof = length(x) - length(phase_log_θ)
-	# uncer = diag((log((dof-1)*val) - log(dof)) * inverse(H))
-	# # uncer = diag((val/dof) * inverse(H))
-	# evecs = eigvecs(H)
-	# evals = eigvals(H)
-    # test_uncer = zeros(Float64, length(evals))
-	# for i in 1:size(H, 1)
-	# 	for j in 1:size(H, 1)
-    #         test_uncer[i] += 1/evals[j] * (evecs[i,j] )^2
-	# 	end
+	# if eltype(pm.CPs) <: CrystalPhase
+	# 	θ = initialize_activation!(θ, pm, x, y)
 	# end
-	if eltype(pm.CPs) <: CrystalPhase
-		θ = initialize_activation!(θ, pm, x, y)
-	end
 	# TODO: Don't take log of profile parameters
 	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
@@ -308,11 +294,6 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	else
 		res = get_newton_objective_func(pm, x, y, opt_stn)
 	end
-
-	# r = zeros(Real, length(y))
-	# function t(log_θ)
-    #     sum(abs2, y .- evaluate!(r, reconstruct!(pm, exp.(log_θ)), x))
-	# end
 
 	H = ForwardDiff.hessian(res, phase_log_θ)
 	# val = res(phase_log_θ) * sqrt(2) * opt_stn.priors.std_noise
@@ -352,12 +333,6 @@ function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::
 	function res(log_θ)
 		sum(abs2, f(r, log_θ))
 	end
-
-	# r = zeros(Real, length(y))
-	# function res(log_θ)
-	# 	_, new_CP = reconstruct_CPs!(exp.(log_θ), CPs)
-    #     sum(abs2, y .- evaluate!(r, new_CP, x))
-	# end
 
 	H = ForwardDiff.hessian(res, phase_log_θ)
 	l2_res = sum(abs2, y .- evaluate!(zero(x), CPs, x))
@@ -482,7 +457,7 @@ function BFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::Abs
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
 
-	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, check=false)
+	N = BFGS(get_newton_objective_func(pm, x, y, opt_stn), log_θ, check=true)
 	N = UnitDirection(N)
 	D = DecreasingStep(N, log_θ)
 	S = StoppingCriterion(log_θ, dx = tol, rx=tol, maxiter=maxiter, verbose=verbose)

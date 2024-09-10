@@ -142,3 +142,11 @@ function OptimizationSettings{Float64}(opt_stn::OptimizationSettings, std_noise:
                                 opt_stn.λ,
                                 opt_stn.verbose, opt_stn.tol)
 end
+
+function OptimizationSettings{Float64}(opt_stn::OptimizationSettings, std_noise::Real, maxiter::Int)
+    pr = Priors{Float64}(opt_stn.priors, std_noise)
+    OptimizationSettings{Float64}(pr, maxiter, opt_stn.regularization, opt_stn.method,
+                                 opt_stn.objective, opt_stn.optimize_mode, opt_stn.em_loop_num,
+                                 opt_stn.λ,
+                                 opt_stn.verbose, opt_stn.tol)
+ end
