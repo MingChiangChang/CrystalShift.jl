@@ -6,7 +6,7 @@
 
 ## Installation
 ```julia
-Using Pkg
+using Pkg
 Pkg.add(url="https://github.com/MingChiangChang/CrystalShift.jl")
 Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
 ```
