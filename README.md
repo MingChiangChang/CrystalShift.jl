@@ -5,7 +5,7 @@
 `CrystalShift.jl` is a package for probabilistic multi-phase labeling of X-ray diffraction(XRD) patterns. It is an efficient and flexible way to probabilistically label phases in XRD patterns based on pseudo-refinement optimzation, best-first tree search and Bayesian model comparison techniques.
 
 ## Installation
-```
+```julia
 Using Pkg
 Pkg.add(url="https://github.com/MingChiangChang/CrystalShift.jl")
 Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
@@ -14,19 +14,19 @@ There are plans to merge these two module and add it to the julia general repo i
 
 ## Usage
 ### Generate recalculate input files
-```
+```julia
 python cif_to_input_file.py -c /path/to/cif/folder -o /path/to/output/location -qmin 10.0 -qmax 80.0 -w 1.5406
 ```
 This script will grab all of the cifs in /path/to/cif/folder, precalculate the XRD stick patterns, and store it as `/path/to/output/location.csv`. 
 
 ### Pseudo-refinement of lattices
 Once you have the input files generated, it can be used to generate an array of `CrystalPhase` objects
-```
+```julia
 using CrystalShift
 cs = CrystalPhase("/path/to/output/location.csv", 0.1, CrystalShift.FixedPseudoVoigt(0.5))
 ```
 The array of `CrystalPhase` object can then be passed to the pseudo-refinement optimization process
-```
+```julia
 std_noise = .1
 mean_θ = [1., .5, .2]
 std_θ = [.05, 2., 1.]
