@@ -15,7 +15,7 @@ using LinearAlgebra
 using LazyInverses
 using ProgressBars
 
-default(grid=false)
+default(grid=false, fontfamily="Helvetica")
 
 function make_string_to_numbers(ls)
     ls = ls[findall(x->x=='=', ls)[1]+1:end]
@@ -24,16 +24,11 @@ function make_string_to_numbers(ls)
 end
 
 
-
 d = ""
 Q_IND = 22 # Q is in 22 row for the udi file
 q_min = 200
 q_max = 800
-FeCr_ratio = [5.06757, 3.62887, 2.53125, 1.75, 1.42932, 1.16432, 1.02212, 0.79845, 0.673913, 0.422713, 0.28169]
 sn = ["7134", "8743", "10205", "11853", "11845", "11836", "11828", "11819", "11811", "10121", "8616"]
-
-
-
 
 
 # path = "/Users/ming/Downloads/CrFeV_toCornell/V54_xrd_A2theta_Int.csv"
@@ -58,17 +53,17 @@ comp = Fe_ ./ (Fe_ .+ Cr_)
 
 
 ##### Read and prepare data #####
-path = "paper/data/CrFeVO/ana__9_3594.udi"
-open(path) do f
-    global d = read(f, String)
-end
-split_data = split(d, '\n')
-sample_number = split(split_data[13][11:end-1], ',')
-q = make_string_to_numbers(split_data[Q_IND])[q_min:q_max]
+# path = "paper/data/CrFeVO/ana__9_3594.udi"
+# open(path) do f
+#     global d = read(f, String)
+# end
+# split_data = split(d, '\n')
+# sample_number = split(split_data[13][11:end-1], ',')
+# q = make_string_to_numbers(split_data[Q_IND])[q_min:q_max]
 
 ##### Define containers #####
 uncertainties = Vector{Vector{Float64}}()
-c = CrystalPhase[]
+cp = CrystalPhase[]
 v = Float64[]
 
 ## CrystalShift settings ##
@@ -85,11 +80,15 @@ regularization=true
 peak_mod_mean=[1., 1.]
 peak_mod_std=[.5, .05]
 
-for i in sn
+FeCr_ratio = [5.06757, 3.62887, 2.53125, 1.75, 1.42932, 1.16432, 1.02212, 0.79845, 0.673913, 0.422713, 0.28169]
+q = npzread("paper/data/CrFeVO/CrFeVO_q.npy")
+data = npzread("paper/data/CrFeVO/CrFeVO_data.npy")
 
-    ind = findall(x->x==i, sample_number)[1]
-    I = make_string_to_numbers(split_data[Q_IND+ind])[q_min:q_max]
-    I ./= maximum(I)
+for I in eachrow(data)
+
+    # ind = findall(x->x==i, sample_number)[1]
+    # I = make_string_to_numbers(split_data[Q_IND+ind])[q_min:q_max]
+    # I ./= maximum(I)
 
     bg = BackgroundModel(q, Matern(3/2), 8., 10., rank_tol=1e-3)
     pm = PhaseModel(cs[1:2], nothing, bg)
@@ -140,20 +139,20 @@ for i in sn
     uncer = sqrt.(diag(val / (length(q) - length(log_θ)) * inverse(H)))
 
     push!(uncertainties, uncer)
-    push!(c, opt_pm.CPs[1])
+    push!(cp, opt_pm.CPs[1])
     push!(v, volume(opt_pm.CPs[1].cl))
 end
 
-c_a = [exp(log(c[i].cl.a) ± 2uncertainties[i][1]) for i in eachindex(c)]
+c_a = [exp(log(cp[i].cl.a) ± 2uncertainties[i][1]) for i in eachindex(cp)]
 norm_a = cs[1].cl.a
 norm_c_a = (c_a .-norm_a) ./norm_a .* 100
-c_b = [exp(log(c[i].cl.b) ± 2uncertainties[i][2]) for i in eachindex(c)]
+c_b = [exp(log(cp[i].cl.b) ± 2uncertainties[i][2]) for i in eachindex(cp)]
 norm_b = cs[1].cl.b
 norm_c_b = (c_b .-norm_b) ./norm_b .* 100
-c_c = [exp(log(c[i].cl.c) ± 2uncertainties[i][3]) for i in eachindex(c)]
+c_c = [exp(log(cp[i].cl.c) ± 2uncertainties[i][3]) for i in eachindex(cp)]
 norm_c = cs[1].cl.c
 norm_c_c = (c_c .-norm_c) ./norm_c .* 100
-c_β = [exp(log(c[i].cl.β) ± 2uncertainties[i][4]) for i in eachindex(c)]
+c_β = [exp(log(cp[i].cl.β) ± 2uncertainties[i][4]) for i in eachindex(cp)]
 norm_β = cs[1].cl.β
 norm_c_β = (c_β.-norm_β) ./norm_β .* 100
 cl = [norm_c_a, norm_c_b, norm_c_c, norm_c_β]
@@ -201,12 +200,11 @@ open(phase_path, "r") do f
 end
 
 plt = plot(size=(900, 200), xlim=(16.5, 32.535), ylim=(0, 1), xtickfontsize=16,
-          legendfontsize=9, frame=:box, bottom_margin=10Plots.mm, left_margin=26.8Plots.mm, yticks=false, labelfontsize=20, ylabel="(a.u)", xlabel="q (nm⁻¹)")
+          legendfontsize=12, frame=:box, bottom_margin=10Plots.mm, left_margin=26.8Plots.mm, yticks=false, labelfontsize=20, ylabel="(a.u)", xlabel="q (nm⁻¹)")
 names = ["SnO₂ 01-070-6153", "Cr₀.₅Fe₀.₅VO₄ 04-011-4573"]
 rcs = reverse(cs)
 for i in eachindex(rcs)
     peak_qs = (rcs[i].cl).(rcs[i].peaks).*10
-    println(peak_qs)
     # plt = plot()
     for j in eachindex(peak_qs)
         if j == 1
@@ -218,9 +216,9 @@ end
 savefig("reference_sticks.svg")
 display(plt)
 
-lattice_a = CSV.read("/Users/ming/Downloads/CrFeVO_a.csv", DataFrame)
-lattice_b = CSV.read("/Users/ming/Downloads/CrFeVO_b.csv", DataFrame)
-lattice_c = CSV.read("/Users/ming/Downloads/CrFeVO_c.csv", DataFrame)
+lattice_a = CSV.read("paper/data/CrFeVO/reference_lp_a.csv", DataFrame)
+lattice_b = CSV.read("paper/data/CrFeVO/reference_lp_b.csv", DataFrame)
+lattice_c = CSV.read("paper/data/CrFeVO/reference_lp_c.csv", DataFrame)
 a = lattice_a[!, 2] ./= 9.8245
 b = lattice_b[!, 2] ./= 8.8776
 c = lattice_c[!, 2] ./= 6.8252
@@ -253,7 +251,7 @@ scatter!(comp, c, color=:lightgreen, label=nothing)
 p4 = plot(comp, getproperty.(c_β, :val).* 180 ./pi, xerr=x_err, yerr=getproperty.(c_β, :err).* 180 ./pi, title="β", xlabel="Fe/(Fe+Cr)",ylabel="β (°)", color=:blue,
        ylim=(mean(getproperty.(c_β, :val).* 180 ./pi)*0.99, mean(getproperty.(c_β, :val).* 180 ./pi)*1.01 ), ytickfontsize=12)
 scatter!(comp, getproperty.(c_β, :val).* 180 ./pi, color=:cornflowerblue)
-plt = plot(p1, p2, p3, layout = (1, 3), legend=false, left_margin=5Plots.mm, bottom_margin=5Plots.mm)
-plot!(size=(1200,600), dpi=300, framestyle = :box ,xticks=[0.2, 0.4, 0.6, 0.8], xlims=(0.2, 0.85), legend=true)
+plt = plot(p1, p2, p3, layout = (1, 3), legend=false, left_margin=5Plots.mm, bottom_margin=10Plots.mm)
+plot!(size=(1200,600), dpi=300, framestyle = :box ,xticks=[0.2, 0.4, 0.6, 0.8], xlims=(0.2, 0.85), legend=true, legendfontsize=12)
 # savefig("CrFeVO_lattice")
 display(plt)

@@ -5,7 +5,7 @@ using ProgressBars
 using CrystalShift
 using CrystalShift: Lorentz
 
-default(grid=false, frame=:box)
+default(grid=false, frame=:box, fontfamily="Helvetica")
 
 function get_unique_phase_names(wafer_result)
     names = String[]
@@ -51,7 +51,7 @@ path = "paper/data/TaSnO/TaSnO_EM=5.json"
 results = JSON.parsefile(path)
 names = get_unique_phase_names(results)
 
-plt = plot(legend=(0.65, 0.04), xlims=(0, 1), fontsize=10, size=(600, 400))
+plt = plot(legend=(0.65, 0.04), xlims=(0, 1), fontsize=10, size=(600, 400), colorbar=true)
 phase_names = ["SnO2_P42/mnm", "Ta2O5_Pccm", "Pyrochlore_Fd-3mZ"]
 chem_names = ["SnO₂ (P4₂/mnm)", "Ta₂O₅ (Pccm)", "Ta₂Sn₂O₇ (Fd-3m)"] # For legends
 
@@ -77,12 +77,15 @@ for (idx, phase_name) in enumerate(phase_names)
             end
         end
     end
-    scatter!(cation, tpeak, label=chem_names[idx], markersize=color[idx], legend=true, frame=:box,
-             xtickfontsize=12, xlabelfontsize=11, ylabelfontsize=11, ytickfontsize=10, right_margin=3Plots.mm)
+    scatter!(cation, tpeak, label=chem_names[idx],
+             markersize=color[idx], legend=true, frame=:box,
+             xtickfontsize=12, xlabelfontsize=13, ylabelfontsize=13, ytickfontsize=12,
+             right_margin=6Plots.mm)
 
     ylabel!("T peak (°C)")
     xlabel!("Ta/(Ta+Sn)")
 end
-plot!(title="Phase Diagram")
+scatter!([0.], [0.], marker_z=[5.], label=nothing, colorbar_title = "\nLattice Strain (%)", colorbar_titlefontsize=13)
+plot!(ylims=(473.0, 1427.0), title="Phase Diagram", titlefontsize=16, legendfontsize=11,colorbar_title = "\nLattice Strain (%)")
 xlims(plt)
 display(plt)

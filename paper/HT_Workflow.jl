@@ -17,7 +17,7 @@ using Measurements
 using ForwardDiff
 using LazyInverses
 
-
+default(grid=false, fontfamily="Helvetica", frame=:axis)
 include("nmf.jl")
 
 function get_phase_model_with_phase_names(phase_names::AbstractSet,
@@ -56,31 +56,32 @@ RANK = 4
 STRIPE_IDX = 336
 
 ##### Plotting heatmap #####
-# heatmap(LinRange(-.75, .75, 76), q[336,50:end-50], transpose(data[336, 77:152,50:end-50]),
-#         yflip=true, clim=(0, 10), xlabel="Relative Location (mm)", ylabel="q (nm⁻¹)",
-#         ylabelfontsize=12, xlabelfontsize=12, xtickfontsize=10, ytickfontsize=10, colorbar_title="Intensity (a.u.)")
+heatmap(LinRange(-.75, .75, 76), q[336,50:end-50], transpose(data[336, 77:152,50:end-50]),
+        yflip=true, clim=(0, 10), xlabel="Relative Location (mm)", ylabel="q (nm⁻¹)",
+        ylabelfontsize=14, xlabelfontsize=14, xtickfontsize=12, ytickfontsize=12,
+         colorbar_title="Intensity (a.u.)", colorbar_titlefontsize=13, tickdirection=:out)
 
 
 q = q[1, 1:900]
 W, H, K = xray(Array(transpose(data[STRIPE_IDX, :, 1:900])), RANK)
 
 ##### Plotting bases #####
-# plt = plot(xlabel="q (nm⁻¹)", ylabel="Intensity (a.u.)", ylabelfontsize=12, xlabelfontsize=12,
-#         xtickfontsize=10, legendfontsize=10,
-#           yticks=false, linewidth=2, leftmargin=3Plots.mm, xlim=(10, 50), grid=false)
-# for i in axes(W, 2)
-#     plot!(q, W[:,i], label="Basis $(i)", linewidth=2)
-# end
-# display(plt)
+plt = plot(xlabel="q (nm⁻¹)", ylabel="Intensity (a.u.)",
+       ylabelfontsize=14, xlabelfontsize=14, xtickfontsize=12, legendfontsize=12,
+          yticks=false, linewidth=2, leftmargin=3Plots.mm, xlim=(10, 50), grid=false)
+for i in axes(W, 2)
+    plot!(q, W[:,i], label="Basis $(i)", linewidth=2)
+end
+display(plt)
 
-# ##### Plotting activations #####
-# plt = plot(xlabel="Relative Location (μm)", ylabel="Activation (a.u.)", ylabelfontsize=12, xlabelfontsize=12,
-#         xtickfontsize=10, ytickfontsize=10, legendfontsize=10,
-#         linewidth=2, leftmargin=3Plots.mm, legend=:topright, grid=false)
-# for i in axes(H, 1)
-#     plot!(LinRange(-.75, .75, 76), H[i,77:152], label="Basis $(i)", linewidth=2)
-# end
-# display(plt)
+##### Plotting activations #####
+plt = plot(xlabel="Relative Location (μm)", ylabel="Activation (a.u.)",
+ylabelfontsize=14, xlabelfontsize=14, xtickfontsize=12, ytickfontsize=12, legendfontsize=12,
+        linewidth=2, leftmargin=3Plots.mm, legend=:topright, grid=false)
+for i in axes(H, 1)
+    plot!(LinRange(-.75, .75, 76), H[i,77:152], label="Basis $(i)", linewidth=2)
+end
+display(plt)
 
 phase_path = "paper/data/TaSnO/TaSnO_sticks.csv"
 open(phase_path, "r") do f
@@ -92,7 +93,7 @@ end
 result_nodes = Vector{Node}(undef, RANK)
 
 
-for i in 1:RANK
+@time for i in 1:RANK
     # check amorphous
     bg = BackgroundModel(q, EQ(), 5, 100)
     W[:, i] ./= maximum(W[:,i])
@@ -149,12 +150,12 @@ end
 # # Optimize each position with the identified phase only
 pm_at_each_position = Vector{PhaseModel}(undef, 201)
 priors = Priors{Float64}(std_noise, mean_θ, std_θ)
-opt_stn = OptimizationSettings{Float64}(priors, 512, true, LM, "LS", Simple, 8, 1., false, 1e-6)
+opt_stn = OptimizationSettings{Float64}(priors, 512, true, LM, "LS", Simple, 1, 1., false, 1e-6)
 # TODO: Parallelize?
 bg = BackgroundModel(q, EQ(), 5, 100)
 uncers = Vector{Vector{Measurement}}()
-for i in tqdm(1:201)
-    pm = get_phase_model_with_phase_names(phases[i], cs, bg)
+for i in 1:201
+    pm = get_phase_model_with_phase_names(phases[i], cs, nothing)
     if !isempty(pm.CPs)
         normalized_data = data[336, i, 1:900] / maximum(data[336, i, 1:900])
         opt_pm = optimize!(pm, q, normalized_data, opt_stn)
@@ -174,7 +175,7 @@ for i in tqdm(1:201)
         end
         log_θ = log.(get_free_params(opt_pm))
 
-        H = ForwardDiff.hessian(res, log_θ)
+        @time H = ForwardDiff.hessian(res, log_θ)
         val = res(log_θ)
         uncer = sqrt.(diag(val / (length(q) - length(log_θ)) * inverse(H)))
         println("$(length(params)), $(length(uncer))")
@@ -203,6 +204,7 @@ end
 
 # Collect phases at their corresponding locations
 # And plot their free lattice parameters
+default(frame=:box)
 unique_phases = Set{String}()
 c = get_color_palette(:auto, 5)
 
@@ -282,6 +284,6 @@ for (phase_idx, phase) in enumerate(unique_phases)
     end
 end
 
-
+plot!(ylabelfontsize=14, xlabelfontsize=14, xtickfontsize=12,  ytickfontsize=12, legendfontsize=12)
 
 display(plt)
