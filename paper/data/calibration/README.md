@@ -1,4 +1,5 @@
 # Calibration dataset
+The npy will be on data repo mentioned in the paper.
 
 ## calibration_data_normal_0.03_easy.npy
 This contains 100000 synthetic XRD spectra for calibration.
