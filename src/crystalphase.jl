@@ -204,6 +204,7 @@ get_n(f::Lorentz, σ) = π*σ
 get_n(f::PseudoVoigt, σ) = (-0.5 + f.sig_α) *π*σ + (1.5 - f.sig_α)*σ*sqrt(2π)
 # (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
 get_n(f::FixedPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
+get_n(f::FixedApproxPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
 #  P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) 
 get_n(CP::CrystalPhase) = get_n(CP.profile, CP.σ)
 get_strain(CP::CrystalPhase) = get_strain(CP.cl, CP.origin_cl)
@@ -466,7 +467,7 @@ function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVect
     # println((length(CP.peaks)))
     # println(eltype(r) <: ForwardDiff.Dual)
     peak_locs = (CP.cl).(CP.peaks) .* 10
-    # y = zeros(Real, length(r))
+    # y = zeros(promote_type(eltype(x), eltype(r)), length(r)) # Can be preallocated at the optimization level
 
     @inbounds @simd for i in eachindex(CP.peaks)
         if isinf(peak_locs[i])
