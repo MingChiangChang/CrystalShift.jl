@@ -132,7 +132,7 @@ end
 
 function OptimizationSettings{Float64}()
     pr = Priors{Float64}()
-    OptimizationSettings{Float64}(pr, 128, true, LM, "LS", Simple, 8, false, DEFAULT_TOL)
+    OptimizationSettings{Float64}(pr, 128, true, LM, "LS", Simple, 8, 1., false, DEFAULT_TOL)
 end
 
 function OptimizationSettings{Float64}(opt_stn::OptimizationSettings, std_noise::Real)
