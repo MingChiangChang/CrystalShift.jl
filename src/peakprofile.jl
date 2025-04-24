@@ -60,7 +60,7 @@ end
 
 const PseudoVoigt = PseudoVoigtProfile
 PseudoVoigt(a::T) where T = PseudoVoigt{T}(a)
-(P::PseudoVoigt)(x::Real) = (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
+@inline (P::PseudoVoigt)(x::Real) = (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
 get_param_nums(P::PseudoVoigtProfile) = length(P.α)
 get_free_params(P::PseudoVoigtProfile) = [P.sig_α] # This is in sigmoid space!!
 

@@ -264,7 +264,7 @@ end
 
 # (Crystal)(Peak) gives the peak position
 # Fallback function and for triclinic
-function (cl::Crystal)(P::Peak)
+function (cl::Crystal{T})(P::Peak) where T
     try
         (2pi/cl.volume *
         sqrt(P.h^2 * cl.b^2 * cl.c^2 * cl.sincos_α[1]^2
@@ -279,14 +279,14 @@ function (cl::Crystal)(P::Peak)
     end
 end
 
-function (cl::Cubic)(P::Peak)
+@inline function (cl::Cubic{T})(P::Peak) where T
     2pi*sqrt(P.h^2 + P.k^2 + P.l^2) / cl.a
 end
 
-function (cl::Tetragonal)(P::Peak)
+@inline function (cl::Tetragonal{T})(P::Peak) where T
     2pi*sqrt(P.h^2*cl.c^2 + P.k^2*cl.c^2 + P.l^2*cl.a^2) / (cl.a*cl.c)
 end
-function (cl::Hexagonal)(P::Peak)
+@inline function (cl::Hexagonal{T})(P::Peak) where T
     (2pi/cl.volume *
     sqrt(P.h^2 * cl.b^2 * cl.c^2
     + P.k^2 * cl.a^2 * cl.c^2
@@ -294,14 +294,14 @@ function (cl::Hexagonal)(P::Peak)
     + 2*P.h * P.k * cl.a * cl.b * cl.c^2 * (cl.sincos_α[2]*cl.sincos_β[2] - cl.sincos_γ[2])))
 end
 
-function (cl::Orthorhombic)(P::Peak)
+@inline function (cl::Orthorhombic{T})(P::Peak) where T
     return (2pi/(cl.a*cl.b*cl.c) *
             sqrt(P.h^2 * cl.b^2 * cl.c^2
                 + P.k^2 * cl.a^2 * cl.c^2
                 + P.l^2 * cl.a^2 * cl.b^2))
 end
 
-function (cl::Rhombohedral)(P::Peak)
+@inline function (cl::Rhombohedral{T})(P::Peak) where T
     (2pi/cl.volume *
     sqrt(P.h^2 * cl.a^4 * cl.sincos_α[1]^2
     + P.k^2 * cl.a^4 * cl.sincos_α[1]^2
@@ -310,7 +310,7 @@ function (cl::Rhombohedral)(P::Peak)
     * (P.h * P.k + P.k * P.l + P.h * P.l) )))
 end
 
-function (cl::Monoclinic)(P::Peak)
+@inline function (cl::Monoclinic{T})(P::Peak) where T
     (2pi/cl.volume *
     sqrt(P.h^2 * cl.b^2 * cl.c^2
     + P.k^2 * cl.a^2 * cl.c^2 * cl.sincos_β[1]^2

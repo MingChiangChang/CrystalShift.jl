@@ -66,7 +66,7 @@ for i in tqdm(1:runs)
 
     LT = Lazytree(cs, x)
 
-    results = search!(LT, x, y, 2, k, 1., amorphous, false, 5., std_noise, mean_θ, std_θ,
+    results = search!(LT, x, y, 2, k, amorphous, false, 5., std_noise, mean_θ, std_θ,
                     method=LM, objective="LS", optimize_mode=EM,
                     maxiter=256, em_loop_num=3,
                     regularization=true)
@@ -74,7 +74,7 @@ for i in tqdm(1:runs)
         results = results[2:end]
     end
     results = reduce(vcat, results)
-    probs = get_probabilities(results, x, y, mean_θ, std_θ, renormalize=true, normalization_constant=100.)
+    probs = get_probabilities(results, x, y, mean_θ, std_θ, renormalize=true, normalization_constant=.5)
 
     prob_of_phase = zeros(Float64, 5)
     for j in eachindex(results)

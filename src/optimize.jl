@@ -200,7 +200,7 @@ end
 
 function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 				   x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
-	# TODO: Add option for whether to estimate this
+	# TODO: Add option for whether to estimate this, otherwise it will casue issue with loop methods (EM, full_optimize)
 	if eltype(pm.CPs) <: CrystalPhase && opt_stn.optimize_mode != EM
 	    θ = initialize_activation!(θ, pm, x, y)
 	end
@@ -227,6 +227,7 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 	return reconstruct!(pm, θ)
 end
 
+# FIXME: Really high allocation counts
 function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 	x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 	opt_stn::OptimizationSettings)
@@ -234,6 +235,7 @@ function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
     c = 0 # As existing local to make this thread safe
 	std_noise = 0.05
 	xrd_temp = zero(y)
+
 	for i in 1:opt_stn.em_loop_num
 		c = simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
 
@@ -241,7 +243,7 @@ function EM_optimize!(θ::AbstractVector, pm::PhaseModel,
 		    evaluate!(xrd_temp, c, get_free_params(c), x)
 		    std_noise = std(y .- xrd_temp)
             xrd_temp .= 0
-		    opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise)
+		    opt_stn = OptimizationSettings{Float64}(opt_stn, std_noise, round(Int64, 32)) # Decreasing iters
 		    pm = c
 		end
 	end
@@ -258,9 +260,9 @@ end
 function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 									x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 									opt_stn::OptimizationSettings)
-	# if eltype(pm.CPs) <: CrystalPhase
-	# 	θ = initialize_activation!(θ, pm, x, y)
-	# end
+	if eltype(pm.CPs) <: CrystalPhase
+		θ = initialize_activation!(θ, pm, x, y)
+	end
 	# TODO: Don't take log of profile parameters
 	θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)] .= @views log.(θ[1:get_param_nums(pm.CPs)+get_param_nums(pm.wildcard)]) # tramsform to log space for better conditioning
 	log_θ = θ
@@ -353,10 +355,13 @@ uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractV
 function initialize_activation!(θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector)
     new_θ = copy(θ) # make a copy
 	start = 1
+	temp = zero(x)
 	for phase in pm.CPs
         param_num = get_param_nums(phase)
-		p = evaluate(phase, θ[start:start+param_num-1], x)
-		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = max(0.01, dot(p, y) / sum(abs2, p)) # To avoid crashing with negative value
+		evaluate!(temp, phase, θ[start:start+param_num-1], x)
+		# Add maximum of 1.0, because it should not be too much larger than that. Most likley becuase of strong background
+		new_θ[start + param_num - 2 - get_param_nums(phase.profile)] = min(1.0, max(0.01, dot(temp, y) / sum(abs2, temp))) # To avoid crashing with negative value
+		temp .= 0
         start += param_num
 	end
 	return new_θ

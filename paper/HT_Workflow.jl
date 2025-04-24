@@ -4,7 +4,7 @@ using CrystalShift
 using CrystalShift: Lorentz, get_free_params, extend_priors, FixedPseudoVoigt, Background, get_lm_objective_func
 using CrystalShift: Crystal, OptionalPhases, get_param_nums, get_fraction, Priors, OptimizationSettings
 using CrystalTree
-using CrystalTree: Lazytree, approximate_negative_log_evidence, LeastSquares, get_probabilities
+using CrystalTree: Lazytree, approximate_negative_log_evidence, LeastSquares , get_probabilities
 using BackgroundSubtraction
 using CovarianceFunctions: EQ
 
@@ -51,7 +51,7 @@ q = npzread("paper/data/TaSnO/TaSnO_Q.npy")
 ##### Parameters #####
 std_noise = .05
 mean_θ = [1., .5, .1]
-std_θ = [.001, 2., 1.]
+std_θ = [.001, .5, 1.]
 RANK = 4
 STRIPE_IDX = 336
 
@@ -155,7 +155,7 @@ opt_stn = OptimizationSettings{Float64}(priors, 512, true, LM, "LS", Simple, 1, 
 bg = BackgroundModel(q, EQ(), 5, 100)
 uncers = Vector{Vector{Measurement}}()
 for i in 1:201
-    pm = get_phase_model_with_phase_names(phases[i], cs, nothing)
+    pm = get_phase_model_with_phase_names(phases[i], cs, bg)
     if !isempty(pm.CPs)
         normalized_data = data[336, i, 1:900] / maximum(data[336, i, 1:900])
         opt_pm = optimize!(pm, q, normalized_data, opt_stn)
@@ -178,7 +178,6 @@ for i in 1:201
         @time H = ForwardDiff.hessian(res, log_θ)
         val = res(log_θ)
         uncer = sqrt.(diag(val / (length(q) - length(log_θ)) * inverse(H)))
-        println("$(length(params)), $(length(uncer))")
         # push!(uncers, uncer)
 
         u = Measurement[]
@@ -226,7 +225,6 @@ phase_param_start = Dict([("SnO2_P42/mnm", 5),
 
 color_idx = 1
 for (phase_idx, phase) in enumerate(unique_phases)
-    println(phase)
     crystals = Vector{CrystalPhase}(undef, 201)
     for i in 1:201
         if isassigned(pm_at_each_position, i)
@@ -257,7 +255,6 @@ end
 
 color_idx = 1
 for (phase_idx, phase) in enumerate(unique_phases)
-    println(phase)
     crystals = Vector{CrystalPhase}(undef, 201)
     for i in 1:201
         if isassigned(pm_at_each_position, i)
