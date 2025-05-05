@@ -201,11 +201,12 @@ end
 # Functions for getting normalization constants
 get_n(f::Gauss, σ) = σ*sqrt(2π)
 get_n(f::Lorentz, σ) = π*σ
-get_n(f::PseudoVoigt, σ) = (-0.5 + f.sig_α) *π*σ + (1.5 - f.sig_α)*σ*sqrt(2π)
+get_n(f::PseudoVoigt, σ) = (-0.5 + f.sig_α) *π*σ + (1.5 - f.sig_α)*σ*sqrt(π/log(2))
 # (-0.5+P.sig_α) * Lorentz()(x) + (1.5-P.sig_α) * Gauss()(x)
-get_n(f::FixedPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
-get_n(f::FixedApproxPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
-#  P.α * Lorentz()(x) + (1-P.α) * Gauss()(x) 
+# get_n(f::FixedPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
+get_n(f::FixedPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(π/log(2))
+get_n(f::FixedApproxPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(π/log(2))
+#  P.α * Lorentz()(x) + (1-P.α) * Gauss()(x)
 get_n(CP::CrystalPhase) = get_n(CP.profile, CP.σ)
 get_strain(CP::CrystalPhase) = get_strain(CP.cl, CP.origin_cl)
 
