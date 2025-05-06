@@ -95,7 +95,7 @@ for i in tqdm(1:runs)
     ind = argmax(probs)
     ss = Set([results[ind].phase_model.CPs[i].id+1 for i in eachindex(results[ind].phase_model.CPs)])
     answer = test_comb
-    ss == answer && (correct_count += 1)
+    ss == answer && (global correct_count += 1)
 
     for j in eachindex(results)
         bin_num = get_bin(probs[j])

@@ -121,7 +121,7 @@ for I in eachrow(data)
     plot!(q, evaluate!(zero(q), opt_pm, q), color=:red, label="Optimized Result", linewidth=4)
 
     plot!(size=(900,900), left_margin=5Plots.mm, bottom_margin=5Plots.mm, dpi=300, framestyle = :box, legend=:topright)
-    savefig("final.svg")
+    # savefig("final.svg")
     display(plt)
 
     ##### Uncertainty evaluateion #####
@@ -214,7 +214,7 @@ for i in eachindex(rcs)
         plot!(rectangle([peak_qs[j], 0.001], 0.1, rcs[i].peaks[j].I), c=palette(:auto)[i+2], linewidth=0, label=false)
     end
 end
-savefig("reference_sticks.svg")
+# savefig("reference_sticks.svg")
 display(plt)
 
 lattice_a = CSV.read("paper/data/CrFeVO/reference_lp_a.csv", DataFrame)

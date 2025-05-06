@@ -248,7 +248,7 @@ for (phase_idx, phase) in enumerate(unique_phases)
             label="$(simple_phase_name[phase]) $(param_label)",
             linewidth=2, markershape=:circle, color=c[color_idx])
         # plot!(x, 100((param./maximum(param))), label="$(simple_phase_name[phase]) $(param_label)")
-        color_idx += 1
+        global color_idx += 1
     end
     
 end
@@ -276,7 +276,7 @@ for (phase_idx, phase) in enumerate(unique_phases)
         param_uncer = [(uncers[j][phase_param_start[phase]+i]).err for j in x]
 
         plot!(0.01(x .- 115), 100((param ./ origin_param) .- 1), yerr=200((param_uncer ./ origin_param)), linewidth=1, label=nothing, color=c[color_idx])
-        color_idx += 1
+        global color_idx += 1
         # plot!(x, 100((param./maximum(param))), label="$(simple_phase_name[phase]) $(param_label)")
     end
 end
