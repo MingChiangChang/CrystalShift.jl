@@ -25,7 +25,7 @@ def main():
     cifs = list(Path(args.cif).glob('*.cif'))
     if not args.outpath.endswith('.csv'):
         args.outpath += '.csv'
-    cif_to_input(cifs, args.outpath, (args.qmin, args.qmax), args.wvlen)
+    cif_to_input(cifs, args.outpath, (float(args.qmin), float(args.qmax)), args.wvlen)
 
 
 def get_parser():
@@ -98,7 +98,10 @@ def _get_phase_name(info_dict):
     else:
         print("cannot find phase name in cif")
     try:
-        space_group = remove_blank(info_dict["_space_group_name_H-M_alt"])
+        if "_symmetry_space_group_name_H-M" in info_dict:
+            space_group = remove_blank(info_dict["_symmetry_space_group_name_H-M"])
+        elif "_space_group_name_H-M_alt" in info_dict:
+            space_group = remove_blank(info_dict["_space_group_name_H-M_alt"])
     except KeyError:
         print(f"No _space_group_name_H-M_alt for {phase_name}")
         space_group = ""
@@ -154,33 +157,3 @@ def _get_crystal_system(info_dict):
 
 if __name__ == "__main__":
     main()
-    # home = Path.home()
-    # path = home / 'Desktop' / 'github' /\
-    #        'Crystallography_based_shifting' / 'data'
-    # path = home / 'Downloads' / 'CIF-3'
-    # path = home / "Downloads" / "CrFeV_toCornell" / "icdd"
-    # path = home / 'Desktop' / 'Code' / 'CrystalShift.jl' / 'data' / 'calibration'
-    # path = home / "Downloads" / "tio2"
-    # path = home / "Downloads" / "test"
-    # path = home / "Downloads" / "YourCustomFileName"
-    # path = home / "Downloads" / "CIFs-2" / "LaOx"
-    # path = home / "Desktop" / "All_CIFs"
-    # path = home / "Downloads" / "ino"
-    # path = home / "Desktop" / "Code" / "SARA.jl" / "BiTiO" / "cifs"
-    # path = home / "Downloads" / "toCornell_Ming" / "cifs"
-    # #path = home / "Desktop" / "TaSnCoO" / "cifs"
-    # path = home / "Downloads" / "igzo_2" 
-    # path = home / "Desktop" / "test_cif"
-    # path = Path("/Users/ming/Desktop/Code/SARA.jl/BiTiO/new_cifs")
-    # path = Path("/Users/ming/Downloads/drive-download-20230911T012020Z-001/cifs")
-    # path = Path("/Users/ming/Downloads/crfevo_cifs")
-    # #path = Path("/Users/ming/Downloads/test_sf")
-    # path = Path("/Users/ming/Desktop/cifsssss/CandidateCifs/ICSD/Ti-O")
-    # #path = home / "Downloads" / "AlLiFeO copy"
-    # cif_paths = list(path.glob('*.cif'))
-    # #cif_paths = path.glob("Ta-Sn-O/*/*.cif")
-
-    # # cif_paths = [str(path / 'Bi2Ti2O7_ICSD.cif') , str(path / 'Delta.cif')]
-    # out_path = path #/ 'Ta-Sn-O'
-    # print(cif_paths)
-    # cif_to_input(cif_paths, out_path, (10, 80))
