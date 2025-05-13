@@ -13,8 +13,8 @@ Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
 There are plans to merge these two module and add it to the julia general repo in the future.
 
 ## Usage
-### Generate recalculate input files
-```julia
+### Generate precalculate input files
+```console
 python cif_to_input_file.py -c /path/to/cif/folder -o /path/to/output/location -qmin 10.0 -qmax 80.0 -w 1.5406
 ```
 This script will grab all of the cifs in /path/to/cif/folder, precalculate the XRD stick patterns, and store it as `/path/to/output/location.csv`. 
