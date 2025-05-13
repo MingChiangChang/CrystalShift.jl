@@ -69,8 +69,7 @@ std_θ = [0.0005, .05, .05]
     # for std_θ in std_θs
 for std_noise in std_noises
 
-    # test_path = "paper/data/AlFeLiO/sticks.csv"
-    test_path = "/Users/ming/Desktop/Data/cifsssss/TiNbSnO/sticks.csv"
+    test_path = "paper/data/AlFeLiO/sticks.csv"
     open(test_path, "r") do f
         global cs = CrystalPhase(f, 0.2, Gauss() )
     end

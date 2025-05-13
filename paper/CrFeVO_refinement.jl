@@ -14,6 +14,7 @@ using ForwardDiff
 using LinearAlgebra
 using LazyInverses
 using ProgressBars
+using NPZ
 
 default(grid=false, fontfamily="Helvetica")
 
@@ -31,27 +32,18 @@ q_max = 800
 FeCr_ratio = [5.06757, 3.62887, 2.53125, 1.75, 1.42932, 1.16432, 1.02212, 0.79845, 0.673913, 0.422713, 0.28169]
 sn = ["7134", "8743", "10205", "11853", "11845", "11836", "11828", "11819", "11811", "10121", "8616"]
 
-
-# path = "/Users/ming/Downloads/CrFeV_toCornell/V54_xrd_A2theta_Int.csv"
-# df = CSV.read(path, DataFrame)
-
 phase_path = "paper/data/CrFeVO/sticks.csv"
 open(phase_path, "r") do f
     global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.5))
 end
 
-
 #W = Wildcard([16.], [0.2],  [2.], "Amorphous", Lorentz(), [2.,  1., .5])
-
-
 # comp = FeCr_ratio ./ (FeCr_ratio .+ 1)
 Fe = (100 ./ (1 .+ FeCr_ratio) .* FeCr_ratio)
 Fe_ = [i ± 5. for i in Fe]
 Cr = 100 .- Fe
 Cr_ = [i ± 5. for i in Cr]
 comp = Fe_ ./ (Fe_ .+ Cr_)
-
-
 
 ##### Read and prepare data #####
 # path = "paper/data/CrFeVO/ana__9_3594.udi"

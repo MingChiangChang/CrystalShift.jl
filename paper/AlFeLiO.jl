@@ -29,9 +29,9 @@ function node_under_improvement_constraint(nodes, improvement, x, y)
 end
 
 ####### CrystalShift setup #######
-std_noise = 5e-2 #5e-3
-mean_θ = [1., .5, .2]
-std_θ = [0.05, 0.05, .05]
+# std_noise = 5e-2 #5e-3
+# mean_θ = [1., .5, .2]
+# std_θ = [0.05, 0.05, .05]
 method = LM
 opt_mode = Simple
 objective = LeastSquares()
@@ -47,8 +47,7 @@ mean_θ = [1., .5, .5]
 # std_θ = [0.05, .05, .05]
 std_θ = [0.1, .05, .1]
 
-
-
+###### Create CrystalPhase Objects #####
 test_path = "paper/data/AlFeLiO/sticks.csv"
 open(test_path, "r") do f
     global cs = CrystalPhase(f, 0.1, Gauss() )
@@ -88,14 +87,14 @@ for i in tqdm(1:n_test)
     y = d[i, :]
 
     tree = Lazytree(cs, x)
-
+    # Perform CrystalShift tree search
     result = search!(tree, x, y, max_num_phases, n_expand, amorphous, false, 5., std_noise, mean_θ, std_θ,
                         optimize_mode=opt_mode, method=method, maxiter=512, regularization=true, em_loop_num=1)
     if !amorphous
         result = result[2:end]
     end
     global result = vcat(result...)
-
+    # Obtain the probabilities of the results
     global prob = get_probabilities(result, x, y, mean_θ, std_θ, objective=objective)
 
     highest = sortperm(prob, rev=true)[1:K]

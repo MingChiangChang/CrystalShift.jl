@@ -11,6 +11,11 @@ using StatsBase
 using Plots
 using Statistics: cor
 
+"""
+    get_bin(prob::Any)
+
+    Get the bin number for a given probability value.
+"""
 function get_bin(prob)
     if isnan(prob)
         p = 1
@@ -45,8 +50,7 @@ data_path = "paper/data/calibration/calibration_data_normal_0.03_easy.npy"
 test_data = npzread(data_path)
 
 
-x = collect(8:.1:40)
-
+x = collect(8:.1:40) # Q values
 totl = zeros(Int64, 10)
 correct = zero(totl)
 totl_prob = zeros(Float64, 10)
@@ -54,10 +58,11 @@ phase_correct = zeros(Int64, 10)
 phase_totl = zeros(Int64, 10)
 
 for i in tqdm(1:runs)
+    #### Create CrystalPhase Object ####
     open(test_path, "r") do f
         global cs = CrystalPhase(f, 0.1, Lorentz())
     end
-    y = test_data[i, 1:end-2]
+    y = test_data[i, 1:end-2] # The last two columns are the ground truth phase ids
     test_comb = test_data[i, end-1:end]
     if test_comb[end] == 0.0
         pop!(test_comb)
@@ -65,7 +70,7 @@ for i in tqdm(1:runs)
     test_comb = Set(test_comb)
 
     LT = Lazytree(cs, x)
-
+    # Where the CrystalShift perform search
     results = search!(LT, x, y, 2, k, amorphous, false, 5., std_noise, mean_θ, std_θ,
                     method=LM, objective="LS", optimize_mode=EM,
                     maxiter=256, em_loop_num=3,
@@ -74,6 +79,7 @@ for i in tqdm(1:runs)
         results = results[2:end]
     end
     results = reduce(vcat, results)
+    # Obtain the probabilities of the results
     probs = get_probabilities(results, x, y, mean_θ, std_θ, renormalize=true, normalization_constant=.5)
 
     prob_of_phase = zeros(Float64, 5)
@@ -134,7 +140,6 @@ font(20)
 xlabel!("Predicted probabilities")
 ylabel!("Frequency of correct matches")
 display(plt)
-#savefig("Calibration_std_noise=$(std_noise)_mean=$(mean_θ)_std=$(std_θ)_runs=$(runs)_pearson=$(pearson)_accuracy=$(correct_count/runs).png")
 
 pearson = cor([0.05+0.1*i for i in 0:9], phase_correct./phase_totl)
 
@@ -163,7 +168,6 @@ font(20)
 xlabel!("Predicted phase probabilities")
 ylabel!("Frequency of correct phase matches")
 display(plt)
-#savefig("Calibration_phase_std_noise=$(std_noise)_mean=$(mean_θ)_std=$(std_θ)_runs=$(runs)_pearson=$(pearson)_accuracy=$(correct_count/runs).png")
 
 t = Dict{Any, Any}()
 t["std_noise"] = std_noise

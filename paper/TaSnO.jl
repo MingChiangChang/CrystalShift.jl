@@ -81,9 +81,9 @@ for i in tqdm(1:size(Ws, 1))
     BK = Ks[i, :]
 
     stripe = Vector{Vector{PhaseResult}}(undef, 4)
-    center = convert(Int64, round(get_weighted_center(BH)))
+    center = convert(Int64, round(get_weighted_center(BH))) # Weighted center with the activation
 
-    isCenter = BitArray(undef, RANK)
+    isCenter = BitArray(undef, RANK) # Indicator of whether this basis exist at the center
     for k in 1:RANK
         isCenter[k] = BH[k, center] > THRESH
     end
@@ -92,7 +92,7 @@ for i in tqdm(1:size(Ws, 1))
         gt_names = sol[i][j]
         nc = maximum(BW[:, j])
         BW[:, j] ./= nc # maximum(BW[:, j])
-        b = mcbl(BW[:, j], q[i,:], 7)
+        b = mcbl(BW[:, j], q[i,:], 7) # Background prediction
         y_bg_sub = BW[:, j] - b
         y_uncer = uncer[i, BK[j], :] ./ nc
         if "a" in gt_names
@@ -102,8 +102,7 @@ for i in tqdm(1:size(Ws, 1))
         @. y_bg_sub = max(y_bg_sub, 0)
 
         tree = Lazytree(cs, q[i,:])
-
-
+        # Perform tree search
         results = search!(tree, q[i,:], y_bg_sub, y_uncer, max_depth, k, amorphous, background, background_length,
                             std_noise, mean_θ, std_θ,
                             method=LM, objective="LS", maxiter=maxiter, optimize_mode=EM, em_loop_num=5,
@@ -112,6 +111,7 @@ for i in tqdm(1:size(Ws, 1))
         results = results[2:end]
         results = reduce(vcat, results)
 
+        # obtain probabilistic labeling results
         probs = get_probabilities(results, q[i,:], y_bg_sub, mean_θ, std_θ)
 
         result_node = results[argmax(probs)]
