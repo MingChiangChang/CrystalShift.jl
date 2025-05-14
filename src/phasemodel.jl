@@ -96,7 +96,7 @@ function reconstruct!(pm::PhaseModel, θ::AbstractVector)
     return PhaseModel(CPs, W, background)
 end
 
-Nothing(n::Nothing, a::Any) = nothing
+Base.Nothing(n::Nothing, a::Any) = nothing
 get_param_nums(B::Nothing) = 0
 get_free_params(B::Nothing) = Float64[]
 
