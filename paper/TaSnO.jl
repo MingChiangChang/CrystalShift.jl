@@ -21,7 +21,7 @@ using JSON: lower
 include("nmf.jl")
 JSON.lower(::Lorentz) = nothing
 
-sol = load_file("paper/data/TaSnO/gt.yaml")
+sol = load_file("data/TaSnO/gt.yaml")
 
 ########## Constant Declaration ##########
 const RANK = 4
@@ -38,7 +38,7 @@ background = false
 background_length = 5.
 
 ########## Load data ##########
-dl = "paper/data/TaSnO/"
+dl = "data/TaSnO/"
 # data = npzread(dl * "TaSnO_data.npy")
 Ws = npzread(dl * "TaSnO_Ws.npy")
 Hs = npzread(dl * "TaSnO_Hs.npy")

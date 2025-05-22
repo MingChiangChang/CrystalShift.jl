@@ -50,8 +50,8 @@ param_name[4] = ["a", "b", "c", "β"]
 param_name[6] = ["a", "b", "c", "α", "β", "γ"]
 
 
-data = npzread("paper/data/TaSnO/TaSnO_data.npy")
-q = npzread("paper/data/TaSnO/TaSnO_Q.npy")
+data = npzread("data/TaSnO/TaSnO_data.npy")
+q = npzread("data/TaSnO/TaSnO_Q.npy")
 
 ##### Plotting heatmap #####
 # heatmap(LinRange(-.75, .75, 76), q[336,50:end-50], transpose(data[336, 77:152,50:end-50]),
@@ -80,7 +80,7 @@ W, H, K = xray(Array(transpose(data[STRIPE_IDX, :, 1:900])), RANK)
 # end
 # display(plt)
 
-phase_path = "paper/data/TaSnO/TaSnO_sticks.csv"
+phase_path = "data/TaSnO/TaSnO_sticks.csv"
 open(phase_path, "r") do f
     global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.1))
 end

@@ -48,17 +48,17 @@ mean_θ = [1., .5, .5]
 std_θ = [0.1, .05, .1]
 
 ###### Create CrystalPhase Objects #####
-test_path = "paper/data/AlFeLiO/sticks.csv"
+test_path = "data/AlFeLiO/sticks.csv"
 open(test_path, "r") do f
     global cs = CrystalPhase(f, 0.1, Gauss() )
 end
 
 x = collect(15.0:.1:79.9)
-d = npzread("paper/data/AlFeLiO/alfeli.npy")
+d = npzread("data/AlFeLiO/alfeli.npy")
 # d = npzread("alfeli_narrow.npy")
 result_node = Vector{Vector{Node}}()
 
-sol_path = "paper/data/AlFeLiO/sol.csv"
+sol_path = "data/AlFeLiO/sol.csv"
 sol = open(sol_path, "r")
 
 t = split(read(sol, String), "\n")

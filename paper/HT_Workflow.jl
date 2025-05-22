@@ -45,8 +45,8 @@ param_name[3] = ["a", "b", "c"]
 param_name[4] = ["a", "b", "c", "β"]
 param_name[6] = ["a", "b", "c", "α", "β", "γ"]
 
-data = npzread("paper/data/TaSnO/TaSnO_data.npy")
-q = npzread("paper/data/TaSnO/TaSnO_Q.npy")
+data = npzread("data/TaSnO/TaSnO_data.npy")
+q = npzread("data/TaSnO/TaSnO_Q.npy")
 
 ##### Parameters #####
 std_noise = .05
@@ -83,7 +83,7 @@ for i in axes(H, 1)
 end
 display(plt)
 
-phase_path = "paper/data/TaSnO/TaSnO_sticks.csv"
+phase_path = "data/TaSnO/TaSnO_sticks.csv"
 open(phase_path, "r") do f
     global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.1))
 end

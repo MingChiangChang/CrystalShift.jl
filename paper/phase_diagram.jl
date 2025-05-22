@@ -47,7 +47,7 @@ function get_lattice_params(phase_result, name)
 end
 
 # Fill in json path from running TaSnO.jl
-path = "paper/data/TaSnO/TaSnO_EM=5.json"
+path = "data/TaSnO/TaSnO_EM=5.json"
 results = JSON.parsefile(path)
 names = get_unique_phase_names(results)
 

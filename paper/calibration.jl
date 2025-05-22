@@ -37,7 +37,7 @@ function get_mod_phase_ids(pm)
     Set(ids)
 end
 
-std_noises = .05
+std_noise = .05
 mean_θ = [1., .5, .1]
 std_θ = [.05, .05, .05]
 amorphous = false
@@ -45,8 +45,8 @@ k = 2
 runs = 1000
 correct_count = 0
 
-test_path = "paper/data/calibration/sticks.csv"
-data_path = "paper/data/calibration/calibration_data_normal_0.03_easy.npy"
+test_path = "data/calibration/sticks.csv"
+data_path = "data/calibration/calibration_data_normal_0.03_easy.npy"
 test_data = npzread(data_path)
 
 

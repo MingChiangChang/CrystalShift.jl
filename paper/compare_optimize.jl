@@ -29,9 +29,6 @@ function node_under_improvement_constraint(nodes, improvement, x, y)
 end
 
 ####### CrystalShift setup #######
-std_noise = 5e-2 #5e-3
-mean_θ = [1., .5, .2]
-std_θ = [0.05, 0.05, .05]
 method = bfgs
 opt_mode = Simple
 objective = LeastSquares()
@@ -42,24 +39,6 @@ n_expand = 3
 noise_level = 0.03
 n_test = 231
 
-std_noise = 1e-2
-mean_θ = [1., .5, .2]
-# std_θ = [0.05, .05, .05]
-# std_θ = [0.1, .05, .1]
-std_θ = [0.005, .5, .02]
-
-std_noise = 5e-2
-mean_θ = [1., .5, .5]
-# std_θ = [0.05, .05, .05]
-# std_θ = [0.1, .05, .1]
-std_θ = [0.0005, .5, .2]
-
-std_noises = [0.1, 0.05, 0.01, 0.005, 0.001]
-std_θs = [[0.05, .5, .2], [0.01, .5, .2], [0.005, .5, .2], [0.001, .5, .2], [0.0005, .5, .2]]
-
-# std_noises = [0.01, 0.005, 0.001, 0.0005, 0.0001]
-# std_θs = [[0.001, .5, .2], [0.0005, .5, .2], [0.0001, .5, .2], [0.00005, .5, .2], [0.00001, .5, .2]]
-
 std_noises = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
 mean_θ = [1., .5, .5]
 std_θ = [0.0005, .05, .05]
@@ -69,17 +48,17 @@ std_θ = [0.0005, .05, .05]
     # for std_θ in std_θs
 for std_noise in std_noises
 
-    test_path = "paper/data/AlFeLiO/sticks.csv"
+    test_path = "data/AlFeLiO/sticks.csv"
     open(test_path, "r") do f
         global cs = CrystalPhase(f, 0.2, Gauss() )
     end
 
     x = collect(15.0:.1:79.9)
-    d = npzread("paper/data/AlFeLiO/alfeli.npy")
+    d = npzread("data/AlFeLiO/alfeli.npy")
     # d = npzread("alfeli_narrow.npy")
     result_node = Vector{Vector{Node}}()
 
-    sol_path = "paper/data/AlFeLiO/sol.csv"
+    sol_path = "data/AlFeLiO/sol.csv"
     sol = open(sol_path, "r")
 
     t = split(read(sol, String), "\n")

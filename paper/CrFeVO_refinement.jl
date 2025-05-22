@@ -32,7 +32,7 @@ q_max = 800
 FeCr_ratio = [5.06757, 3.62887, 2.53125, 1.75, 1.42932, 1.16432, 1.02212, 0.79845, 0.673913, 0.422713, 0.28169]
 sn = ["7134", "8743", "10205", "11853", "11845", "11836", "11828", "11819", "11811", "10121", "8616"]
 
-phase_path = "paper/data/CrFeVO/sticks.csv"
+phase_path = "data/CrFeVO/sticks.csv"
 open(phase_path, "r") do f
     global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.5))
 end
@@ -46,7 +46,7 @@ Cr_ = [i ± 5. for i in Cr]
 comp = Fe_ ./ (Fe_ .+ Cr_)
 
 ##### Read and prepare data #####
-# path = "paper/data/CrFeVO/ana__9_3594.udi"
+# path = "data/CrFeVO/ana__9_3594.udi"
 # open(path) do f
 #     global d = read(f, String)
 # end
@@ -74,8 +74,8 @@ peak_mod_mean=[1., 1.]
 peak_mod_std=[.5, .05]
 
 FeCr_ratio = [5.06757, 3.62887, 2.53125, 1.75, 1.42932, 1.16432, 1.02212, 0.79845, 0.673913, 0.422713, 0.28169]
-q = npzread("paper/data/CrFeVO/CrFeVO_q.npy")
-data = npzread("paper/data/CrFeVO/CrFeVO_data.npy")
+q = npzread("data/CrFeVO/CrFeVO_q.npy")
+data = npzread("data/CrFeVO/CrFeVO_data.npy")
 
 for I in eachrow(data)
 
@@ -187,7 +187,7 @@ function rectangle(pos, w, h)
     Plots.Shape([x-w/2, x+w/2, x+w/2, x-w/2], [y, y, y+h, y+h])
 end
 
-phase_path = "paper/data/CrFeVO/sticks.csv"
+phase_path = "data/CrFeVO/sticks.csv"
 open(phase_path, "r") do f
     global cs = CrystalPhase(f, 0.1, FixedPseudoVoigt(0.5))
 end
@@ -209,9 +209,9 @@ end
 # savefig("reference_sticks.svg")
 display(plt)
 
-lattice_a = CSV.read("paper/data/CrFeVO/reference_lp_a.csv", DataFrame)
-lattice_b = CSV.read("paper/data/CrFeVO/reference_lp_b.csv", DataFrame)
-lattice_c = CSV.read("paper/data/CrFeVO/reference_lp_c.csv", DataFrame)
+lattice_a = CSV.read("data/CrFeVO/reference_lp_a.csv", DataFrame)
+lattice_b = CSV.read("data/CrFeVO/reference_lp_b.csv", DataFrame)
+lattice_c = CSV.read("data/CrFeVO/reference_lp_c.csv", DataFrame)
 a = lattice_a[!, 2] ./= 9.8245
 b = lattice_b[!, 2] ./= 8.8776
 c = lattice_c[!, 2] ./= 6.8252
