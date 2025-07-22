@@ -31,7 +31,7 @@ def main():
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cif', required=True, help='A folder that contain all the CIF files')
-    parser.add_argument('-w', '--wvlen', default=1.5406, help='Wavelength in angstrom of X-ray. Default to Cu Kα')
+    parser.add_argument('-w', '--wvlen', type=float, default=1.5406, help='Wavelength in angstrom of X-ray. Default to Cu Kα')
     parser.add_argument('-o', '--outpath', required=True, help='Output path for csv input file for CrystalShift')
     parser.add_argument('-qmin', '--qmin', default=10., help='Minimum Q value in nm-1')
     parser.add_argument('-qmax', '--qmax', default=80., help='Maximum Q value in nm-1')
