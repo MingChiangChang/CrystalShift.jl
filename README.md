@@ -35,7 +35,7 @@ phasemodel = CrystalShift.optimize!(cs, q, y, std_noise, mean_θ, std_θ)
 ```
 This is the minimal setup for the optimization. User can also pass in the following named arguments:
 * `y_uncer::AbstractVector`: uncertainty of y that will be take into account when optimizing
-* `method::OptimizationMethods`: `LM`(Levenberg-Marquart), `Newton`, `bfgs`, `l_bfgs`
+* `method::OptimizationMethod`: `LM`(Levenberg-Marquart), `Newton`, `bfgs`, `l_bfgs`
 * `optimize_mode::OptimizationMode`: `Simple`, `EM`(expectation-maximization mode for jointly optimize `std_noise`), `WithUncer` (returns uncertainty of lattice parameters)
 * `ovejctive::String`: `"LS"` (least square), `"KL"` (KL-divergence)
 * `maxiter::Int`: number of maximum iterations
@@ -73,13 +73,16 @@ To obtain a proper normalization constant, one will have to go through the optim
 ## Cite this package
 When using this package for your work, please cite this package using the following Bibtex citation:
 ```
-@misc{2308.07897,
-Author = {Ming-Chiang Chang and Sebastian Ament and Maximilian Amsler and Duncan R. Sutherland and Lan Zhou and John M. Gregoire and Carla P. Gomes and R. Bruce van Dover and Michael O. Thompson},
-Title = {Probabilistic Phase Labeling and Lattice Refinement for Autonomous Material Research},
-Year = {2023},
-Eprint = {arXiv:2308.07897},
-}
-```
+@article{chang2025probabilistic,
+  title={Probabilistic phase labeling and lattice refinement for autonomous materials research},
+  author={Chang, Ming-Chiang and Ament, Sebastian and Amsler, Maximilian and Sutherland, Duncan R and Zhou, Lan and Gregoire, John M and Gomes, Carla P and van Dover, R Bruce and Thompson, Michael O},
+  journal={npj Computational Materials},
+  volume={11},
+  number={1},
+  pages={148},
+  year={2025},
+  publisher={Nature Publishing Group UK London}
+}```
 
 ## Other links
 * [CrystalTree.jl](https://github.com/MingChiangChang/crystaltree.jl) is a package based on `CrystalShift` that builds all of the tree search and probibilistic capabilities.
