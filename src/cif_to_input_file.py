@@ -25,7 +25,7 @@ def main():
     cifs = list(Path(args.cif).glob('*.cif'))
     if not args.outpath.endswith('.csv'):
         args.outpath += '.csv'
-    cif_to_input(cifs, args.outpath, (float(args.qmin), float(args.qmax)), args.wvlen)
+    cif_to_input(cifs, args.outpath, (float(args.qmin), float(args.qmax)), args.wvlen, args.threshold)
 
 
 def get_parser():
@@ -35,11 +35,12 @@ def get_parser():
     parser.add_argument('-o', '--outpath', required=True, help='Output path for csv input file for CrystalShift')
     parser.add_argument('-qmin', '--qmin', default=10., help='Minimum Q value in nm-1')
     parser.add_argument('-qmax', '--qmax', default=80., help='Maximum Q value in nm-1')
+    parser.add_argument('-t', '--threshold', default=.001, help='Threshold intensity for inlcuded peaks.')
     return parser
 
 
 
-def cif_to_input(cif_paths, output_path, q_range, wvlen=1.5406, _type=float):
+def cif_to_input(cif_paths, output_path, q_range, wvlen=1.5406, threshold=0.001, _type=float):
     '''
     cif_to_input(cif_path, output_path, q_range, output_name='sticks')
 
@@ -50,12 +51,12 @@ def cif_to_input(cif_paths, output_path, q_range, wvlen=1.5406, _type=float):
             print(cif_path)
             cif = CifParser(cif_path)
             lattice = CIFFile(cif_path).SGLattice()
-            write_cif(f, idx, cif, lattice, _type, q_range, wvlen)
+            write_cif(f, idx, cif, lattice, _type, q_range, wvlen, threshold)
 
-def write_cif(f, idx, cif, lattice, _type, q_range, wvlen):
+def write_cif(f, idx, cif, lattice, _type, q_range, wvlen, threshold):
     f.write(f'{idx},')
     write_crystal_info(f, cif, _type)
-    write_peaks_info(f, lattice, q_range, wvlen)
+    write_peaks_info(f, lattice, q_range, wvlen, threshold)
 
 def write_crystal_info(f, cif, _type):
     cif_dict = cif.as_dict()
@@ -67,16 +68,32 @@ def write_crystal_info(f, cif, _type):
     f.write(',')
     f.write(_get_lattice_parameters(info_dict, _type))
 
-def write_peaks_info(f, lattice, q_range, wvlen):
+def write_peaks_info(f, lattice, q_range, wvlen, threshold):
     crystal = Crystal('test', lattice)
     xrd = PowderDiffraction(crystal, wl=wvlen).data
 
+    qs = []
+    Is = []
+    hs = []
+    ks = []
+    ls = []
     for i, peak in enumerate(xrd):
         q = xrd[peak]['qpos']*10
-        I = xrd[peak]['r']
-        print(i, q, I, flush=True)
-        if q_range[0] < q < q_range[1] and I>0.0001:
-            f.write(f'\n{peak[0]},{peak[1]},{peak[2]},{q},{I}')
+        if q_range[0] < q < q_range[1]:
+            I = xrd[peak]['r']
+            hs.append(peak[0])
+            ks.append(peak[1])
+            ls.append(peak[2])
+            print(i, q, I, flush=True)
+            qs.append(q)
+            Is.append(I)
+    Is = np.array(Is)
+    nc = np.max(Is)
+    Is /= nc
+
+    for i, _ in enumerate(Is):
+        if q_range[0] < qs[i] < q_range[1] and Is[i] > threshold:
+            f.write(f'\n{hs[i]},{ks[i]},{ls[i]},{qs[i]},{Is[i]*nc}')
     f.write('#\n')
 
 def q_to_two_theta(wvlen, *args):

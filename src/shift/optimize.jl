@@ -1,8 +1,25 @@
-function fit_phases(phases::AbstractVector{<:CrystalPhase},
-                   x::AbstractVector, y::AbstractVector,
-                   std_noise::Real, mean_θ::AbstractVector = [1. , 1.,.2],
-                   std_θ::AbstractVector = [1., 1., 1.];
-                   maxiter::Int = 32, regularization::Bool = true)
+"""
+    `optimize!`
+
+    Function for optimizing `PhaseModel`s.
+	There are multiple functions that handles more primitive object, e.g. Vector{CrystalPhase}.
+	Returns a optimized `PhaseModel`.
+"""
+function optimize! end
+
+"""
+   `full_optimize!`
+
+    Function for optimizing `PhaseModel`s. This function allows change in peak height ratios.
+	There are multiple functions that handles more primitive object, e.g. Vector{CrystalPhase}.
+	Returns a optimized `PhaseModel`.
+"""
+function full_optimize! end
+
+
+function fit_phases(phases::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector,
+                   std_noise::Real, mean_θ::AbstractVector = [1. , .5, .2], std_θ::AbstractVector = [.005, .5, .2];
+                   maxiter::Int = 5122, regularization::Bool = true)
 	optimized_phases = Vector{CrystalPhase}(undef, size(phases))
     @threads for i in eachindex(phases)
         optimized_phases[i] = optimize!(phases[i], x, y, std_noise, mean_θ, std_θ,
@@ -16,24 +33,24 @@ function get_min_index(optimized_phases::AbstractVector{<:CrystalPhase},
    argmin([norm(p.(x)-y) for p in optimized_phases])
 end
 
-function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::AbstractVector,
+function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
 					std_noise::Real;
-					method::OptimizationMethods,
+					method::OptimizationMethod,
 					objective::String = "LS",
 					optimize_mode::OptimizationMode=Simple,
-					maxiter::Int = 32,
+					maxiter::Int = 512,
 					regularization::Bool = true,
 					em_loop_num::Integer = 8,
 					λ::Float64 = 1.,
 					verbose::Bool = false, tol::Float64 = DEFAULT_TOL)
 
     pm = PhaseModel(W, BG)
-	opt_stn = OptimizationSettings{Float64}(std_noise, [1., 1., 1.], [1., 1., 1.],
+	opt_stn = OptimizationSettings{Float64}(std_noise, [1., .5, .2], [.005, .5, .2],
 											maxiter, regularization,
 											method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 
 	y ./= maximum(y) * 2
-	opt_pm = optimize!(pm, x, y, opt_stn)
+	opt_pm = optimize!(pm, x, y, y_uncer, opt_stn, opt_stn.optimize_mode)
 	return opt_pm
 end
 
@@ -55,9 +72,8 @@ intensities can be much larger than `peak_mod_std` suggests; the prior is effect
 weaker the more loops are run.
 """
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-						std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-						std_θ::AbstractVector = [1., Inf, 5.];
-						method::OptimizationMethods = LeastSquares(),
+						std_noise::Real, mean_θ::AbstractVector = [1., .5, .2], std_θ::AbstractVector = [.005, .5, .2];
+						method::OptimizationMethod = LM,
 						optimize_mode::OptimizationMode=Simple,
 						objective::String = "LS",
 						regularization::Bool = true,
@@ -105,7 +121,7 @@ end
 function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector,
 						std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 						std_θ::AbstractVector = [1., 1., 5.];
-						method::OptimizationMethods, objective::String = "LS",
+						method::OptimizationMethod, objective::String = "LS",
 						optimize_mode::OptimizationMode=Simple,
 						regularization::Bool = true,
 						loop_num::Int=8,
@@ -120,7 +136,7 @@ function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y
     pm = PhaseModel(cp)
 	pm = full_optimize!(pm, x, y, std_noise, mean_θ, std_θ;
 						method=method, objective=objective,
-						optimize_mode=Simple,
+						optimize_mode=optimize_mode,
 						regularization=regularization,
 						loop_num=loop_num,
 						peak_shift_iter=peak_shift_iter,
@@ -137,7 +153,7 @@ end
 function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 	std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 	std_θ::AbstractVector = [1., 1., 5.];
-	method::OptimizationMethods, objective::String = "LS",
+	method::OptimizationMethod, objective::String = "LS",
 	optimize_mode::OptimizationMode=Simple,
 	regularization::Bool = true,
 	loop_num::Int=8,
@@ -222,21 +238,15 @@ function optimize!(P::LinearPeakMod, std_noise::Real;
 	reconstruct_IMs(P, exp.(u))
 end
 
-"""
-    optimize!
 
-    This is the function that each of the node would call on.
-    Try to fit a PhaseModel, which comprise a vector of CrystalPhase
-	and an optional BackgroundModel to the given spectrum y.
 
-	Return: a PhaseModel object
-"""
+
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, # Both y and y_uncer will not be further normalized
-					std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-					std_θ::AbstractVector = [1., Inf, 5.];
-					method::OptimizationMethods=LM, objective::String = "LS",
+					std_noise::Real, mean_θ::AbstractVector = [1., .5, .2], std_θ::AbstractVector = [.005, .5, .2];
+					method::OptimizationMethod=LM,
+					objective::String = "LS",
 					optimize_mode::OptimizationMode=Simple,
-					maxiter::Int = 32,
+					maxiter::Int = 512,
 					regularization::Bool = true,
 					em_loop_num::Integer = 8, λ::Float64=1.,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
@@ -244,15 +254,14 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer
 							maxiter, regularization,
 							method, objective, optimize_mode, em_loop_num, λ, verbose, tol)
 
-	optimize!(pm, x, y, y_uncer, opt_stn)
+	optimize!(pm, x, y, y_uncer, opt_stn, opt_stn.optimize_mode)
 end
 
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-				std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
-				std_θ::AbstractVector = [1., Inf, 5.];
-				method::OptimizationMethods=LM, objective::String = "LS",
+				std_noise::Real, mean_θ::AbstractVector = [1., .5, .2], std_θ::AbstractVector = [.005, .5, .2];
+				method::OptimizationMethod=LM, objective::String = "LS",
 				optimize_mode::OptimizationMode=Simple,
-				maxiter::Int = 32,
+				maxiter::Int = 512,
 				regularization::Bool = true,
 				em_loop_num::Integer = 8, λ::Float64=1.,
 				verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
@@ -268,15 +277,34 @@ function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 			  tol=tol)
 end
 
+# function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
+# 	θ = get_free_params(pm)
+# 	if opt_stn.optimize_mode == Simple
+# 		return simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
+# 	elseif opt_stn.optimize_mode == EM
+# 		return EM_optimize!(θ, pm, x, y, y_uncer, opt_stn)
+#     elseif opt_stn.optimize_mode == WithUncer
+#         return optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
+# 	end
+# end
+
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings)
-	θ = get_free_params(pm)
-	if opt_stn.optimize_mode == Simple
-		return simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
-	elseif opt_stn.optimize_mode == EM
-		return EM_optimize!(θ, pm, x, y, y_uncer, opt_stn)
-    elseif opt_stn.optimize_mode == WithUncer
-        return optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
-	end
+	optimize!(pm, x, y, y_uncer, opt_stn, opt_stn.optimize_mode) # Dispatch on optimize_mode, which gives different output that affects type stability
+end
+
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings, mode::_Simple)
+    θ = get_free_params(pm)
+    simple_optimize!(θ, pm, x, y, y_uncer, opt_stn)
+end
+
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings, mode::_EM)
+    θ = get_free_params(pm)
+    EM_optimize!(θ, pm, x, y, y_uncer, opt_stn)
+end
+
+function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings, mode::_WithUncer)
+    θ = get_free_params(pm)
+    optimize_with_uncertainty!(θ, pm, x, y, opt_stn)
 end
 
 function optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector, opt_stn::OptimizationSettings)
@@ -409,7 +437,9 @@ end
 
 
 """
-Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters
+`uncertainty`
+
+Pass in optimize CrystalPhase arrays and uses Hessian to estimate uncertainty of free parameters.
 """
 function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, opt_stn::OptimizationSettings, scaled::Bool=false)
 	phase_params = get_param_nums(CPs)
@@ -428,7 +458,6 @@ function uncertainty(CPs::AbstractVector{<:CrystalPhase}, x::AbstractVector, y::
 	    println("residual: $(val)")
 		display(H)
 	end
-
 
 	uncer = scaled ? diag(l2_res / (length(x) - length(phase_log_θ)) * inverse(H)) : diag(inverse(H))
 	fill_angle = 0
@@ -516,7 +545,7 @@ function get_lm_objective_func(pm::PhaseModel,
 	opt_stn.regularization ? (return f) : (return residual!)
 end
 
-# TODO: Work with newton
+
 function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 				opt_stn::OptimizationSettings)
 	tol, maxiter, verbose = opt_stn.tol, opt_stn.maxiter, opt_stn.verbose
@@ -531,6 +560,7 @@ function newton!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::A
 
 	return log_θ
 end
+
 using OptimizationAlgorithms: UnitDirection
 function LBFGS!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 				opt_stn::OptimizationSettings)
@@ -638,7 +668,7 @@ function optimize!(phases::AbstractVector,
                    x::AbstractVector, y::AbstractVector,
                    std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
                    std_θ::AbstractVector = [1., Inf, 5.];
-                   method::OptimizationMethods, objective::String = "LS",
+                   method::OptimizationMethod, objective::String = "LS",
 				   optimize_mode::OptimizationMode=Simple,
 				   maxiter::Int = 32,
 				   em_loop_num::Int =1,
@@ -659,7 +689,7 @@ function optimize!(phase::AbstractPhase,
 					x::AbstractVector, y::AbstractVector,
 					std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 					std_θ::AbstractVector = [1., Inf, 5.];
-					method::OptimizationMethods, objective::String = "LS",
+					method::OptimizationMethod, objective::String = "LS",
 					maxiter::Int = 32,
 					regularization::Bool = true,
 					verbose::Bool = false, tol::Float64 =DEFAULT_TOL)

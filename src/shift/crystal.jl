@@ -1,4 +1,10 @@
 # Abstract type to serve as supertype for 7 different crystal systems
+"""
+    `Crystal`
+
+    Abstract type for crystal systems.
+    Defines a crystal system that depends on the lattice parameters.
+"""
 abstract type Crystal{T} end
 
 # Unit in angstrom and radians
@@ -317,6 +323,14 @@ end
     + P.l^2 * cl.a^2 * cl.b^2
     + 2*P.h * P.l * cl.a * cl.b^2 * cl.c * (- cl.sincos_β[2])))
 end
+
+"""
+    `get_free_lattice_params(cl::Crystal)`
+
+    Get the free lattice parameters of a crystal.
+    Returns a vector of the free lattice parameters.
+"""
+function get_free_lattice_params end
 
 get_free_lattice_params(cl::Cubic) = [cl.a]
 get_free_lattice_params(cl::Tetragonal) = [cl.a, cl.c]

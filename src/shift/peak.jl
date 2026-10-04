@@ -1,3 +1,9 @@
+"""
+    `Peak`
+
+    A peak in an XRD pattern of a crystal phase.
+    Contains the Miller indices, the position in reciprocal space, and the intensity.
+"""
 struct Peak
     h::Int16 # Stored separately to be explicit
     k::Int16 # Enforce h, k, l to be integer
@@ -7,6 +13,12 @@ struct Peak
     I::Float64 # Intensity
 end
 
+"""
+    `Peak(s::String)`
+
+    Create a `Peak` from a string.
+    The string is expected to be in the format "h,k,l,q,I".
+"""
 function Peak(s::String)
     info = split(s, ',')
     length(info) == 5 || throw("info must has length of 5")
@@ -16,8 +28,19 @@ function Peak(s::String)
 end
 
 import Base.isless
+"""
+    `isless(peak_1::Peak, peak_2::Peak)`
+
+    Compare two peaks based on their intensity.
+"""
 isless(peak_1::Peak, peak_2::Peak) = isless(peak_1.I, peak_2.I)
 
+"""
+    `get_peaks(lines)`
+
+    Create a vector of `Peak`s from a vector of strings.
+    Returns the peaks and the normalization constant.
+"""
 function get_peaks(lines)
     peaks = Vector{Peak}(undef, size(lines))
     for i in eachindex(lines)
@@ -27,6 +50,12 @@ function get_peaks(lines)
     return peaks, norm_constant
 end
 
+"""
+    `normalize_peaks!(peaks::AbstractVector{Peak})`
+
+    Normalize the peaks to the maximum intensity.
+    Returns the normalized peaks and the normalization constant.
+"""
 function normalize_peaks!(peaks::AbstractVector{Peak})
     intensities = [peaks[i].I for i in eachindex(peaks)]
     norm_constant = maximum(intensities)

@@ -3,10 +3,10 @@ using CrystalShift
 using CrystalShift: Wildcard, Lorentz, evaluate, optimize!, fit_amorphous
 using CovarianceFunctions: EQ
 
-using NPZ 
+using NPZ
 using Test
 using LinearAlgebra
-# using Plots 
+# using Plots
 
 x = collect(10:.1:42)
 w = Wildcard([20., 35.], [1., 0.2],  [2., 3.], "Amorphous", Lorentz(), [2., 2., 1., 1., .2, .5])
@@ -16,6 +16,7 @@ w = Wildcard([20., 35.], [1., 0.2],  [2., 3.], "Amorphous", Lorentz(), [2., 2., 
 q = npzread("../data/test_q.npy")
 y = npzread("../data/test_int.npy")
 y ./= maximum(y)*2
+y_uncer = 1e-2 * ones(length(y))
 # plt = plot(q, y)
 bg = BackgroundModel(q, EQ(), 20, rank_tol=1e-3)
 # plot!(q, evaluate!(zero(q), w, [22., 36., 1., 0.5, 2., 2.], q))
@@ -24,7 +25,7 @@ pm = PhaseModel(w, bg)
 
 # new_pm = optimize!(pm, q, y, 1e-2, [1.,1., 1.], [1., 1., 1.], method=bfgs, objective="LS",
 #                          maxiter=512, regularization=true, verbose=false)
-new_pm = fit_amorphous(w, bg, q, y, 1e-2, method=bfgs, objective="LS",
+new_pm = fit_amorphous(w, bg, q, y, y_uncer, 1e-2; method=bfgs, objective="LS",
                 maxiter=512, regularization=true, verbose=false)
 t = zero(q)
 # plot!(q, evaluate!(t, new_pm, q))
