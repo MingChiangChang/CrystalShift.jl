@@ -24,6 +24,13 @@ function change_peak_int!(CP::CrystalPhase, IM::PeakModCP)
     change_peak_int!(CP, IM.peak_int)
 end
 
+# CrystalPhase(CP, θ) shares the peaks vector with CP, so give a phase its own copy
+# before modifying peak intensities in place with change_peak_int!
+function copy_peaks(CP::CrystalPhase)
+    CrystalPhase(CP.cl, CP.origin_cl, copy(CP.peaks), CP.param_num, CP.id, CP.name,
+                 CP.act, CP.σ, CP.profile, CP.norm_constant)
+end
+
 function change_peak_int!(CP::CrystalPhase, peak_int::AbstractVector)
     for i in 1:length(peak_int)
         CP.peaks[i] = Peak(CP.peaks[i].h, CP.peaks[i].k, CP.peaks[i].l,
@@ -64,11 +71,53 @@ end
 
 function evaluate_residual!(IM::PeakModCP, θ::AbstractVector,
                             x::AbstractVector, r::AbstractVector)
-    r .-= IM.basis[:,i] *θ
+    r .-= IM.basis * θ
     @. r -= IM.const_basis
     r
 end
 
 function PeakModCP(IM::PeakModCP, θ::AbstractVector)
     PeakModCP(IM.basis, IM.const_basis, θ)
+end
+
+"""
+    LinearPeakMod(IMs, y, mean_θ, std_θ)
+
+Peak-height subproblem of `full_optimize!` in a form that is solved without
+automatic differentiation. The model y ≈ B*w + c is linear in the height factors
+w = exp(u), so the least-squares term only depends on the sufficient statistics
+BᵀB, Bᵀ(y - c) and ‖y - c‖², which are precomputed here once. Each iteration of
+`optimize!(::LinearPeakMod, ...)` then only works with n×n quantities
+(n = total number of free peak heights) instead of length(x)-sized arrays.
+B is the column-concatenation of `IM.basis` and c the sum of `IM.const_basis`
+over all `IMs`. Priors are the same as in the `PeakModCP` route (`extend_priors`).
+"""
+struct LinearPeakMod{T<:Real, P<:PeakModCP}
+    IMs::Vector{P}
+    BtB::Matrix{T}       # BᵀB
+    Btr::Vector{T}       # Bᵀ(y - c)
+    rtr::T               # ‖y - c‖²
+    mean_log_θ::Vector{T}
+    std_θ::Vector{T}
+end
+
+function LinearPeakMod(IMs::AbstractVector{<:PeakModCP}, y::AbstractVector,
+                       mean_θ::AbstractVector, std_θ::AbstractVector)
+    B = reduce(hcat, [IM.basis for IM in IMs])
+    r = y .- sum(IM.const_basis for IM in IMs)
+    full_mean_θ, full_std_θ = extend_priors(mean_θ, std_θ, IMs)
+    LinearPeakMod(collect(IMs), B'B, B'r, dot(r, r), log.(full_mean_θ), full_std_θ)
+end
+
+get_param_nums(P::LinearPeakMod) = length(P.Btr)
+
+# Split the stacked height factors back into one PeakModCP per phase
+function reconstruct_IMs(P::LinearPeakMod, w::AbstractVector)
+    start = 1
+    map(P.IMs) do IM
+        n = get_param_nums(IM)
+        new_IM = PeakModCP(IM, w[start:start+n-1])
+        start += n
+        new_IM
+    end
 end

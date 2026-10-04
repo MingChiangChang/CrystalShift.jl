@@ -1,7 +1,7 @@
 name = "CrystalShift"
 uuid = "fb120844-f04e-4a6b-a6eb-278194263097"
 authors = ["Ming-Chiang Chang <mc2663@cornell.edu"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 CovarianceFunctions = "b3329135-7958-41d4-bb02-e084c5a526bf"

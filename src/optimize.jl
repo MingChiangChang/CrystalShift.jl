@@ -51,11 +51,13 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 						peak_mod_mean::AbstractVector = [1.],
 						peak_mod_std::AbstractVector = [.5],
 						peak_mod_iter::Int=32,
+						analytic_peak_mod::Bool = true, # solve peak heights with LinearPeakMod (no autodiff)
 						λ::Float64=1.,
 						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
 	# have_bg = !isnothing(pm.background)
-	c = pm
+	# Work on copies of the peaks so change_peak_int! does not modify the caller's phases
+	c = PhaseModel(copy_peaks.(pm.CPs), pm.wildcard, pm.background)
 	for i in 1:loop_num
 		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
 			method=method, objective=objective, maxiter=peak_shift_iter,
@@ -64,10 +66,15 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 
 		IMs = get_PeakModCP(c, x, mod_peak_num)
 
-		Mod_IMs = optimize!(IMs, x, y, std_noise, peak_mod_mean, peak_mod_std;
-					method=bfgs, objective=objective, maxiter=peak_mod_iter,
-					regularization=regularization, optimize_mode=optimize_mode,λ=λ,
-					verbose=verbose, tol=tol)
+		if analytic_peak_mod && objective == "LS" && optimize_mode == Simple
+			Mod_IMs = optimize!(LinearPeakMod(IMs, y, peak_mod_mean, peak_mod_std), std_noise;
+						maxiter=peak_mod_iter, verbose=verbose, tol=tol)
+		else
+			Mod_IMs = optimize!(IMs, x, y, std_noise, peak_mod_mean, peak_mod_std;
+						method=bfgs, objective=objective, maxiter=peak_mod_iter,
+						regularization=regularization, optimize_mode=optimize_mode,λ=λ,
+						verbose=verbose, tol=tol)
+		end
 		# change_peak_int!.(c.CPs, Mod_IMs[1:end-Int64(have_bg)])
 		change_peak_int!.(c.CPs, Mod_IMs)
 		# change_c!(c.background, Mod_IMs[end-Int64(have_bg)+1:end])
@@ -91,6 +98,7 @@ function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y
 						peak_mod_mean::AbstractVector = [1.],
 						peak_mod_std::AbstractVector = [.5],
 						peak_mod_iter::Int=32,
+						analytic_peak_mod::Bool = true,
 						λ::Float64=1.,
 						verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
     pm = PhaseModel(cp)
@@ -104,6 +112,7 @@ function full_optimize!(cp::AbstractVector{<:CrystalPhase}, x::AbstractVector, y
 						peak_mod_mean=peak_mod_mean,
 						peak_mod_std=peak_mod_std,
 						peak_mod_iter=peak_mod_iter,
+						analytic_peak_mod=analytic_peak_mod,
 						λ=λ,
 						verbose=verbose, tol=tol)
 	pm.CPs
@@ -121,6 +130,7 @@ function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 	peak_mod_mean::AbstractVector = [1.],
 	peak_mod_std::AbstractVector = [.5],
 	peak_mod_iter::Int=32, λ::Float64=1.,
+	analytic_peak_mod::Bool = true,
 	verbose::Bool = false, tol::Float64 =DEFAULT_TOL)
 
 	full_optimize!([cp], x, y, std_noise, mean_θ, std_θ;
@@ -133,9 +143,69 @@ function full_optimize!(cp::CrystalPhase, x::AbstractVector, y::AbstractVector,
 			peak_mod_mean=peak_mod_mean,
 			peak_mod_std=peak_mod_std,
 			peak_mod_iter=peak_mod_iter,
+			analytic_peak_mod=analytic_peak_mod,
 			λ=λ,
 			verbose=verbose, tol=tol)
 end
+
+"""
+    optimize!(P::LinearPeakMod, std_noise; maxiter, tol, verbose)
+
+Optimize the peak-height factors w = exp(u) of a `LinearPeakMod` with damped
+Gauss-Newton (Levenberg-Marquardt) using the analytic gradient and Gauss-Newton
+Hessian. Minimizes the same objective as the BFGS/`PeakModCP` route with "LS":
+
+    F(u) = ‖y - c - B w‖² / (2 std_noise²) + Σ ((u - mean_log_θ) / (√2 std_θ))²
+
+Returns a vector of `PeakModCP`s holding the optimized height factors, one per phase.
+
+Notes:
+- Like the BFGS route, the prior is always applied (there is no `regularization`
+  switch) and measurement uncertainty `y_uncer` is not used.
+- `tol` is a stopping threshold on the objective decrease of an accepted step,
+  relative to max(1, F), or on the largest step component in u; this differs from
+  the `dx`/`rx` criteria of the BFGS route.
+- `full_optimize!` uses this route when `analytic_peak_mod = true` (default),
+  `objective == "LS"` and `optimize_mode == Simple`, and falls back to BFGS otherwise.
+"""
+function optimize!(P::LinearPeakMod, std_noise::Real;
+				   maxiter::Int = 32, tol::Real = DEFAULT_TOL, verbose::Bool = false)
+	σ² = std_noise^2
+	s² = P.std_θ .^ 2
+	u = log.(reduce(vcat, [get_free_params(IM) for IM in P.IMs]))
+
+	function objective(u)
+		w = exp.(u)
+		(P.rtr - 2dot(w, P.Btr) + dot(w, P.BtB, w)) / (2σ²) + sum((u .- P.mean_log_θ).^2 ./ (2s²))
+	end
+
+	F = objective(u)
+	damping = 1e-6
+	for i in 1:maxiter
+		w = exp.(u)
+		g = w .* (P.BtB * w .- P.Btr) ./ σ² .+ (u .- P.mean_log_θ) ./ s²
+		H = (w * w') .* P.BtB ./ σ² + Diagonal(1 ./ s²) # Gauss-Newton Hessian, positive definite
+		accepted = false
+		while damping < 1e10
+			δ = -(Symmetric(H + damping * Diagonal(diag(H))) \ g)
+			F_new = objective(u .+ δ)
+			if F_new < F
+				u .+= δ
+				decrease = F - F_new
+				F = F_new
+				damping = max(damping / 7, 1e-12)
+				accepted = true
+				verbose && println("LinearPeakMod iter $i: objective = $F")
+				(decrease <= tol * max(1, F) || maximum(abs, δ) <= tol) && return reconstruct_IMs(P, exp.(u))
+				break
+			end
+			damping *= 10
+		end
+		accepted || break # no decrease possible, at a minimum up to numerical precision
+	end
+	reconstruct_IMs(P, exp.(u))
+end
+
 """
     optimize!
 

@@ -4,6 +4,7 @@ peakprofile
 crystal
 crystalphase
 peakmodCP
+linearpeakmod
 phasemodel
 wildcard
 optimizationsettings
