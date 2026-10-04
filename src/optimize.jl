@@ -38,6 +38,22 @@ function fit_amorphous(W::Wildcard, BG::Background, x::AbstractVector, y::Abstra
 end
 
 # TODO: allow change in some parameters
+"""
+    full_optimize!(pm::PhaseModel, x, y, std_noise, mean_θ, std_θ; kwargs...)
+
+Optimize a `PhaseModel` while also allowing the peak heights to change. Each of the
+`loop_num` loops refines the lattice, activation, width and background (`optimize!`),
+then fits multiplicative height factors for the first `mod_peak_num` peaks of each
+phase with the positions fixed, and refines the lattice again. The phases passed in
+are not modified; the fitted peak heights are in the returned model.
+
+Note on the peak-height prior: the log-normal prior (`peak_mod_mean`, `peak_mod_std`)
+is applied to the height factors of the current loop, relative to the heights
+reached in the previous loop, not to the original reference intensities. The factors
+compound over loops, so after `loop_num` loops the total deviation from the reference
+intensities can be much larger than `peak_mod_std` suggests; the prior is effectively
+weaker the more loops are run.
+"""
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 						std_noise::Real, mean_θ::AbstractVector = [1., 1., .2],
 						std_θ::AbstractVector = [1., Inf, 5.];
