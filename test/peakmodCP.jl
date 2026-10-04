@@ -29,6 +29,7 @@ else
 end
 
 cs = CrystalPhase.(String.(s[1:end-1]))
+ref_intensities = [p.I for p in cs[1].peaks]
 x = collect(8:.1:60)
 
 pmcp = PeakModCP(CrystalPhase(String(s[1]), 0.1, FixedPseudoVoigt(0.01)),x, 10)
@@ -50,6 +51,9 @@ evaluate!(y, pmcp, x)
 t = zero(x)
 evaluate!(t, c, x)
 @test norm(t-y) < 0.2
+# full_optimize! must not modify the peak intensities of the input phases
+@test [p.I for p in cs[1].peaks] == ref_intensities
+@test [p.I for p in c.CPs[1].peaks] != ref_intensities
 
 @time c = full_optimize!(cs[1], x, y, std_noise, mean_θ, std_θ;
                 objective = "LS", method = LM,

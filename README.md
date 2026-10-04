@@ -48,6 +48,21 @@ One can also pass in `PhaseModel` array, of which each contains a list of `Cryst
 `Wildcard` is an object that tries to optimize signals that are not explained by the above models with multiple manually construct but modifiable gaussian distributions.
 All three objects are jointly optimized if `PhaseModel` is passed in to `optimize!` function.
 
+### Refining peak heights
+If the measured relative peak intensities differ from the reference (e.g. because of texture), `full_optimize!` alternates the lattice refinement with fitting the heights of the strongest peaks
+```julia
+phasemodel = CrystalShift.full_optimize!(PhaseModel(cs), q, y, std_noise, mean_θ, std_θ;
+                                         method = LM, loop_num = 8, mod_peak_num = 32)
+```
+A background can be included the same way as for `optimize!`, e.g. `PhaseModel(cs, nothing, bg)`. Additional named arguments:
+* `loop_num::Int`: number of alternations between lattice refinement and peak-height fitting
+* `mod_peak_num::Int`: number of peaks (in the order of the input file) whose heights are free; the rest are kept fixed
+* `peak_mod_mean::AbstractVector`, `peak_mod_std::AbstractVector`: log-normal prior on the peak-height factors
+* `peak_mod_iter::Int`: maximum number of iterations of each peak-height step
+* `analytic_peak_mod::Bool` (default `true`): solve the peak-height step analytically with `LinearPeakMod`. This is used for `objective = "LS"` with `optimize_mode = Simple`; otherwise the autodiff/BFGS route is used
+
+The phases passed in are not modified; the fitted peak heights are in the returned model.
+
 ### Tree search and probability estimates
 ```julia
 using CrystalTree: LazyTree, search!, get_probabilities
