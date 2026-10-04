@@ -1,5 +1,14 @@
 abstract type AbstractPhase end
 
+"""
+    `CrystalPhase`
+
+    Contains the crystal object, the origin crystal object, the peaks, the parameter number,
+    the id, the name, the activation parameter, the peak width parameter, the peak profile,
+    and the normalization constant.
+
+    Not made mutable so everytime a new `CrystalPhase` instance is created.
+"""
 struct CrystalPhase{T, V<:AbstractVector{T}, C, CL, P, K, M, N} <: AbstractPhase
     cl::C # crystal object
     origin_cl::CL # save for comparison
@@ -33,6 +42,14 @@ end
 Base.Bool(CP::AbstractPhase) = true
 Base.Bool(CP::CrystalPhase) = true
 Base.Bool(CPs::AbstractVector{<:CrystalPhase}) = true
+
+"""
+    `get_param_nums`
+
+    A critical function that is always called to let the optimizer know how many parameters are there in a phase.
+    Used to reconstruct the XRD pattern.
+"""
+function get_param_nums end
 get_param_nums(CP::CrystalPhase) = CP.param_num #CP.cl.free_param + 2 + get_param_nums(CP.profile)
 get_param_nums(APs::AbstractVector{<:AbstractPhase}) = sum(get_param_nums.(APs))
 # get_param_nums(CPs::AbstractVector{<:CrystalPhase}) = sum(get_param_nums.(CPs))
@@ -180,6 +197,11 @@ function get_intrinsic_profile_type(profile_type::Type)
     end
 end
 
+"""
+    `get_intrinsic_crystal_type`
+
+    CrystalPhases are generic types. This is used to get the intrinsic `Crystal` type.
+"""
 function get_intrinsic_crystal_type(cl::Type)
     if cl <: Cubic
         return Cubic
@@ -199,6 +221,13 @@ function get_intrinsic_crystal_type(cl::Type)
 end
 
 # Functions for getting normalization constants
+"""
+    `get_n`
+
+    Get the normalization constant of a peak profile used for calculating the phase fraction.
+"""
+function get_n end
+
 get_n(f::Gauss, σ) = σ*sqrt(2π)
 get_n(f::Lorentz, σ) = π*σ
 get_n(f::PseudoVoigt, σ) = (-0.5 + f.sig_α) *π*σ + (1.5 - f.sig_α)*σ*sqrt(2π)
@@ -209,6 +238,12 @@ get_n(f::FixedApproxPseudoVoigt, σ) =f.α*π*σ  + (1 - f.α)*σ*sqrt(2π)
 get_n(CP::CrystalPhase) = get_n(CP.profile, CP.σ)
 get_strain(CP::CrystalPhase) = get_strain(CP.cl, CP.origin_cl)
 
+"""
+    `get_moles`
+
+    Get the moles of a crystal phase.
+    Returns the moles.
+"""
 function get_moles(CP::CrystalPhase)
     CP.act * get_n(CP.profile, CP.σ) / CP.norm_constant
 end
@@ -245,21 +280,15 @@ function get_free_params(CPs::AbstractVector{<:AbstractPhase})
     p
 end
 
-function get_eight_param end
-"""Returns a vector of the eight parameters determining a phase structure,
-i.e. three sidelengths and three angles for the unit cell, the activation
-coefficient, as well as the peak width of the empirical spectrum.
-
-Args:
-    - an AbstractPhase object.
-    - (optional) a parameter vector θ holding a subset of phase parameters that
-        are required to specify a phase, i.e. only one side length for a Cubic.
-    - (optional) a real-valued fill angle, fills the unspecified angles with π/2
-        by default. For uncertainty computations, we use fill_angle = 0.
-
-Returns:
-    - Vector of length eight an real elements, containing the phase parameters.
 """
+    `get_eight_params`
+
+    Returns a vector of the eight parameters determining a phase structure,
+    i.e. three sidelengths and three angles for the unit cell, the activation
+    coefficient, as well as the peak width of the empirical spectrum.
+"""
+function get_eight_params end
+
 const FILL_ANGLE = pi / 2
 
 function get_eight_params(CP::CrystalPhase)

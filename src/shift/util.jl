@@ -1,3 +1,10 @@
+"""
+`cast(f, type)`
+
+Tries to parse every element in f into type `type`)
+
+No try catch to do error handling, so use with caution.
+"""
 cast(f::AbstractVector, type::Type) = map(x->parse(type, x), f)
 
 # "chess_x_y_tpeak_dwell"
@@ -44,6 +51,13 @@ function _get_phase_name(info_dict)
     return phase_name * "_" * space_group
 end
 
+"""
+`_get_crystal_system(info_dict)`
+
+Grab the `_space_group_IT_number` from the key indexed argument `info_dict`
+and check if it is an integer. If yes, return the crystal system name. Else,
+return triclinic.
+"""
 function _get_crystal_system(info_dict)
     # println(info_dict["_space_group_IT_number"])
     try

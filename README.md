@@ -8,9 +8,8 @@
 ```julia
 using Pkg
 Pkg.add(url="https://github.com/MingChiangChang/CrystalShift.jl")
-Pkg.add(url="https://github.com/MingChiangChang/CrystalTree.jl")
 ```
-There are plans to merge these two module and add it to the julia general repo in the future.
+The tree search and probability estimates that used to live in the separate `CrystalTree.jl` package are now part of `CrystalShift.jl`.
 
 ## Usage
 ### Generate precalculate input files
@@ -65,7 +64,7 @@ The phases passed in are not modified; the fitted peak heights are in the return
 
 ### Tree search and probability estimates
 ```julia
-using CrystalTree: LazyTree, search!, get_probabilities
+using CrystalShift: Lazytree, search!, get_probabilities
 
 max_depth = 3         # maximum number of allowed phases
 k = 3                 # degree of expansion for each top node
@@ -73,7 +72,7 @@ amorphous = false     # whether trying to fit the data with an smooth signal
 background = false    # whether
 background_length = 8.
 
-lt = LazyTree(cs, q)
+lt = Lazytree(cs, q)
 results = search!(lt, q, y, max_depth, k, amorphous, background, background_length)
 
 results = results[2:end]         # the result is a vector with (k+1) length, one for each level.
@@ -101,7 +100,7 @@ When using this package for your work, please cite this package using the follow
 ```
 
 ## Other links
-* [CrystalTree.jl](https://github.com/MingChiangChang/crystaltree.jl) is a package based on `CrystalShift` that builds all of the tree search and probibilistic capabilities.
+* [CrystalTree.jl](https://github.com/MingChiangChang/crystaltree.jl) used to provide the tree search and probabilistic capabilities on top of `CrystalShift`; that code has been merged into this package (`src/tree/`).
 * [pyPhaseLabel](https://github.com/MingChiangChang/pyPhaseLabel) is a python wrapper of `CrystalShift`.
 * [phiddle](https://github.com/MingChiangChang/phiddle) is a GUI that builds on top of `CrysatlShift` for rapid labeling of large XRD dataset and build-in visualization tools.
 Currently is designed for the need for our group but it is easily modifiable for other usage.
