@@ -1,8 +1,27 @@
 const ALLOWED_OBJECTIVE = ["LS", "KL"]
 const PEAK_PRIOR_LENGTH = 1
 const DEFAULT_TOL = 1e-8
-@exported_enum OptimizationMethods LM Newton bfgs l_bfgs
-@exported_enum OptimizationMode Simple EM WithUncer
+@exported_enum OptimizationMethod LM Newton bfgs l_bfgs
+# @exported_enum OptimizationMode Simple EM WithUncer
+abstract type OptimizationMode end
+struct _Simple <: OptimizationMode end
+struct _EM <: OptimizationMode end
+struct _WithUncer <: OptimizationMode end
+
+Simple = _Simple()
+EM = _EM()
+WithUncer = _WithUncer()
+
+# abstract type OptimizationMethod end
+# struct _LM <: OptimizationMethod end
+# struct _Newton <: OptimizationMethod end
+# struct _bfgs <: OptimizationMethod end
+# struct _l_bfgs <: OptimizationMethod end
+
+# LM = _LM()
+# Newton = _Newton()
+# bfgs = _bfgs()
+# l_bfgs = _l_bfgs()
 
 # function extend_priors(mean_θ::AbstractVector, std_θ::AbstractVector,
 #     phases::AbstractVector{<:AbstractPhase})
@@ -91,7 +110,7 @@ struct OptimizationSettings{T}
     priors::Priors{T}
     maxiter::Int
     regularization::Bool
-    method::OptimizationMethods
+    method::OptimizationMethod
     objective::String
     optimize_mode::OptimizationMode
     em_loop_num::Integer
@@ -102,7 +121,7 @@ struct OptimizationSettings{T}
     function OptimizationSettings{V}(priors::Priors{V},
                                      maxiter::Int = 128,
                                      regularization::Bool =true,
-                                     method::OptimizationMethods = LM,
+                                     method::OptimizationMethod = LM,
                                      objective::String = "LS",
                                      optimize_mode::OptimizationMode = Simple,
                                      em_loop_num::Integer=8,
@@ -119,7 +138,7 @@ function OptimizationSettings{V}(
                                  std_noise::Real, mean_θ::AbstractVector{V}, std_θ::AbstractVector{V},
                                  maxiter::Int = 128,
                                  regularization::Bool =true,
-                                 method::OptimizationMethods = LM,
+                                 method::OptimizationMethod = LM,
                                  objective::String = "LS",
                                  optimize_mode::OptimizationMode = Simple,
                                  em_loop_num::Integer=8,

@@ -2,6 +2,13 @@
 # This code is taken from https://github.com/SebastianAment/PhaseMapping.jl
 # With author's permission to remove the dependency of this module on PhaseMapping.jl
 ##################
+"""
+   `PeakProfile`
+
+   Abstract type for peak profiles.
+   Defines a peak profile that depends on peak position μ and width σ.
+   The computation is always based on the scaled x-axis, (x-μ)/σ.
+"""
 abstract type PeakProfile{T} end
 
 @inline locationscale(f, x, μ, σ) = f((x-μ)/σ)
@@ -49,6 +56,13 @@ ApproxGaussian() = ApproxGaussian{Float64}()
 
 ############################# pseudo-voigt function ############################
 # A mix of Gaussian and Lorentzian
+"""
+    `PseudoVoigtProfile`
+
+    Pseudo-Voigt profile.  This is a profile that is a mix of Gaussian and Lorentzian.
+    The mixture parameter α controls the relative contribution of the Gaussian and Lorentzian.
+    In this struct, α will be optimized.
+"""
 struct PseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
    sig_α::T
@@ -69,6 +83,12 @@ function PseudoVoigt(a::AbstractVector)
    PseudoVoigt{eltype(a)}(a[1])
 end
 
+"""
+    `FixedPseudoVoigtProfile`
+
+    FixedPseudoVoigt profile.
+    This is a fixed profile that does not allow change in the mixture parameter α.
+"""
 struct FixedPseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
 end
@@ -83,6 +103,13 @@ const FixedPseudoVoigt = FixedPseudoVoigtProfile
 get_param_nums(P::FixedPseudoVoigt) = 0
 get_free_params(P::FixedPseudoVoigt) = []
 
+"""
+    `FixedApproxPseudoVoigtProfile`
+
+    FixedApproxPseudoVoigt profile.
+    This is a fixed profile that does not allow change in the mixture parameter α.
+    The Gaussian part is approximated by a function that is more efficient to compute using `@fastpow`.
+"""
 struct FixedApproxPseudoVoigtProfile{T} <: PeakProfile{T}
    α::T
 end

@@ -7,6 +7,7 @@ home = Path.home()
 
 path = home / 'Desktop' / 'AlLiFe_data' / 'sticks' / 'AlLiFe_oxides'
 path = home / 'Downloads' / 'AlLiFeO_assembled_icdd'
+path = home / "Downloads" / "SnO"
 #path = home / 'Downloads' / 'AlLiFeO'
 #path = home / 'Downloads' / 'CrFeV_toCornell' / 'icdd'
 #path = home / 'Downloads' / 'AlLiFeO copy'
@@ -49,6 +50,7 @@ with open(f'{str(path)}/_sticks.csv', 'w') as f:
         hs = []
         ks = []
         ls = []
+        qs = []
         intensities = []
         for stick in stick_series:
             h = stick.find('h').text
@@ -57,19 +59,23 @@ with open(f'{str(path)}/_sticks.csv', 'w') as f:
             if check_none(h, k, l):
                 continue
             intensity = stick.find('intensity').text
+            theta = stick.find('theta').text
+            q = 4*np.pi*np.sin(np.radians(float(theta)/2)) / 1.5418
             intensity = re.sub("[^0-9]", "", intensity)
             hs.append(h)
             ks.append(k)
             ls.append(l)
+            print(q)
+            qs.append(q*10)
             intensities.append(intensity)
 
 
-        intensities = np.array(intensities).astype('Float64')
+        intensities = np.array(intensities).astype(np.float64)
         intensities = intensities/np.max(intensities)
         intensities = intensities * 100
 
         f.write(f'{idx},{chem_form}_{sg},{xstal_sys},{a},{b},{c},{alpha},{beta},{gamma}')
 
-        for h, k, l, intensity in zip(hs, ks, ls, intensities):
-            f.write(f'\n{h},{k},{l},0.0,{intensity}')
+        for h, k, l, q, intensity in zip(hs, ks, ls, qs, intensities):
+            f.write(f'\n{h},{k},{l},{q},{intensity}')
         f.write('#\n')

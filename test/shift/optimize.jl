@@ -31,7 +31,7 @@ cs = CrystalPhase.(String.(s[1:end-1]), (0.1,), (FixedPseudoVoigt(0.5),))
 x = collect(8:.1:60)
 
 function test_optimize(cp::CrystalPhase, x::AbstractVector,
-                       method::OptimizationMethods, verbose = verbose)
+                       method::OptimizationMethod, verbose = verbose)
     y, sol = synthesize_data(cp, x)
     c = optimize!(cp, x, y, std_noise, mean_θ, std_θ;
                   method = method,
@@ -90,7 +90,7 @@ end
 
 function test_multiphase_optimize(cps::AbstractVector{<:CrystalPhase},
                                    x::AbstractVector, num_phase::Int,
-                                   method::OptimizationMethods, objective::String = "LS",
+                                   method::OptimizationMethod, objective::String = "LS",
                                    verbose = false)
     phase = rand(1:size(cps, 1), num_phase)
     y, full_params = synthesize_multiphase_data(cps[phase], x)
