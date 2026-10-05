@@ -34,7 +34,7 @@ export Simple, EM, WithUncer
 # Tree search exports
 export Node, Tree, Lazytree, MPTree
 export search!, search_k2n!
-export TreeSearchSettings, MPTreeSearchSettings
+export TreeSearchSettings, MPTreeSearchSettings, FullOptimizeSettings
 export LeastSquares, KullbackLeibler, get_probabilities
 
 # Python imports
