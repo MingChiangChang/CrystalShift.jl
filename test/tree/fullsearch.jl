@@ -40,7 +40,7 @@ reference_data(ids) = normalized(sum(phase(id).(x) for id in ids))
 perturbed_data(ids) = normalized(sum(perturbed(phase(id), i - 1.).(x) for (i, id) in enumerate(ids)))
 
 opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ, 256)
-full_opt_stn = FullOptimizeSettings(loop_num=2)
+full_opt_stn = FullOptimizeSettings()
 settings(f; depth = 2, k = 3, amorphous = false, background = false) =
     TreeSearchSettings{Float64}(depth, k, amorphous, background, 5., opt_stn; full_opt_stn=f)
 
@@ -53,8 +53,8 @@ combos(t) = Set(Set(get_phase_ids(n)) for n in t)
 
 @testset "settings" begin
     d = FullOptimizeSettings()
-    @test (d.loop_num, d.mod_peak_num, d.peak_mod_iter, d.analytic_peak_mod) == (8, 32, 32, true)
-    @test d.peak_mod_mean == [1.] && d.peak_mod_std == [.5]
+    @test (d.loop_num, d.mod_peak_num, d.peak_mod_iter, d.analytic_peak_mod) == (2, 32, 32, true)
+    @test d.peak_mod_mean == [1.] && d.peak_mod_std == [.1]
 
     @test isnothing(TreeSearchSettings{Float64}(2, 3, false, false, 5., opt_stn).full_opt_stn)
     @test isnothing(TreeSearchSettings{Float64}().full_opt_stn)

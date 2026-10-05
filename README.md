@@ -84,6 +84,19 @@ probibilities = get_probabilities(results, q, y, std_noise, mean_θ, std_θ, ren
 ```
 To obtain a proper normalization constant, one will have to go through the optimization procedure described in the paper.
 
+#### Refining peak heights of the search results
+If the relative peak intensities may differ from the reference (e.g. texture), pass a `FullOptimizeSettings` to `TreeSearchSettings`. The search still ranks and expands nodes with `optimize!`, and every node it returns is then refit with `full_optimize!` before computing the probabilities:
+```julia
+using CrystalShift: OptimizationSettings, TreeSearchSettings, FullOptimizeSettings
+
+opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ, 256)
+ts_stn = TreeSearchSettings{Float64}(max_depth, k, amorphous, background, background_length, opt_stn;
+                                     full_opt_stn = FullOptimizeSettings())  # loop_num = 2, peak_mod_std = [.1]
+results = reduce(vcat, search!(Lazytree(cs, q), q, y, ts_stn)[2:end])
+probabilities = get_probabilities(results, q, y, mean_θ, std_θ)
+```
+`FullOptimizeSettings` takes the `full_optimize!` keywords `loop_num`, `mod_peak_num`, `peak_mod_mean`, `peak_mod_std`, `peak_mod_iter` and `analytic_peak_mod`. Its default height prior (`peak_mod_std = [.1]`) is tighter than `full_optimize!`'s: with loose priors a phase can imitate another one through its peak heights. Running `full_optimize!` during the search instead is not supported for the same reason: a phase with many reflections and free heights fits much of a pattern on its own and pushes the true phases out of the top `k`.
+
 ## Cite this package
 When using this package for your work, please cite this package using the following Bibtex citation:
 ```
