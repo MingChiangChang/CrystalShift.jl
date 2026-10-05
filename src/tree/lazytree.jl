@@ -96,7 +96,7 @@ function search!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer::Ab
 
        @threads for i in eachindex(nodes)
             if !isnothing(nodes[i].phase_model.background) || !isempty(nodes[i].phase_model.CPs)
-                pm = optimize_node(nodes[i].phase_model, x, y, y_uncer, ts_stn)
+                pm = optimize!(nodes[i].phase_model, x, y, y_uncer, ts_stn.opt_stn)
                 if pm isa Tuple # The uncertainty flag returns two result, awful solution for now
                     pm = pm[1]
                 end
@@ -118,6 +118,9 @@ function search!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer::Ab
                 expand!(LT, i, x, ts_stn.background, ts_stn.background_length)
             end
         end
+    end
+    for level_result in result
+        refine_nodes!(level_result, x, y, ts_stn)
     end
     return result
 end
@@ -170,11 +173,12 @@ function search_k2n!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer
     search_k2n!(result, LT, LT.nodes[1], x, y, y_uncer, ts_stn)
     @threads for i in eachindex(result)
         if isassigned(result, i) && !result[i].is_optimized
-            pm = optimize_node(result[i].phase_model, x, y, y_uncer, ts_stn)
+            pm = optimize!(result[i].phase_model, x, y, y_uncer, ts_stn.opt_stn)
             result[i] = Node(result[i], pm, x, y, true)
         end
     end
-    result[[isassigned(result, i) for i in eachindex(result)]]
+    result = result[[isassigned(result, i) for i in eachindex(result)]]
+    refine_nodes!(result, x, y, ts_stn)
 end
 
 function search_k2n!(LT::Lazytree, x::AbstractVector, y::AbstractVector, ts_stn::TreeSearchSettings)
@@ -193,7 +197,7 @@ function search_k2n!(result::AbstractVector, LT::Lazytree, node::Node, x::Abstra
 
     child_nodes = expand!(LT, node, x, ts_stn.background, ts_stn.background_length)
     @threads for i in eachindex(child_nodes)
-        pm = optimize_node(child_nodes[i].phase_model, x, y, y_uncer, ts_stn)
+        pm = optimize!(child_nodes[i].phase_model, x, y, y_uncer, ts_stn.opt_stn)
         child_nodes[i] = Node(child_nodes[i], pm, x, y, true)
     end
 
@@ -208,25 +212,30 @@ end
 
 
 ################## Helper functions #################
-# Optimize a node's phase model with `optimize!`, or with `full_optimize!` (peak heights
-# refit too) when `ts_stn.full_opt_stn` is set. Nodes without phases (e.g. the amorphous
-# root) have no peak heights, so they always use `optimize!`.
+# When `ts_stn.full_opt_stn` is set, refit the nodes returned by a search with
+# `full_optimize!` (peak heights too), e.g. before `get_probabilities`. The search
+# itself ranks nodes with `optimize!`: with free peak heights, phases with many
+# reflections fit almost any pattern alone and crowd the true phases out of the top k.
+# Nodes without phases (e.g. the amorphous root) have no peak heights and are kept.
 # Note: `full_optimize!` ignores `y_uncer` and `opt_stn.em_loop_num`.
-function optimize_node(pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
+function refine_nodes!(nodes::AbstractVector{<:Node}, x::AbstractVector, y::AbstractVector,
                        ts_stn::TreeSearchSettings)
-    f_stn = ts_stn.full_opt_stn
-    if isnothing(f_stn) || isnothing(pm.CPs) || isempty(pm.CPs)
-        return optimize!(pm, x, y, y_uncer, ts_stn.opt_stn)
+    f_stn, opt_stn = ts_stn.full_opt_stn, ts_stn.opt_stn
+    isnothing(f_stn) && return nodes
+    @threads for i in eachindex(nodes)
+        pm = nodes[i].phase_model
+        (isnothing(pm.CPs) || isempty(pm.CPs)) && continue
+        pm = full_optimize!(pm, x, y, opt_stn.priors.std_noise, opt_stn.priors.mean_θ, opt_stn.priors.std_θ;
+                            method=opt_stn.method, optimize_mode=opt_stn.optimize_mode,
+                            objective=opt_stn.objective, regularization=opt_stn.regularization,
+                            loop_num=f_stn.loop_num, peak_shift_iter=opt_stn.maxiter,
+                            mod_peak_num=f_stn.mod_peak_num, peak_mod_mean=f_stn.peak_mod_mean,
+                            peak_mod_std=f_stn.peak_mod_std, peak_mod_iter=f_stn.peak_mod_iter,
+                            analytic_peak_mod=f_stn.analytic_peak_mod,
+                            λ=opt_stn.λ, verbose=opt_stn.verbose, tol=opt_stn.tol)
+        nodes[i] = Node(nodes[i], pm, x, y, true)
     end
-    opt_stn = ts_stn.opt_stn
-    full_optimize!(pm, x, y, opt_stn.priors.std_noise, opt_stn.priors.mean_θ, opt_stn.priors.std_θ;
-                   method=opt_stn.method, optimize_mode=opt_stn.optimize_mode,
-                   objective=opt_stn.objective, regularization=opt_stn.regularization,
-                   loop_num=f_stn.loop_num, peak_shift_iter=opt_stn.maxiter,
-                   mod_peak_num=f_stn.mod_peak_num, peak_mod_mean=f_stn.peak_mod_mean,
-                   peak_mod_std=f_stn.peak_mod_std, peak_mod_iter=f_stn.peak_mod_iter,
-                   analytic_peak_mod=f_stn.analytic_peak_mod,
-                   λ=opt_stn.λ, verbose=opt_stn.verbose, tol=opt_stn.tol)
+    return nodes
 end
 
 function get_top_nodes(nodes::AbstractVector{Node}, k::Int)

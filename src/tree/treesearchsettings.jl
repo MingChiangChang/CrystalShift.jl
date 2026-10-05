@@ -5,10 +5,11 @@ const ScalarOrVecInt = Union{Integer, AbstractVector{<:Integer}}
                            peak_mod_std=[.5], peak_mod_iter=32, analytic_peak_mod=true)
 
 Peak-height refinement options for tree search. Passing one as `full_opt_stn` to
-`TreeSearchSettings` makes the search optimize each node with `full_optimize!`
-(which also refits peak heights) instead of `optimize!`. The fields are the
-`full_optimize!` keywords of the same names; the remaining options (priors,
-method, objective, `maxiter` as `peak_shift_iter`, ...) come from `opt_stn`.
+`TreeSearchSettings` makes `search!`/`search_k2n!` refit every node they return with
+`full_optimize!` (which also refits peak heights) after the search. The search itself
+still ranks and expands nodes with `optimize!`. The fields are the `full_optimize!`
+keywords of the same names; the remaining options (priors, method, objective,
+`maxiter` as `peak_shift_iter`, ...) come from `opt_stn`.
 """
 struct FullOptimizeSettings
     loop_num::Int
@@ -33,7 +34,7 @@ struct TreeSearchSettings{V} <: AbstractTreeSearchSettings
     background_length::Real
     default_phase::Union{Nothing, CrystalPhase}
     opt_stn::OptimizationSettings{V}
-    full_opt_stn::Union{Nothing, FullOptimizeSettings} # nothing: plain optimize!
+    full_opt_stn::Union{Nothing, FullOptimizeSettings} # nothing: no full_optimize! refinement
 
     function TreeSearchSettings(depth::Integer, k::ScalarOrVecInt, amorphous::Bool, background::Bool,
                                 background_length::Real, default_phase::Union{Nothing, CrystalPhase},
