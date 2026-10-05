@@ -22,6 +22,7 @@ using LogExpFunctions: logsumexp
 
 # TODO: Update export list
 export CrystalPhase, AbstractPhase, PeakModCP, LinearPeakMod, Wildcard, Peak, PhaseModel, BackgroundModel
+export FixedBackground, BasisBackground, PolynomialBackground, ChebyshevBackground, CosineBackground, InterpolationBackground
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
 export OptimizationMethod, OptimizationMode, OptimizationSettings # enums
@@ -78,9 +79,11 @@ include("shift/wildcard.jl")
 include("shift/peakmodCP.jl")
 include("shift/background.jl")
 include("shift/fixedbackground.jl")
+include("shift/basisbackground.jl")
 include("shift/phasemodel.jl")
 include("shift/phaseresult.jl")
 include("shift/optimizationsettings.jl")
+include("shift/lmsolver.jl")
 include("shift/optimize.jl")
 
 # Tree search and probabilistic labeling (merged from CrystalTree.jl)

@@ -487,21 +487,40 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 	opt_stn.objective == "LS" || error("LM only work with LS for now")
 
 	f = get_lm_objective_func(pm, x, y, y_uncer, opt_stn)
-	if opt_stn.regularization
-		r = zeros(eltype(log_θ), length(y) + length(log_θ) )
-		LM = LevenbergMarquart(f, log_θ, r)
-	else
-		r = zeros(eltype(log_θ), size(y))
-		LM = LevenbergMarquart(f, log_θ, r)
-	end
+	r = zeros(eltype(log_θ), opt_stn.regularization ? length(y) + length(log_θ) : length(y))
 
 	stn = LevenbergMarquartSettings(min_resnorm = 1e-2, min_res = 1e-3,
 						min_decrease = 1e-6, max_iter = opt_stn.maxiter,
 						decrease_factor = 7, increase_factor = 10, max_step = .1)
 
 	λ = 1e-6
-	OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
+	np = length(log_θ) - get_param_nums(pm.background)
+	if is_linear(pm.background) && np > 0
+		# background is linear: AD only over phase/wildcard params, constant Jacobian for the rest
+		J_bg = background_jacobian(pm.background, x, y, y_uncer, length(r), opt_stn)
+		LM = SplitJacobianLM(f, log_θ, r, np, J_bg)
+		lm_loop!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))
+	else
+		LM = LevenbergMarquart(f, log_θ, r)
+		OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
+	end
 	return log_θ
+end
+
+# Constant Jacobian of the LM residual vector (see get_lm_objective_func) w.r.t.
+# the coefficients of a linear background: data rows and background prior rows
+function background_jacobian(B::AbstractBackground, x::AbstractVector, y::AbstractVector,
+                             y_uncer::AbstractVector, n_rows::Int, opt_stn::OptimizationSettings)
+	nbg = get_param_nums(B)
+	w = @. 1 / (sqrt(2) * sqrt(y_uncer^2 + opt_stn.priors.std_noise^2)) # as in _weighted_residual!
+	J = zeros(n_rows, nbg)
+	J[1:length(y), :] .= -w .* background_basis(B, x)
+	if opt_stn.regularization # background prior p = Λ c
+		Λ = zeros(nbg)
+		lm_prior!(Λ, B, ones(nbg))
+		J[end-nbg+1:end, :] .= Diagonal(Λ)
+	end
+	J
 end
 
 function get_lm_objective_func(pm::PhaseModel,
