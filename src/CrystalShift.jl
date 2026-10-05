@@ -19,6 +19,7 @@ using Random
 
 # TODO: Update export list
 export CrystalPhase, AbstractPhase, PeakModCP, LinearPeakMod, Wildcard, Peak, PhaseModel, BackgroundModel
+export FixedBackground, BasisBackground, PolynomialBackground, ChebyshevBackground, CosineBackground, InterpolationBackground
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic
 export OptimizationMethods, OptimizationMode, OptimizationSettings # enums
@@ -65,9 +66,11 @@ include("wildcard.jl")
 include("peakmodCP.jl")
 include("background.jl")
 include("fixedbackground.jl")
+include("basisbackground.jl")
 include("phasemodel.jl")
 include("phaseresult.jl")
 include("optimizationsettings.jl")
+include("lmsolver.jl")
 include("optimize.jl")
 
 @setup_workload begin

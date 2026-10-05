@@ -4,6 +4,25 @@ const DEFAULT_RANK_TOL = 1e-6 # IDEA: consider increase in tolerance
 
 abstract type AbstractBackground end
 
+# Linear backgrounds have a constant Jacobian w.r.t. their coefficients, which lm_optimize!
+# uses instead of ForwardDiff. New types must opt in, so a nonlinear one falls back to AD.
+is_linear(::AbstractBackground) = false
+is_linear(::Nothing) = false
+
+# Jacobian of a linear background w.r.t. its coefficients, one column per unit vector
+function background_basis(B::AbstractBackground, x::AbstractVector)
+    k = get_param_nums(B)
+    basis = zeros(length(x), k)
+    e = zeros(k)
+    for i in 1:k
+        e[i] = 1
+        _, Bi = reconstruct_BG!(e, B)
+        evaluate!(view(basis, :, i), Bi, x)
+        e[i] = 0
+    end
+    basis
+end
+
 struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:AbstractVector, LT, CT} <: AbstractBackground
     k::KT # kernel function
     K::AT # kernel matrix
@@ -13,6 +32,7 @@ struct BackgroundModel{T, KT, AT<:AbstractMatrix{T}, UT<:AbstractMatrix, ST<:Abs
     c::CT # temporary storage for model parameters
 end
 
+is_linear(::BackgroundModel) = true
 get_param_nums(B::BackgroundModel) = length(B.S)
 get_free_params(B::BackgroundModel) = B.c
 

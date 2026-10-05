@@ -5,6 +5,7 @@ struct FixedBackground{T, WT<:AbstractVector{T}, V, Z} <: AbstractBackground
     λ::Z # Regularization factor
 end
 
+is_linear(::FixedBackground) = true
 get_free_params(FBG::FixedBackground) = [FBG.a]
 get_param_nums(FBG::FixedBackground) = 1
 
