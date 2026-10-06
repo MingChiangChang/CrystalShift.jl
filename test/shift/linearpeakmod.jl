@@ -3,6 +3,7 @@ using CrystalShift
 using CrystalShift: CrystalPhase, optimize!, evaluate!, evaluate_residual!, get_free_params, get_param_nums
 using CrystalShift: PeakModCP, LinearPeakMod, FixedPseudoVoigt, PhaseModel, BackgroundModel, full_optimize!
 using CrystalShift: get_PeakModCP, get_newton_objective_func, OptimizationSettings, Simple, EM, DEFAULT_TOL
+using CrystalShift: copy_peaks, change_peak_int!
 using LinearAlgebra
 using CovarianceFunctions: EQ
 using Random
@@ -140,6 +141,28 @@ end
     c_kl = full_optimize!(PhaseModel(cs[1:1]), x, y, std_noise, mean_θ, std_θ;
                           objective = "KL", kw..., method = bfgs, loop_num = 1)
     @test c_kl isa PhaseModel
+end
+
+
+@testset "full_optimize! peak-height prior is relative to the reference" begin
+    # first 10 peaks twice as high as the reference; a tight prior keeps the fit closer
+    cp = copy_peaks(cs[1])
+    change_peak_int!(cp, fill(2., 10))
+    y = cp.(x)
+    ref = [p.I for p in cs[1].peaks]
+    # mean log deviation of the fitted from the reference heights of the doubled peaks
+    function deviation(loop_num, analytic)
+        c = full_optimize!(PhaseModel(cs[1:1]), x, y, std_noise, mean_θ, std_θ;
+                           method = LM, loop_num = loop_num, peak_mod_std = [.05],
+                           analytic_peak_mod = analytic)
+        sum(log.([p.I for p in c.CPs[1].peaks[1:10]] ./ ref[1:10])) / 10
+    end
+    for analytic in (true, false)
+        d1, d8 = deviation(1, analytic), deviation(8, analytic)
+        @test 0 < d1 < log(2) / 2 # pulled towards 2, held back by the prior
+        # more loops must not loosen the prior (before: per-loop factors compounded, 0.10 -> 0.24)
+        @test d8 <= d1 + 0.01
+    end
 end
 
 end

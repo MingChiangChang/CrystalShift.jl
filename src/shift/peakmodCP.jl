@@ -26,8 +26,11 @@ end
 
 # CrystalPhase(CP, θ) shares the peaks vector with CP, so give a phase its own copy
 # before modifying peak intensities in place with change_peak_int!
-function copy_peaks(CP::CrystalPhase)
-    CrystalPhase(CP.cl, CP.origin_cl, copy(CP.peaks), CP.param_num, CP.id, CP.name,
+copy_peaks(CP::CrystalPhase) = with_peaks(CP, CP.peaks)
+
+# CP (lattice, activation, width, profile) with its own copy of `peaks`
+function with_peaks(CP::CrystalPhase, peaks::AbstractVector)
+    CrystalPhase(CP.cl, CP.origin_cl, copy(peaks), CP.param_num, CP.id, CP.name,
                  CP.act, CP.σ, CP.profile, CP.norm_constant)
 end
 

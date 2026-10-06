@@ -56,7 +56,7 @@ phasemodel = CrystalShift.full_optimize!(PhaseModel(cs), q, y, std_noise, mean_Î
 A background can be included the same way as for `optimize!`, e.g. `PhaseModel(cs, nothing, bg)`. Additional named arguments:
 * `loop_num::Int`: number of alternations between lattice refinement and peak-height fitting
 * `mod_peak_num::Int`: number of peaks (in the order of the input file) whose heights are free; the rest are kept fixed
-* `peak_mod_mean::AbstractVector`, `peak_mod_std::AbstractVector`: log-normal prior on the peak-height factors
+* `peak_mod_mean::AbstractVector`, `peak_mod_std::AbstractVector`: log-normal prior on the peak-height factors, i.e. on the ratio of the fitted to the reference intensity. Every loop re-fits these factors from the reference intensities, so the prior bounds the total deviation regardless of `loop_num`
 * `peak_mod_iter::Int`: maximum number of iterations of each peak-height step
 * `analytic_peak_mod::Bool` (default `true`): solve the peak-height step analytically with `LinearPeakMod`. This is used for `objective = "LS"` with `optimize_mode = Simple`; otherwise the autodiff/BFGS route is used
 

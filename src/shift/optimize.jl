@@ -64,12 +64,10 @@ then fits multiplicative height factors for the first `mod_peak_num` peaks of ea
 phase with the positions fixed, and refines the lattice again. The phases passed in
 are not modified; the fitted peak heights are in the returned model.
 
-Note on the peak-height prior: the log-normal prior (`peak_mod_mean`, `peak_mod_std`)
-is applied to the height factors of the current loop, relative to the heights
-reached in the previous loop, not to the original reference intensities. The factors
-compound over loops, so after `loop_num` loops the total deviation from the reference
-intensities can be much larger than `peak_mod_std` suggests; the prior is effectively
-weaker the more loops are run.
+The height factors are relative to the reference intensities of the phases passed in
+(`pm.CPs`): every loop re-solves them from the reference intensities, so the log-normal
+prior (`peak_mod_mean`, `peak_mod_std`) bounds the total deviation from the reference,
+however many loops are run.
 """
 function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 						std_noise::Real, mean_θ::AbstractVector = [1., .5, .2], std_θ::AbstractVector = [.005, .5, .2];
@@ -89,6 +87,7 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 
 	# have_bg = !isnothing(pm.background)
 	# Work on copies of the peaks so change_peak_int! does not modify the caller's phases
+	ref_peaks = [CP.peaks for CP in pm.CPs]
 	c = PhaseModel(copy_peaks.(pm.CPs), pm.wildcard, pm.background)
 	for i in 1:loop_num
 		c = optimize!(c, x, y, std_noise, mean_θ, std_θ;
@@ -96,6 +95,9 @@ function full_optimize!(pm::PhaseModel, x::AbstractVector, y::AbstractVector,
 			regularization=regularization, optimize_mode=optimize_mode, λ=λ,
 			verbose=verbose, tol=tol)
 
+		# Fit the height factors relative to the reference intensities, so the prior
+		# applies to the total deviation instead of compounding over loops
+		c = PhaseModel(with_peaks.(c.CPs, ref_peaks), c.wildcard, c.background)
 		IMs = get_PeakModCP(c, x, mod_peak_num)
 
 		if analytic_peak_mod && objective == "LS" && optimize_mode == Simple
