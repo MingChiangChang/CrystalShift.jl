@@ -18,5 +18,6 @@ tree/node
 tree/tree
 tree/search
 tree/lazytree
+tree/fullsearch
 tree/mptree
 tree/probabilistic
