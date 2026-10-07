@@ -1,0 +1,72 @@
+Julia 1.10.9, threads 1
+Costs are ‖get_lm_objective_func residual‖² for every solver (including quasi-Newton ones).
+
+single phase, ±1.25% strain  [test/optimize.jl] — 60 trials, 6 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: OptimizationAlgorithms LM         100%   100%   100%   2.665 ms 282.111 ms     18     0.060858  0.000% / 0.002%
+  LeastSquaresOptim Dogleg                   100%   100%   100%   1.014 ms  88.077 ms      6     0.060858  0.000% / 0.002%
+  NonlinearSolve LM, no geodesic             100%   100%   100%  10.888 ms    1.252 s     41     0.060858  0.000% / 0.002%
+  NonlinearSolve TrustRegion Hei             100%   100%   100%   4.103 ms 420.325 ms     36     0.060858  0.000% / 0.002%
+  NonlinearSolve TrustRegion Yuan             97%   100%    97%  63.245 ms    3.402 s     39     0.060877  0.000% / 0.002%
+  NonlinearSolve TrustRegion Fan              95%   100%    95%   8.239 ms 604.796 ms     39     0.060877  0.000% / 0.003%
+  NonlinearSolve TrustRegion NocedalWright    97%   100%    97%   6.539 ms 555.764 ms     39     0.060877  0.000% / 0.002%
+  Dogleg multi-start ×8                      100%   100%   100%  10.190 ms 850.981 ms     55     0.060843  0.000% / 0.002%
+  Dogleg continuation (0.4, 0.2)             100%   100%   100%   4.621 ms 503.465 ms     56     0.060858  0.000% / 0.002%
+  VarPro (Dogleg) + Dogleg polish            100%   100%   100%   2.222 ms 297.732 ms      8     0.060858  0.000% / 0.002%
+  VarPro (Dogleg), no polish                 100%   100%   100%   1.912 ms 259.125 ms      6     0.060884  0.000% / 0.002%
+
+two phases, ±0.5% strain  [test/optimize.jl] — 40 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: OptimizationAlgorithms LM          92%    88%   100%  10.422 ms 538.630 ms     18      0.19745  0.001% / 0.365%
+  LeastSquaresOptim Dogleg                   100%    95%   100%   3.047 ms 213.042 ms      6       0.1867  0.001% / 0.026%
+  NonlinearSolve LM, no geodesic              92%    88%    98%  62.763 ms  344.478 s     43      0.19158  0.001% / 0.139%
+  NonlinearSolve TrustRegion Hei              98%    92%   100%  19.585 ms    1.394 s     41       0.1867  0.001% / 0.037%
+  NonlinearSolve TrustRegion Yuan             98%    92%   100% 171.338 ms   10.052 s     48       0.1867  0.001% / 0.037%
+  NonlinearSolve TrustRegion Fan             100%    95%   100%  19.217 ms    1.129 s     40       0.1867  0.001% / 0.026%
+  NonlinearSolve TrustRegion NocedalWright   100%    95%   100%  19.340 ms    1.331 s     40       0.1867  0.001% / 0.026%
+  Dogleg multi-start ×8                      100%    98%   100%  33.961 ms    2.087 s     65      0.17631  0.001% / 0.025%
+  Dogleg continuation (0.4, 0.2)              98%    92%   100%  22.706 ms    1.197 s     98       0.1867  0.001% / 0.037%
+  VarPro (Dogleg) + Dogleg polish            100%    98%   100%  11.811 ms 565.602 ms      8      0.17631  0.001% / 0.025%
+  VarPro (Dogleg), no polish                  88%    88%    85%   8.638 ms 415.843 ms      6      0.20987  0.001% / 0.412%
+
+single phase + smooth background  [test/background.jl] — 15 trials, 19 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: OptimizationAlgorithms LM         100%   100%   100%  19.262 ms 473.898 ms     56       2.7633  0.000% / 0.000%
+  LeastSquaresOptim Dogleg                   100%   100%   100%   2.584 ms  59.387 ms      7       2.7633  0.000% / 0.000%
+  NonlinearSolve LM, no geodesic             100%   100%   100%  39.928 ms 933.438 ms     41       2.7633  0.000% / 0.000%
+  NonlinearSolve TrustRegion Hei             100%   100%   100%  23.656 ms 512.180 ms     39       2.7633  0.000% / 0.000%
+  NonlinearSolve TrustRegion Yuan            100%   100%   100% 107.963 ms    2.781 s     39       2.7633  0.000% / 0.000%
+  NonlinearSolve TrustRegion Fan             100%   100%   100%  19.618 ms 291.243 ms     39       2.7633  0.000% / 0.000%
+  NonlinearSolve TrustRegion NocedalWright   100%   100%   100%  19.423 ms 315.009 ms     39       2.7633  0.000% / 0.000%
+  Dogleg multi-start ×8                      100%   100%   100%  22.501 ms 593.481 ms     61       2.7633  0.000% / 0.000%
+  Dogleg continuation (0.4, 0.2)             100%    93%    93%   8.774 ms 216.226 ms     19       2.7633  0.000% / 0.000%
+  VarPro (Dogleg) + Dogleg polish            100%   100%   100%   5.609 ms 108.682 ms      8       2.7633  0.000% / 0.000%
+  VarPro (Dogleg), no polish                 100%   100%   100%   6.649 ms 117.099 ms      7       2.7633  0.000% / 0.000%
+
+single phase + polynomial bg + noise  [test/fixedbackground.jl] — 15 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: OptimizationAlgorithms LM         100%    93%   100%  24.813 ms    1.195 s    184        38499  0.012% / 0.061%
+  LeastSquaresOptim Dogleg                   100%   100%   100%   3.283 ms  47.485 ms      8        38499  0.012% / 0.042%
+  NonlinearSolve LM, no geodesic             100%   100%   100%  22.385 ms 647.182 ms     58        38499  0.012% / 0.042%
+  NonlinearSolve TrustRegion Hei             100%   100%   100%   8.009 ms 222.683 ms     46        38499  0.012% / 0.042%
+  NonlinearSolve TrustRegion Yuan            100%   100%   100%  60.160 ms    1.473 s     54        38499  0.012% / 0.042%
+  NonlinearSolve TrustRegion Fan             100%   100%   100%   9.800 ms 215.364 ms     43        38499  0.012% / 0.042%
+  NonlinearSolve TrustRegion NocedalWright   100%   100%   100%   7.881 ms 214.810 ms     44        38499  0.012% / 0.042%
+  Dogleg multi-start ×8                      100%   100%   100%  24.681 ms 458.790 ms    105        38499  0.012% / 0.042%
+  Dogleg continuation (0.4, 0.2)             100%   100%   100%   9.209 ms 173.432 ms     58        38499  0.012% / 0.042%
+  VarPro (Dogleg) + Dogleg polish            100%   100%   100%   2.990 ms  91.837 ms      8        38499  0.012% / 0.042%
+  VarPro (Dogleg), no polish                 100%   100%   100%   2.688 ms 106.946 ms      7        38499  0.012% / 0.042%
+
+wildcard + background, measured data  [test/wildcard.jl] — 1 trials, 13 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: OptimizationAlgorithms LM         100%      -   100%  19.089 ms  19.089 ms    210       351.64                -
+  LeastSquaresOptim Dogleg                   100%      -   100%   2.370 ms   2.370 ms     31       351.64                -
+  NonlinearSolve LM, no geodesic             100%      -   100%  37.997 ms  37.997 ms    178       351.64                -
+  NonlinearSolve TrustRegion Hei             100%      -   100%  10.528 ms  10.528 ms     67       351.64                -
+  NonlinearSolve TrustRegion Yuan            100%      -   100%  28.851 ms  28.851 ms     80       351.64                -
+  NonlinearSolve TrustRegion Fan             100%      -   100%  13.650 ms  13.650 ms     97       351.64                -
+  NonlinearSolve TrustRegion NocedalWright   100%      -   100%  11.224 ms  11.224 ms     73       351.64                -
+  Dogleg multi-start ×8                      100%      -   100%  19.922 ms  19.922 ms    248       351.64                -
+  Dogleg continuation (0.4, 0.2)             100%      -   100%   4.579 ms   4.579 ms     51       351.64                -
+  VarPro (Dogleg) + Dogleg polish            100%      -   100%  12.613 ms  12.613 ms     29       351.64                -
+  VarPro (Dogleg), no polish                 100%      -   100%  12.888 ms  12.888 ms     28       351.64                -

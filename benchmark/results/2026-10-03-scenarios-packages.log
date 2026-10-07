@@ -1,0 +1,51 @@
+Julia 1.10.9, threads 1
+Costs are ‖get_lm_objective_func residual‖² for every solver (including quasi-Newton ones).
+
+single phase, ±1.25% strain  [test/optimize.jl] — 60 trials, 6 params
+  solver                                     pass  ≤ cur     median      total  iters  median cost
+  current: OptimizationAlgorithms LM         100%   100%   2.672 ms 283.049 ms     18     0.060858
+  NonlinearSolve LevenbergMarquardt          100%   100%  18.774 ms    2.324 s    192     0.060858
+  NonlinearSolve TrustRegion                  98%    98%   4.590 ms 504.185 ms     39     0.060858
+  NonlinearSolve GaussNewton                 100%   100%   9.985 ms    1.152 s     39     0.060858
+  LeastSquaresOptim LevenbergMarquardt       100%   100% 895.230 μs  86.377 ms      6     0.060858
+  LeastSquaresOptim Dogleg                   100%   100% 946.646 μs  86.201 ms      6     0.060858
+
+two phases, ±0.5% strain  [test/optimize.jl] — 40 trials, 8 params
+  solver                                     pass  ≤ cur     median      total  iters  median cost
+  current: OptimizationAlgorithms LM          92%   100%   9.945 ms 523.791 ms     18      0.19745
+  NonlinearSolve LevenbergMarquardt           98%   100%  83.596 ms    4.964 s    132       0.1867
+  NonlinearSolve TrustRegion                 100%   100%  20.095 ms    1.230 s     40       0.1867
+  NonlinearSolve GaussNewton                  90%    92%  55.091 ms    5.821 s     41      0.19745
+  LeastSquaresOptim LevenbergMarquardt        98%   100%   3.492 ms 241.458 ms      6      0.18894
+  LeastSquaresOptim Dogleg                   100%   100%   3.072 ms 224.984 ms      6       0.1867
+
+single phase + smooth background  [test/background.jl] — 15 trials, 19 params
+  solver                                     pass  ≤ cur     median      total  iters  median cost
+  current: OptimizationAlgorithms LM         100%   100%  20.094 ms 486.333 ms     56       2.7633
+  NonlinearSolve LevenbergMarquardt          100%   100% 100.434 ms    1.865 s    154       2.7633
+  NonlinearSolve TrustRegion                 100%   100%  19.586 ms 268.191 ms     39       2.7633
+  NonlinearSolve GaussNewton                 100%   100%  34.776 ms 872.134 ms     39       2.7633
+  LeastSquaresOptim LevenbergMarquardt       100%   100%   2.899 ms  77.638 ms      7       2.7633
+  LeastSquaresOptim Dogleg                   100%   100%   2.542 ms  59.016 ms      7       2.7633
+
+single phase + polynomial bg + noise  [test/fixedbackground.jl] — 15 trials, 8 params
+  solver                                     pass  ≤ cur     median      total  iters  median cost
+  current: OptimizationAlgorithms LM         100%   100%  24.879 ms    1.193 s    184        38499
+  NonlinearSolve LevenbergMarquardt          100%   100%  38.313 ms 935.717 ms    173        38499
+  NonlinearSolve TrustRegion                 100%   100%   9.961 ms 252.960 ms     63        38499
+  NonlinearSolve GaussNewton                 100%   100%  19.115 ms 512.230 ms     45        38499
+  LeastSquaresOptim LevenbergMarquardt       100%    47%   2.890 ms  77.912 ms     26        40115
+  LeastSquaresOptim Dogleg                   100%   100%   3.507 ms  48.142 ms      8        38499
+
+wildcard + background, measured data  [test/wildcard.jl] — 1 trials, 13 params
+  solver                                     pass  ≤ cur     median      total  iters  median cost
+  current: OptimizationAlgorithms LM         100%   100%  33.395 ms  33.395 ms    210       351.64
+  NonlinearSolve LevenbergMarquardt          100%   100% 103.562 ms 103.562 ms    381       351.64
+  NonlinearSolve TrustRegion                 100%   100%  13.745 ms  13.745 ms     84       351.64
+  NonlinearSolve GaussNewton                 100%   100%  37.697 ms  37.697 ms    183       351.64
+  LeastSquaresOptim LevenbergMarquardt       100%   100%   3.340 ms   3.340 ms     25       351.64
+  LeastSquaresOptim Dogleg                   100%   100%   2.451 ms   2.451 ms     31       351.64
+  current: OptimizationAlgorithms BFGS       100%   100%  33.289 ms  33.289 ms      -       351.64
+  current: OptimizationAlgorithms LBFGS        0%     0%  52.813 ms  52.813 ms      -       600.88
+  Optim BFGS                                 100%   100%  25.698 ms  25.698 ms    128       351.64
+  Optim LBFGS                                  0%     0%  32.603 ms  32.603 ms    512       712.15

@@ -1,0 +1,38 @@
+Julia 1.10.9, threads 1
+Costs are ‖get_lm_objective_func residual‖² for every solver (including quasi-Newton ones).
+
+single phase, ±1.25% strain  [test/shift/optimize.jl] — 60 trials, 6 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%   100%   100%   2.700 ms 300.037 ms      -     0.060858  0.000% / 0.002%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100% 960.541 μs  87.828 ms      -     0.060858  0.000% / 0.002%
+  LeastSquaresOptim LevenbergMarquardt       100%   100%   100% 931.021 μs  91.621 ms      6     0.060858  0.000% / 0.002%
+  LeastSquaresOptim Dogleg                   100%   100%   100% 955.104 μs  87.223 ms      6     0.060858  0.000% / 0.002%
+
+two phases, ±0.5% strain  [test/shift/optimize.jl] — 40 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                    92%    88%   100%   9.946 ms 521.838 ms      -      0.19745  0.001% / 0.365%
+  CrystalShift dogleg (method = dogleg)      100%    95%   100%   3.076 ms 213.550 ms      -       0.1867  0.001% / 0.026%
+  LeastSquaresOptim LevenbergMarquardt        98%    92%   100%   3.521 ms 228.872 ms      6      0.18894  0.001% / 0.037%
+  LeastSquaresOptim Dogleg                   100%    95%   100%   3.100 ms 213.830 ms      6       0.1867  0.001% / 0.026%
+
+single phase + smooth background  [test/shift/background.jl] — 15 trials, 19 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%   100%   100%  10.387 ms 268.536 ms      -       2.7633  0.000% / 0.000%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100%   2.575 ms  58.999 ms      -       2.7633  0.000% / 0.000%
+  LeastSquaresOptim LevenbergMarquardt       100%   100%   100%   2.951 ms  63.559 ms      7       2.7633  0.000% / 0.000%
+  LeastSquaresOptim Dogleg                   100%   100%   100%   2.559 ms  59.658 ms      7       2.7633  0.000% / 0.000%
+
+single phase + polynomial bg + noise  [test/shift/fixedbackground.jl] — 15 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%    93%   100%  22.859 ms    1.072 s      -        38499  0.012% / 0.061%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100%   3.295 ms  47.631 ms      -        38499  0.012% / 0.042%
+  LeastSquaresOptim LevenbergMarquardt       100%   100%    47%   7.137 ms  95.798 ms     26        40115  0.012% / 0.065%
+  LeastSquaresOptim Dogleg                   100%   100%   100%   3.346 ms  48.097 ms      8        38499  0.012% / 0.042%
+
+wildcard + background, measured data  [test/shift/wildcard.jl] — 1 trials, 13 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%      -   100%  14.314 ms  14.314 ms      -       351.64                -
+  CrystalShift dogleg (method = dogleg)      100%      -   100%   2.464 ms   2.464 ms      -       351.64                -
+  LeastSquaresOptim LevenbergMarquardt       100%      -   100%   3.429 ms   3.429 ms     25       351.64                -
+  LeastSquaresOptim Dogleg                   100%      -   100%   2.500 ms   2.500 ms     31       351.64                -
+julia +1.10.9 --project=benchmark benchmark/scenarios.jl --filter   93.72s user 6.37s system 132% cpu 1:15.45 total
