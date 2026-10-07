@@ -7,6 +7,7 @@ using OptimizationAlgorithms: StoppingCriterion, fixedpoint!
 using OptimizationAlgorithms: BFGS, LBFGS
 using LinearAlgebra
 using OptimizationAlgorithms
+import LeastSquaresOptim
 using SpecialFunctions
 using ForwardDiff
 using LazyInverses
@@ -28,7 +29,7 @@ export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMono
 export OptimizationMethod, OptimizationMode, OptimizationSettings # enums
 export evaluate!, evaluate_residual!, optimize!, full_optimize!, fit_amorphous
 export get_free_params, Gauss, Lorentz, FixedPseudoVoigt, PseudoVoigt
-export LM, Newton, bfgs, l_bfgs
+export LM, Newton, bfgs, l_bfgs, dogleg
 export Simple, EM, WithUncer
 
 # Tree search exports

@@ -1,0 +1,27 @@
+Julia 1.10.9, threads 1
+Costs are ‖get_lm_objective_func residual‖² for every solver (including quasi-Newton ones).
+
+single phase, ±1.25% strain  [test/shift/optimize.jl] — 60 trials, 6 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%   100%   100%   3.378 ms 367.950 ms      -     0.060858  0.000% / 0.002%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100%   1.709 ms 126.600 ms      -     0.060858  0.000% / 0.002%
+
+two phases, ±0.5% strain  [test/shift/optimize.jl] — 40 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                    92%    88%   100%  12.048 ms 626.736 ms      -      0.19745  0.001% / 0.365%
+  CrystalShift dogleg (method = dogleg)      100%    95%   100%   3.287 ms 267.590 ms      -       0.1867  0.001% / 0.026%
+
+single phase + smooth background  [test/shift/background.jl] — 15 trials, 19 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%   100%   100%  12.740 ms 307.489 ms      -       2.7633  0.000% / 0.000%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100%   4.172 ms  80.989 ms      -       2.7633  0.000% / 0.000%
+
+single phase + polynomial bg + noise  [test/shift/fixedbackground.jl] — 15 trials, 8 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%    93%   100%  24.095 ms    1.271 s      -        38499  0.012% / 0.061%
+  CrystalShift dogleg (method = dogleg)      100%   100%   100%   3.746 ms  66.218 ms      -        38499  0.012% / 0.042%
+
+wildcard + background, measured data  [test/shift/wildcard.jl] — 1 trials, 13 params
+  solver                                     pass lat ok  ≤ cur     median      total  iters  median cost  lat err med/p90
+  current: CrystalShift LM                   100%      -   100%  19.586 ms  19.586 ms      -       351.64                -
+  CrystalShift dogleg (method = dogleg)      100%      -   100%   3.638 ms   3.638 ms      -       351.64                -
