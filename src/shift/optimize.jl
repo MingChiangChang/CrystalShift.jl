@@ -330,6 +330,8 @@ function simple_optimize!(θ::AbstractVector, pm::PhaseModel,
 	# TODO use Match.jl, or just use multiple dispatch on method?
 	if opt_stn.method == LM
 		log_θ = lm_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
+	elseif opt_stn.method == dogleg
+		log_θ = dogleg_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.method == Newton
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
 	elseif opt_stn.method == bfgs
@@ -387,6 +389,8 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	# TODO use Match.jl, or just use multiple dispatch on method?
 	if opt_stn.method == LM
 		log_θ = lm_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
+	elseif opt_stn.method == dogleg
+		log_θ = dogleg_optimize!(log_θ, pm, x, y, y_uncer, opt_stn)
 	elseif opt_stn.method == Newton
 		log_θ = newton!(log_θ, pm, x, y, opt_stn)
 	elseif opt_stn.method == bfgs
@@ -403,7 +407,7 @@ function optimize_with_uncertainty!(θ::AbstractVector, pm::PhaseModel,
 	phase_log_θ = log_θ[1:phase_params]
 
 	# This is hessian in log space, TODO: change to real sapce
-	if opt_stn.method == LM
+	if opt_stn.method in (LM, dogleg) # least-squares objective
 		f = get_lm_objective_func(phases, x, signal, y_uncer, opt_stn)
 		r = zeros(Real, length(y) + phase_params)
 		function res(log_θ)
@@ -506,6 +510,48 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 		LM = LevenbergMarquart(f, log_θ, r)
 		OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
 	end
+	return log_θ
+end
+
+# Largest relative change of a lattice parameter (lengths and angles) allowed in one
+# dogleg_optimize! call, as a box bound in log space
+const DOGLEG_MAX_STRAIN = 0.05
+
+# Same least-squares problem as lm_optimize! (residual, priors, log-space parameters),
+# solved with the Dogleg trust-region method of LeastSquaresOptim. In the benchmarks in
+# benchmark/FINDINGS.md it took far fewer iterations than the LM above and recovered
+# lattice parameters at least as well. The Jacobian comes from ForwardDiff over all
+# parameters, including linear backgrounds.
+# Unlike the LM, whose steps are capped at 0.1 in log space, the trust region can take
+# large steps, which let wrong phases strain far to fit part of a pattern during tree
+# search; lattice parameters are therefore bounded to ±DOGLEG_MAX_STRAIN of the start.
+function dogleg_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
+                          y_uncer::AbstractVector, opt_stn::OptimizationSettings)
+	opt_stn.objective == "LS" || error("dogleg only works with LS for now")
+
+	f = get_lm_objective_func(pm, x, y, y_uncer, opt_stn)
+	n_res = opt_stn.regularization ? length(y) + length(log_θ) : length(y)
+	function f!(r, θ)
+		out = f(r, θ)
+		out isa Number && fill!(r, Inf) # the objective returns a scalar Inf for non-finite parameters
+		r
+	end
+	lower, upper = fill(-Inf, length(log_θ)), fill(Inf, length(log_θ))
+	if !isnothing(pm.CPs) && eltype(pm.CPs) <: CrystalPhase
+		start = 1
+		for cp in pm.CPs
+			lattice = start:start+cp.cl.free_param-1
+			lower[lattice] .= log_θ[lattice] .+ log(1 - DOGLEG_MAX_STRAIN)
+			upper[lattice] .= log_θ[lattice] .+ log(1 + DOGLEG_MAX_STRAIN)
+			start += get_param_nums(cp)
+		end
+	end
+	θ0 = copy(log_θ)
+	problem = LeastSquaresOptim.LeastSquaresProblem(x = log_θ, f! = f!, output_length = n_res,
+	                                                autodiff = :forward)
+	result = LeastSquaresOptim.optimize!(problem, LeastSquaresOptim.Dogleg(); lower, upper,
+	                                     iterations = opt_stn.maxiter, show_trace = opt_stn.verbose)
+	log_θ .= all(isfinite, result.minimizer) ? result.minimizer : θ0
 	return log_θ
 end
 

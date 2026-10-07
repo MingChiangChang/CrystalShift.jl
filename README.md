@@ -34,7 +34,7 @@ phasemodel = CrystalShift.optimize!(cs, q, y, std_noise, mean_θ, std_θ)
 ```
 This is the minimal setup for the optimization. User can also pass in the following named arguments:
 * `y_uncer::AbstractVector`: uncertainty of y that will be take into account when optimizing
-* `method::OptimizationMethod`: `LM`(Levenberg-Marquart), `Newton`, `bfgs`, `l_bfgs`
+* `method::OptimizationMethod`: `LM`(Levenberg-Marquart), `Newton`, `bfgs`, `l_bfgs`, `dogleg` (trust-region Dogleg from LeastSquaresOptim.jl; same least-squares problem as `LM`, with each lattice parameter bounded to ±5% of its starting value; several times faster in benchmarks, see `benchmark/FINDINGS.md`)
 * `optimize_mode::OptimizationMode`: `Simple`, `EM`(expectation-maximization mode for jointly optimize `std_noise`), `WithUncer` (returns uncertainty of lattice parameters)
 * `ovejctive::String`: `"LS"` (least square), `"KL"` (KL-divergence)
 * `maxiter::Int`: number of maximum iterations
