@@ -13,12 +13,14 @@
                 [4.4, 5.2, 6.3, 90, 101, 90],    # monoclinic
                 [4.5, 5.3, 6.4, 82, 95, 103]]    # triclinic
     hkls = [(1, 0, 0), (1, 1, 0), (1, 1, 1), (2, 0, 0), (2, 1, 0), (2, 1, 1), (0, 1, 2), (1, 0, 2)]
+    # CrystalPhase(io) splits phases on "#\r\n" on Windows, so use the platform's line ending
+    nl = Sys.iswindows() ? "\r\n" : "\n"
     blocks = map(enumerate(lattices)) do (i, lp)
         header = "$(i-1),phase$(i-1),system," * join(lp, ",")
         peaks = ["$h,$k,$l,0.0,$(100 / j)" for (j, (h, k, l)) in enumerate(hkls)]
-        join(vcat(header, peaks), "\n")
+        join(vcat(header, peaks), nl)
     end
-    csv = join(blocks .* "#\n") # stick-pattern CSV format: each phase ends with "#"
+    csv = join(blocks .* "#" .* nl) # stick-pattern CSV format: each phase ends with "#"
     x = collect(range(8., 45., length = 256))
     std_noise, mean_θ, std_θ = .01, [1., 1., .2], [.5, .5, 1.]
     opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ, 4)
