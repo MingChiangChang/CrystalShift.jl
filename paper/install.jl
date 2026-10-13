@@ -1,7 +1,7 @@
 using Pkg
 
 packages = ["BackgroundSubtraction", "CSV", "Combinatorics",
-            "CovarianceFunctions", "DataFrames", "ForwardDiff",
+            "DataFrames", "ForwardDiff",
             "ProgressBars", "Plots", "JSON", "LaTeXStrings", "LazyInverses",
             "Measurements", "NPZ", "Plots", "ProgressBars", "StatsBase", "YAML"]
 

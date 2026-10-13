@@ -1,7 +1,7 @@
 module TestWildcard
 using CrystalShift
 using CrystalShift: Wildcard, Lorentz, evaluate, optimize!, fit_amorphous
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 
 using NPZ
 using Test

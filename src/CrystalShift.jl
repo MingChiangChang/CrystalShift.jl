@@ -17,12 +17,11 @@ using Printf
 using PrecompileTools
 using Random
 # using PyCall
-using CovarianceFunctions: EQ
 using Einsum
 using LogExpFunctions: logsumexp
 
 # TODO: Update export list
-export CrystalPhase, AbstractPhase, PeakModCP, LinearPeakMod, Wildcard, Peak, PhaseModel, BackgroundModel
+export CrystalPhase, AbstractPhase, PeakModCP, LinearPeakMod, Wildcard, Peak, PhaseModel, BackgroundModel, EQ, Matern
 export FixedBackground, BasisBackground, PolynomialBackground, ChebyshevBackground, CosineBackground, InterpolationBackground
 export Triclinic, Monoclinic, Orthorhombic, Tetragonal, Rhombohedral, Hexagonal, Cubic
 export isCubic, isTetragonal, isHexagonal, isRhombohedral, isOrthohombic, isMonoclinic

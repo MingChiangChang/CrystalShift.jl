@@ -118,7 +118,7 @@ end
 using CrystalShift: get_lm_objective_func, background_jacobian, SplitJacobianLM, is_linear
 using CrystalShift: OptimizationSettings, FixedBackground, BackgroundModel, Wildcard, Lorentz
 using OptimizationAlgorithms: update_jacobian!
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 using ForwardDiff
 
 @testset "constant background Jacobian matches ForwardDiff: $(name)" for (name, BG) in [

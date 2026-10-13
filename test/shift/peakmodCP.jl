@@ -4,7 +4,7 @@ using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params, evaluate
 using CrystalShift: newton!, evaluate_residual!, BackgroundModel
 using CrystalShift: PeakModCP, FixedPseudoVoigt, PhaseModel, full_optimize!
 using LinearAlgebra
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 using Random: rand
 using Test
 # using Plots

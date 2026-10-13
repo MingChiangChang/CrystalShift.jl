@@ -23,7 +23,7 @@ include(joinpath(@__DIR__, "solvers.jl"))
 include(joinpath(@__DIR__, "methods.jl"))
 using CrystalShift: BackgroundModel, FixedBackground, Wildcard, FixedPseudoVoigt, PseudoVoigt, Lorentz,
                     evaluate, get_free_lattice_params
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 using NPZ
 using Random
 using Statistics

@@ -6,7 +6,7 @@ using CrystalShift: Crystal, OptionalPhases, get_param_nums, get_fraction
 using CrystalTree
 using CrystalTree: Lazytree, approximate_negative_log_evidence, LeastSquares, get_probabilities
 using BackgroundSubtraction
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 
 using NPZ
 using Plots
