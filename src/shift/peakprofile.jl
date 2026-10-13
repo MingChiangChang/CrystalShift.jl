@@ -120,6 +120,19 @@ const FixedApproxPseudoVoigt = FixedApproxPseudoVoigtProfile
 get_param_nums(P::FixedApproxPseudoVoigt) = 0
 get_free_params(P::FixedApproxPseudoVoigt) = []
 
+"""
+    `support(P::PeakProfile)`
+
+    Half-width, in units of σ, beyond which the profile is at its constant floor:
+    `special_exp(-z^2/2)` floors for z^2 > 20 and `special_inv(1 + z^2)` for z^2 > 99.
+    Peak evaluation of `CrystalPhase` only visits the x within this window of each peak.
+    `Inf` (the default) for profiles without a floor, which are evaluated everywhere.
+"""
+support(P::PeakProfile) = Inf
+support(P::Gauss) = sqrt(20)
+support(P::Lorentz) = sqrt(99)
+support(P::Union{PseudoVoigt, FixedPseudoVoigt}) = sqrt(99)
+
 
 ########################## mixture of peak profiles ############################
 # θ parameters of mixture (peak parameters x number of peaks)
