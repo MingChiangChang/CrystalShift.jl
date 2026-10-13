@@ -497,16 +497,77 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 
 	λ = 1e-6
 	np = length(log_θ) - get_param_nums(pm.background)
-	if is_linear(pm.background) && np > 0
-		# background is linear: AD only over phase/wildcard params, constant Jacobian for the rest
-		J_bg = background_jacobian(pm.background, x, y, y_uncer, length(r), opt_stn)
-		LM = SplitJacobianLM(f, log_θ, r, np, J_bg)
+	if np > 0 && (isnothing(pm.background) || is_linear(pm.background))
+		# AD separately over each phase and the wildcard, constant Jacobian for a linear background
+		LM = block_lm(f, pm, x, y, y_uncer, log_θ, r, opt_stn)
 		lm_loop!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))
 	else
 		LM = LevenbergMarquart(f, log_θ, r)
 		OptimizationAlgorithms.optimize!(LM, log_θ, copy(r), stn, λ, Val(opt_stn.verbose))#, false)
 	end
 	return log_θ
+end
+
+# BlockJacobianLM (see lmsolver.jl) for the residual f of get_lm_objective_func at log_θ:
+# one ForwardDiff block per phase and one for the wildcard, each computing its weighted
+# contribution to the data rows (as in _weighted_residual!) and its own prior rows (as in f),
+# and a constant block for a linear background. The background must be linear or nothing.
+function block_lm(f, pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
+				  log_θ::AbstractVector, r::AbstractVector, opt_stn::OptimizationSettings)
+	n = length(y)
+	reg = opt_stn.regularization
+	w = @. 1 / (sqrt(2) * sqrt(y_uncer^2 + opt_stn.priors.std_noise^2))
+	prior_rows(cols) = reg ? n + length(cols) : n
+	mean_θ, std_θ = extend_priors(opt_stn.priors, pm)
+	blocks = ADBlock[]
+	start = 1
+	for CP in something(pm.CPs, AbstractPhase[])
+		cols = start:start+get_param_nums(CP)-1
+		mean_log_θ, std_cols = log.(mean_θ[cols]), std_θ[cols]
+		g! = (out, θ) -> begin
+			data = view(out, 1:n)
+			data .= 0
+			evaluate_residual!(CP, exp.(θ), x, data)
+			data .*= w
+			reg && @views @. out[n+1:end] = (θ - mean_log_θ) / (sqrt(2) * std_cols)
+			out
+		end
+		push!(blocks, ADBlock(g!, cols, prior_rows(cols)))
+		start += length(cols)
+	end
+	if !isnothing(pm.wildcard)
+		W = pm.wildcard
+		cols = start:start+get_param_nums(W)-1
+		g! = (out, θ) -> begin
+			data = view(out, 1:n)
+			data .= 0
+			evaluate_residual!(reconstruct_WC!(exp.(θ), W)[2], x, data)
+			data .*= w
+			reg && lm_prior!(view(out, n+1:length(out)), W, θ)
+			out
+		end
+		push!(blocks, ADBlock(g!, cols, prior_rows(cols)))
+		start += length(cols)
+	end
+	constant = nothing
+	if !isnothing(pm.background)
+		B = pm.background
+		cols = start:length(log_θ)
+		J_bg = background_jacobian(B, x, y, y_uncer, length(r), opt_stn)
+		J_cols = reg ? J_bg[[1:n; n .+ cols], :] : J_bg[1:n, :]
+		value! = (out, c) -> begin
+			data = view(out, 1:n)
+			data .= 0
+			evaluate_residual!(reconstruct_BG!(c, B)[2], x, data)
+			data .*= w
+			reg && lm_prior!(view(out, n+1:length(out)), B, c)
+			out
+		end
+		constant = ConstantBlock(value!, cols, zeros(size(J_cols, 1)), J_cols)
+	end
+	base = zeros(length(r))
+	base[1:n] .= w .* y
+	BlockJacobianLM(f, log_θ, r, blocks, constant, base, n)
 end
 
 # Constant Jacobian of the LM residual vector (see get_lm_objective_func) w.r.t.

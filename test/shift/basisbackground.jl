@@ -114,21 +114,23 @@ noisy_data ./= maximum(noisy_data)
     @test any(!iszero, get_free_params(c.background))
 end
 
-# lm_optimize! fills the Jacobian columns of linear backgrounds from their basis
-using CrystalShift: get_lm_objective_func, background_jacobian, SplitJacobianLM, is_linear
+# lm_optimize! differentiates each phase and the wildcard separately and fills the Jacobian
+# columns of linear backgrounds from their basis
+using CrystalShift: get_lm_objective_func, block_lm, is_linear
 using CrystalShift: OptimizationSettings, FixedBackground, BackgroundModel, Wildcard, Lorentz
 using OptimizationAlgorithms: update_jacobian!
 using CovarianceFunctions: EQ
 using ForwardDiff
 
-@testset "constant background Jacobian matches ForwardDiff: $(name)" for (name, BG) in [
+@testset "block Jacobian matches ForwardDiff: $(name)" for (name, BG) in [
+        ("none", nothing),
         ("basis", ChebyshevBackground(x, 6)),
         ("fixed", FixedBackground(smooth_bg, 1., 3.)),
         ("kernel", BackgroundModel(x, EQ(), 10)),
-    ], regularization in (true, false), wildcard in (false, true)
-    @test is_linear(BG)
+    ], regularization in (true, false), wildcard in (false, true), nphase in (1, 2)
+    isnothing(BG) || @test is_linear(BG)
     W = wildcard ? [Wildcard([20.], [.5], [2.], "Amorphous", Lorentz(), [1., 1., .5])] : nothing
-    pm = PhaseModel([cs[1]], W, BG)
+    pm = PhaseModel(cs[1:nphase], W, BG)
     opt_stn = OptimizationSettings{Float64}(std_noise, mean_θ, std_θ, 10, regularization)
     y_uncer = 0.01 .* rand(length(x))
     f = get_lm_objective_func(pm, x, noisy_data, y_uncer, opt_stn)
@@ -138,7 +140,7 @@ using ForwardDiff
     r = zeros(regularization ? length(x) + length(θ) : length(x))
 
     J_ad = ForwardDiff.jacobian(f, copy(r), θ)
-    LM = SplitJacobianLM(f, θ, r, np, background_jacobian(BG, x, noisy_data, y_uncer, length(r), opt_stn))
+    LM = block_lm(f, pm, x, noisy_data, y_uncer, θ, r, opt_stn)
     v, J = update_jacobian!(LM, θ)
     @test J ≈ J_ad rtol = 1e-10
     @test v ≈ f(copy(r), θ)
