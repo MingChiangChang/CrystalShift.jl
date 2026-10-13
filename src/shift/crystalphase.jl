@@ -392,10 +392,53 @@ function evaluate!(y::AbstractMatrix, CP::AbstractPhase, peaks::AbstractVector{<
 end
 
 function evaluate!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector)
+    add_peaks!(y, CP, x, 1)
+    y
+end
+
+_primal(x::Real) = x
+_primal(x::ForwardDiff.Dual) = _primal(ForwardDiff.value(x))
+
+"""
+    `add_peaks!(y, CP::CrystalPhase, x, s)`
+
+    Add `s * act * I * profile((x - q) / σ)` of every peak of `CP` to `y` (the main bottleneck).
+    For a profile with finite `support` and sorted `x`, each peak only visits the x within
+    its window; outside it the profile is at its constant floor, which is added for all
+    peaks at once. Returns `Inf` without adding the remaining peaks if a peak position is
+    infinite (e.g. an invalid triclinic cell), otherwise `y`.
+"""
+function add_peaks!(y::AbstractVector, CP::CrystalPhase, x::AbstractVector, s::Real)
     peak_locs = (CP.cl).(CP.peaks) .* 10
-    @fastmath @inbounds @simd for i in eachindex(CP.peaks)
-        @. y += CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ) # Main bottle neck
+    k = support(CP.profile)
+    if !(isfinite(k) && issorted(x))
+        @inbounds for i in eachindex(CP.peaks)
+            isinf(peak_locs[i]) && return Inf
+            c = s * CP.act * CP.peaks[i].I
+            @simd for j in eachindex(x)
+                y[j] += c * CP.profile((x[j]-peak_locs[i])/CP.σ)
+            end
+        end
+        return y
     end
+    floor = CP.profile(2k) # value beyond the support
+    w = 1.01k * abs(_primal(CP.σ)) # margin so rounding at the edge cannot drop a point inside the support
+    total = zero(s * CP.act) # sum of peak scales, for the floor
+    @inbounds for i in eachindex(CP.peaks)
+        q = peak_locs[i]
+        if isinf(q)
+            @. y += total * floor
+            return Inf
+        end
+        c = s * CP.act * CP.peaks[i].I
+        total += c
+        lo = searchsortedfirst(x, _primal(q) - w)
+        hi = searchsortedlast(x, _primal(q) + w)
+        @simd for j in lo:hi
+            y[j] += c * (CP.profile((x[j]-q)/CP.σ) - floor)
+        end
+    end
+    @. y += total * floor
     y
 end
 
@@ -493,23 +536,7 @@ end
 # end
 
 function evaluate_residual!(CP::CrystalPhase, x::AbstractVector, r::AbstractVector{T}) where T
-    # println((length(CP.peaks)))
-    # println(eltype(r) <: ForwardDiff.Dual)
-    peak_locs = (CP.cl).(CP.peaks) .* 10
-    # y = zeros(promote_type(eltype(x), eltype(r)), length(r)) # Can be preallocated at the optimization level
-
-    @inbounds @simd for i in eachindex(CP.peaks)
-        if isinf(peak_locs[i])
-            return Inf
-        end
-        # @. r -= get_phase_pattern(CP.act, CP.peaks[i].I, (x.-peak_locs[i])./CP.σ, (CP.profile,))
-        @. r -= CP.act * CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
-        # Note: For Dual type, plus and minus are more expensive than multiply..
-        # ~ 10 % improvement for 3 phase case but uses 3-4 times more memory
-        # @. y += CP.peaks[i].I * CP.profile((x-peak_locs[i])/CP.σ)
-    end
-    # @. r -= y * CP.act
-    r
+    add_peaks!(r, CP, x, -1)
 end
 
 
@@ -547,10 +574,7 @@ function evaluate_residual_in_sqrt!(CPs::AbstractVector{<:CrystalPhase},
         if isinf(CPs[i].cl.volume)
             return Inf
         end
-        peak_locs = (CPs[i].cl).(CPs[i].peaks) .* 10
-        for j in eachindex(CPs[i].peaks)
-            @. y += CPs[i].act * CPs[i].peaks[j].I * CPs[i].profile((x-peak_locs[j])/CPs[i].σ)
-        end
+        add_peaks!(y, CPs[i], x, 1)
     end
     # plt = plot(x, y)
     # display(plt)

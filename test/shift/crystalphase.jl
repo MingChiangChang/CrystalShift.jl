@@ -155,5 +155,20 @@ evaluate_residual!(cs[1:2], get_free_params(cs[1:2]), x, t)
 #     end
 # end
 
+# Peaks are only evaluated within support(profile) * σ of their position when x is sorted.
+# Reversed x takes the unwindowed path, so both must agree, including derivatives.
+@testset "Peak window matches full evaluation" begin
+    ForwardDiff = CrystalShift.ForwardDiff
+    xs = collect(8:.05:60)
+    xr = reverse(xs)
+    for profile in (CrystalShift.FixedPseudoVoigt(0.5), PseudoVoigt(0.3), Lorentz(), Gauss()), σ in (0.05, 0.3)
+        for cp in CrystalPhase.(String.(s[[1, 2, 15]]), (σ,), (profile,))
+            θ = get_free_params(cp)
+            @test evaluate_residual!(cp, θ, xs, ones(length(xs))) ≈ reverse(evaluate_residual!(cp, θ, xr, ones(length(xs)))) atol=1e-12
+            f(t, xx) = evaluate!(zeros(eltype(t), length(xx)), cp, t, xx)
+            @test ForwardDiff.jacobian(t -> f(t, xs), θ) ≈ reverse(ForwardDiff.jacobian(t -> f(t, xr), θ), dims=1)
+        end
+    end
+end
 
 end # modules
