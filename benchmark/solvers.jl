@@ -60,7 +60,8 @@ qn_cost(p::Problem, θ) = get_newton_objective_func(p.pm, p.x, p.y, p.stn)(θ)
 # --- solvers: (problem, log_θ0) -> (log_θ, iterations) ---------------------------------------
 
 # The package's own LM and Dogleg (method = LM / dogleg in optimize!). lm_optimize! uses
-# SplitJacobianLM, with the exact background Jacobian, when the background is linear.
+# BlockJacobianLM (ForwardDiff per phase, exact background Jacobian) when the background is
+# linear or absent.
 # Neither reports its iteration count.
 current_lm(p, θ) = (CrystalShift.lm_optimize!(copy(θ), p.pm, p.x, p.y, zero(p.y), p.stn), missing)
 package_dogleg(p, θ) = (CrystalShift.dogleg_optimize!(copy(θ), p.pm, p.x, p.y, zero(p.y), p.stn), missing)

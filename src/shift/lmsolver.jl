@@ -1,39 +1,75 @@
-# Levenberg-Marquart with a Jacobian that is computed by ForwardDiff only over the
-# first np parameters and is constant in the remaining ones. Used for linear
-# backgrounds, whose Jacobian columns are fixed by the background basis.
+# Levenberg-Marquart with a Jacobian assembled from independent column blocks. The LM
+# residual (see get_lm_objective_func) is w .* (y - sum of component models) in the data
+# rows, plus one prior row per parameter (row n + i for parameter i). Each phase and the
+# wildcard only depend on their own parameters, so ForwardDiff runs over each of them on
+# its own and its Dual numbers carry only that component's partials instead of all of
+# them. A linear background (is_linear trait) contributes constant Jacobian columns from
+# its basis. The residual value is assembled from the same block evaluations.
 const DiffResults = ForwardDiff.DiffResults
 using OptimizationAlgorithms: AbstractGaussNewton, update_direction!, objective!
 
-struct SplitJacobianLM{T, F, FP, D, R, RP, C, JT, BT} <: AbstractGaussNewton{T}
-    f::F       # full residual f(rp, θ)
-    fp::FP     # f restricted to the first np parameters, the rest read from θ_rest
-    d::D       # pre-allocation for parameter direction vector
-    r::R       # DiffResult of the full problem
-    rp::RP     # DiffResult of the ForwardDiff part
-    cfg::C     # Jacobian config of the ForwardDiff part
-    JJ::JT     # pre-allocation for Hessian approximation
-    J_rest::BT # constant Jacobian columns of the remaining parameters
-    θ_rest::Vector{T}
-    np::Int
+# g!(out, θ_block) writes the block's data rows (n) followed by its prior rows, if any
+struct ADBlock{G, C}
+    g!::G
+    cols::UnitRange{Int}
+    out::Vector{Float64}
+    J::Matrix{Float64}
+    cfg::C
 end
 
-function SplitJacobianLM(f, x::AbstractVector{T}, y::AbstractVector, np::Int, J_rest::AbstractMatrix) where T
-    θ_rest = x[np+1:end]
-    fp = (r, θp) -> f(r, vcat(θp, θ_rest))
+function ADBlock(g!, cols::UnitRange{Int}, rows::Int)
+    out = zeros(rows)
+    ADBlock(g!, cols, out, zeros(rows, length(cols)), ForwardDiff.JacobianConfig(g!, out, zeros(length(cols))))
+end
+
+# value!(out, θ_block) writes the block's data rows followed by its prior rows; J is constant
+struct ConstantBlock{V}
+    value!::V
+    cols::UnitRange{Int}
+    out::Vector{Float64}
+    J::Matrix{Float64}
+end
+
+struct BlockJacobianLM{T, F, D, R, JT, B, C} <: AbstractGaussNewton{T}
+    f::F            # full residual f(rp, θ), used for objective values
+    d::D            # pre-allocation for parameter direction vector
+    r::R            # DiffResult holding the assembled residual and Jacobian
+    JJ::JT          # pre-allocation for Hessian approximation
+    blocks::B       # ADBlocks, one per phase and one for the wildcard
+    constant::C     # ConstantBlock of a linear background, or nothing
+    base::Vector{T} # w .* y in the data rows, zero in the prior rows
+    n::Int          # number of data rows
+end
+
+function BlockJacobianLM(f, x::AbstractVector{T}, y::AbstractVector, blocks, constant,
+                         base::AbstractVector, n::Int) where T
     r = DiffResults.JacobianResult(y, x)
-    rp = DiffResults.JacobianResult(y, x[1:np])
-    cfg = ForwardDiff.JacobianConfig(fp, y, x[1:np])
     J = DiffResults.jacobian(r)
-    SplitJacobianLM(f, fp, similar(x), r, rp, cfg, J'J, J_rest, θ_rest, np)
+    BlockJacobianLM(f, similar(x), r, J'J, blocks, constant, Vector{T}(base), n)
 end
 
-function OptimizationAlgorithms.update_jacobian!(LM::SplitJacobianLM, x::AbstractVector)
+function add_block!(y::AbstractVector, J::AbstractMatrix, b, n::Int)
+    @views y[1:n] .+= b.out[1:n]
+    @views J[1:n, b.cols] .= b.J[1:n, :]
+    if length(b.out) > n # prior rows
+        @views y[n .+ b.cols] .+= b.out[n+1:end]
+        @views J[n .+ b.cols, b.cols] .= b.J[n+1:end, :]
+    end
+end
+
+function OptimizationAlgorithms.update_jacobian!(LM::BlockJacobianLM, x::AbstractVector)
     y, J = OptimizationAlgorithms.get_value_jacobian(LM)
-    np = LM.np
-    LM.θ_rest .= @view x[np+1:end]
-    ForwardDiff.jacobian!(LM.rp, LM.fp, y, x[1:np], LM.cfg)
-    J[:, 1:np] .= DiffResults.jacobian(LM.rp)
-    J[:, np+1:end] .= LM.J_rest
+    y .= LM.base
+    J .= 0
+    for b in LM.blocks
+        ForwardDiff.jacobian!(b.J, b.g!, b.out, x[b.cols], b.cfg)
+        add_block!(y, J, b, LM.n)
+    end
+    if !isnothing(LM.constant)
+        b = LM.constant
+        b.value!(b.out, x[b.cols])
+        add_block!(y, J, b, LM.n)
+    end
     return y, J
 end
 
