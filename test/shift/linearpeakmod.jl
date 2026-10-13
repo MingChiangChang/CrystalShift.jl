@@ -5,7 +5,7 @@ using CrystalShift: PeakModCP, LinearPeakMod, FixedPseudoVoigt, PhaseModel, Back
 using CrystalShift: get_PeakModCP, get_newton_objective_func, OptimizationSettings, Simple, EM, DEFAULT_TOL
 using CrystalShift: copy_peaks, change_peak_int!
 using LinearAlgebra
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 using Random
 using Test
 

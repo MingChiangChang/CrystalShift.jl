@@ -6,7 +6,7 @@ using CrystalShift
 using CrystalShift: Lorentz, optimize!, PhaseModel, full_optimize!, FixedPseudoVoigt, PseudoVoigt
 using CrystalShift: Wildcard, Crystal, twoθ2q, volume, get_lm_objective_func
 
-using CovarianceFunctions: EQ, Matern
+using CrystalShift: EQ, Matern
 using Plots
 using LaTeXStrings
 using Measurements

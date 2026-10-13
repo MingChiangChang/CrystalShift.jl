@@ -1,8 +1,43 @@
-using CovarianceFunctions
 using LinearAlgebra
+using SpecialFunctions: gamma, besselk
 const DEFAULT_RANK_TOL = 1e-6 # IDEA: consider increase in tolerance
 
 abstract type AbstractBackground end
+
+# Isotropic kernels for BackgroundModel: functions of the distance r between two inputs.
+# Same conventions as CovarianceFunctions.jl, which BackgroundModel used before; any
+# callable k(r) works, including CovarianceFunctions kernels.
+"""
+    EQ()
+
+Exponentiated quadratic (squared exponential) kernel, k(r) = exp(-r²/2).
+"""
+struct EQ end
+(k::EQ)(r::Real) = exp(-r^2/2)
+
+"""
+    Matern(ν)
+
+Matérn kernel with smoothness ν, k(r) = 2^(1-ν) / Γ(ν) * s^ν * K_ν(s) with s = √(2ν) r.
+"""
+struct Matern{T<:Real}
+    ν::T
+    Matern(ν::T) where {T<:Real} = ν > 0 ? new{T}(ν) : throw(DomainError(ν, "ν must be positive"))
+end
+function (k::Matern)(r::Real)
+    iszero(r) && return one(float(r))
+    s = sqrt(2k.ν) * r
+    2^(1-k.ν) / gamma(k.ν) * s^k.ν * besselk(k.ν, s)
+end
+
+# Kernel k with its input distance scaled by the lengthscale l
+struct Lengthscale{K, T<:Real}
+    k::K
+    l::T
+end
+(k::Lengthscale)(r::Real) = k.k(r / k.l)
+
+kernel_matrix(k, x::AbstractVector) = [k(abs(xi - xj)) for xi in x, xj in x]
 
 # Linear backgrounds have a constant Jacobian w.r.t. their coefficients, which lm_optimize!
 # uses instead of ForwardDiff. New types must opt in, so a nonlinear one falls back to AD.
@@ -37,7 +72,8 @@ get_param_nums(B::BackgroundModel) = length(B.S)
 get_free_params(B::BackgroundModel) = B.c
 
 function BackgroundModel(x::AbstractVector, k, l::Real, λ::Real = 1; rank_tol::Real = DEFAULT_RANK_TOL)
-    k = CovarianceFunctions.Lengthscale(k, l)
+    l > 0 || throw(DomainError(l, "lengthscale must be positive"))
+    k = Lengthscale(k, l)
     K, U, S = low_rank_background_model(x, k, rank_tol)
     c = zeros(length(S))
     BackgroundModel(k, K, U, S, λ, c)
@@ -52,8 +88,6 @@ end
 
 reconstruct_BG!(θ::AbstractVector, B::Nothing) = θ, nothing
 
-LinearAlgebra.svd(G::Gramian) = svd(Matrix(G))
-
 # x is vector of q values in case of XRD
 # k is kernel function
 # rank_tol is the singular value threshold below which we truncate and SVD to approximate the full kernel matrix
@@ -61,7 +95,7 @@ LinearAlgebra.svd(G::Gramian) = svd(Matrix(G))
 # To be true to the original kernel model, have to add least-squares regularizer on α
 # with variances equal to the singular values Si.
 function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAULT_RANK_TOL)
-    K = gramian(k, x)
+    K = kernel_matrix(k, x)
     U, S, V = svd(K)
     i = findfirst(<(rank_tol), S)
     Ui = @view U[:, 1:i]

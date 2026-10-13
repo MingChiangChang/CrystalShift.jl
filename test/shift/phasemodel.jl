@@ -6,7 +6,7 @@ using CrystalShift: collect_crystals, Lorentz, PseudoVoigt, get_moles, Gauss
 using CrystalShift: get_fraction, get_free_params, evaluate_residual!, get_intrinsic_profile_type
 using CrystalShift: get_phase_ids
 using LinearAlgebra
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 
 path = "../data/"
 test_path = path * "Ta-Sn-O/sticks.csv" # when ]test is executed pwd() = /test

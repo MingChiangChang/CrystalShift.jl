@@ -10,7 +10,7 @@ using CrystalShift: CrystalPhase, PhaseModel, BackgroundModel, OptimizationSetti
                     FixedPseudoVoigt, Lorentz, LM, Simple, EM,
                     evaluate, evaluate!, evaluate_residual!, get_free_params,
                     get_free_lattice_params, get_lm_objective_func, extend_priors
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 using ForwardDiff
 using LinearAlgebra
 using Random

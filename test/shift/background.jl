@@ -4,8 +4,7 @@ using CrystalShift: CrystalPhase, optimize!, evaluate, get_free_params
 using CrystalShift: newton!, get_free_lattice_params
 using CrystalShift: BackgroundModel, evaluate!, PhaseModel, Lorentz, PseudoVoigt, FixedPseudoVoigt
 using CrystalShift: _prior, get_param_nums, lm_prior!
-using CovarianceFunctions
-using CovarianceFunctions: EQ
+using CrystalShift: EQ
 
 using LinearAlgebra
 using Random: rand
@@ -78,5 +77,19 @@ evaluate(PM.background, x)
 evaluate(PM.background, rand(get_param_nums(PM.background)), x)
 _prior(PM.background, rand(get_param_nums(PM.background)))
 lm_prior!(rand(get_param_nums(PM.background)), PM.background)
+
+# Closed forms of the kernels (same conventions as CovarianceFunctions.jl, used before)
+@testset "background kernels" begin
+    r = [0., .3, 1., 2.5]
+    @test EQ().(r) ≈ exp.(-r.^2 ./ 2)
+    @test CrystalShift.Matern(1/2).(r) ≈ exp.(-r)
+    @test CrystalShift.Matern(3/2).(r) ≈ (1 .+ sqrt(3) .* r) .* exp.(-sqrt(3) .* r)
+    @test CrystalShift.Matern(5/2).(r) ≈ (1 .+ sqrt(5) .* r .+ 5 .* r.^2 ./ 3) .* exp.(-sqrt(5) .* r)
+    @test_throws DomainError CrystalShift.Matern(0.)
+    xs = collect(1.:.5:4.)
+    B = BackgroundModel(xs, EQ(), 2.)
+    @test B.K ≈ [exp(-((a - b) / 2)^2 / 2) for a in xs, b in xs]
+    @test_throws DomainError BackgroundModel(xs, EQ(), 0.)
+end
 
 end
