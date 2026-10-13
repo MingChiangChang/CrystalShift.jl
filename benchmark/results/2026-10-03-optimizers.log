@@ -1,0 +1,53 @@
+Julia 1.10.9, threads 1, maxiter 128
+
+=== Least-squares solvers (objective: get_lm_objective_func) ===
+
+1 phase  (4 params, start cost 84.07)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms LM         1.698 ms 229.67 KiB     1357     17     0.061966   0.001091
+  NonlinearSolve LevenbergMarquardt          9.115 ms  1.91 MiB     7311    128     0.061966   0.001091
+  NonlinearSolve TrustRegion                 2.500 ms 494.48 KiB     2285     38     0.061966   0.001091
+  NonlinearSolve GaussNewton                 5.794 ms 872.23 KiB     5527     39     0.061966   0.001091
+  LeastSquaresOptim LevenbergMarquardt     511.459 μs 375.62 KiB      613      6     0.061966   0.001091
+  LeastSquaresOptim Dogleg                 514.417 μs 375.69 KiB      615      6     0.061966   0.001091
+
+3 phases  (10 params, start cost 213.4)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms LM         6.319 ms 876.45 KiB     2905     20      0.10469   0.004567
+  NonlinearSolve LevenbergMarquardt         52.026 ms  6.19 MiB    33969    128      0.10469   0.004567
+  NonlinearSolve TrustRegion                13.510 ms  1.68 MiB     9166     59      0.10469   0.004567
+  NonlinearSolve GaussNewton                29.600 ms  3.50 MiB    22066     40      0.10469   0.004567
+  LeastSquaresOptim LevenbergMarquardt       1.759 ms 643.41 KiB     1157      6      0.10469   0.004567
+  LeastSquaresOptim Dogleg                   1.754 ms 642.77 KiB     1159      6      0.10469   0.004567
+
+3 phases + background  (35 params, start cost 678.4)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms LM        54.602 ms 18.97 MiB    15760     61      0.12627    0.01423
+  NonlinearSolve LevenbergMarquardt        174.866 ms 38.04 MiB    97917    128      0.12685    0.01475
+  NonlinearSolve TrustRegion                33.329 ms  7.89 MiB    20378     40      0.12685    0.01475
+  NonlinearSolve GaussNewton               106.826 ms 26.44 MiB    75700     40      0.12685    0.01475
+  LeastSquaresOptim LevenbergMarquardt      12.326 ms  4.72 MiB     5312     12      0.12685    0.01475
+  LeastSquaresOptim Dogleg                   7.382 ms  2.92 MiB     3159      7      0.12685    0.01475
+
+=== Quasi-Newton solvers (objective: get_newton_objective_func) ===
+
+1 phase  (4 params, start cost 84.07)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms BFGS       4.634 ms  1.41 MiB     3914      -     0.061966   0.001091
+  current: OptimizationAlgorithms LBFGS      9.035 ms  2.81 MiB     8196      -     0.061966   0.001091
+  Optim BFGS                                 2.841 ms  1.46 MiB     1704     14     0.061966   0.001091
+  Optim LBFGS                                2.516 ms  1.60 MiB     2040     34     0.061966   0.001091
+
+3 phases  (10 params, start cost 213.4)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms BFGS      12.625 ms  2.91 MiB     6989      -       0.1041   0.003256
+  current: OptimizationAlgorithms LBFGS     38.924 ms  8.94 MiB    22842      -      0.11609    0.01511
+  Optim BFGS                                  1.460 s 582.15 MiB   362545    128      0.10406   0.003248
+  Optim LBFGS                               63.301 ms 26.04 MiB    17275    128      0.10541   0.004845
+
+3 phases + background  (35 params, start cost 678.4)
+  solver                                       median    memory   allocs  iters   final cost    ‖fit-y‖
+  current: OptimizationAlgorithms BFGS      53.598 ms 27.66 MiB    23235      -      0.12685    0.01475
+  current: OptimizationAlgorithms LBFGS     70.861 ms 34.37 MiB    36470      -       584.13      3.415
+  Optim BFGS                               128.813 ms 67.95 MiB    21069     58      0.12685    0.01475
+  Optim LBFGS                              549.907 ms 415.64 MiB   131568    128       583.92      3.415

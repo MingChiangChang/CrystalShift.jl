@@ -1,0 +1,5 @@
+Julia 1.10.9, threads 4, dogleg lattice bound ±5.0%
+LM      refine=false correct 24/28   total search time 18.4 s
+dogleg  refine=false correct 24/28   total search time 9.3 s
+LM      refine=true  correct 28/28   total search time 44.2 s
+dogleg  refine=true  correct 28/28   total search time 26.4 s

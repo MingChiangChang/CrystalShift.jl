@@ -163,6 +163,45 @@ end
     @test correct_counts >= size(cs, 1) - 1
 end
 
+@testset "Single phase with shift dogleg test" begin
+    correct_counts = 0
+    for (idx, cp) in enumerate(cs)
+        verbose && println(idx)
+        if test_optimize(cp, x, dogleg, false) < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= size(cs, 1) - 1
+end
+
+@testset "dogleg lattice bound and uncertainty" begin
+    # data 10% strained: the fit may move each lattice parameter at most
+    # DOGLEG_MAX_STRAIN from the start
+    cp = cs[10]
+    params = vcat(get_free_lattice_params(cp) .* 1.1, [1., 0.2])
+    y = evaluate(cp, params, x)
+    c = optimize!(cp, x, y, std_noise, mean_θ, std_θ; method = dogleg, maxiter = maxiter)
+    strain = get_free_lattice_params(c[1]) ./ get_free_lattice_params(cp) .- 1
+    @test all(abs.(strain) .<= CrystalShift.DOGLEG_MAX_STRAIN + 1e-9)
+
+    # uncertainties come from the same least-squares Hessian as with LM
+    y, _ = synthesize_data(cp, x)
+    uncer(method) = optimize!(CrystalShift.PhaseModel([cp]), x, y, std_noise, mean_θ, std_θ;
+                              method = method, maxiter = maxiter, optimize_mode = WithUncer)[2]
+    @test isapprox(uncer(dogleg), uncer(LM), rtol = 1e-3)
+end
+
+@testset "Multiple phases with shift dogleg test" begin
+    correct_counts = 0
+    for _ in 1:5
+        t = test_multiphase_optimize(cs, x, 2, dogleg, "LS", verbose)
+        if t < 0.1
+            correct_counts += 1
+        end
+    end
+    @test correct_counts >= 3
+end
+
 @testset "Multiple phases with shift test" begin
     correct_counts = 0
     for _ in 1:5

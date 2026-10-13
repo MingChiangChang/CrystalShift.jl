@@ -1,7 +1,7 @@
 const ALLOWED_OBJECTIVE = ["LS", "KL"]
 const PEAK_PRIOR_LENGTH = 1
 const DEFAULT_TOL = 1e-8
-@exported_enum OptimizationMethod LM Newton bfgs l_bfgs
+@exported_enum OptimizationMethod LM Newton bfgs l_bfgs dogleg
 # @exported_enum OptimizationMode Simple EM WithUncer
 abstract type OptimizationMode end
 struct _Simple <: OptimizationMode end
