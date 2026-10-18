@@ -523,7 +523,7 @@ function block_lm(f, pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_unc
 	w = @. 1 / (sqrt(2) * sqrt(y_uncer^2 + opt_stn.priors.std_noise^2))
 	prior_rows(cols) = reg ? n + length(cols) : n
 	mean_θ, std_θ = extend_priors(opt_stn.priors, pm)
-	blocks = ADBlock[]
+	blocks = JacobianBlock[]
 	start = 1
 	for CP in something(pm.CPs, AbstractPhase[])
 		cols = start:start+get_param_nums(CP)-1
@@ -536,7 +536,8 @@ function block_lm(f, pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_unc
 			reg && @views @. out[n+1:end] = (θ - mean_log_θ) / (sqrt(2) * std_cols)
 			out
 		end
-		push!(blocks, ADBlock(g!, cols, prior_rows(cols)))
+		# hand-written Jacobian for supported CrystalPhases, ForwardDiff otherwise
+		push!(blocks, phase_block(ADBlock(g!, cols, prior_rows(cols)), CP, x, w, n, reg, mean_log_θ, std_cols))
 		start += length(cols)
 	end
 	if !isnothing(pm.wildcard)

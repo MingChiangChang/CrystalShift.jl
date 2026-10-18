@@ -5,11 +5,16 @@
 # its own and its Dual numbers carry only that component's partials instead of all of
 # them. A linear background (is_linear trait) contributes constant Jacobian columns from
 # its basis. The residual value is assembled from the same block evaluations.
+# CrystalPhase blocks with a supported profile use a hand-written Jacobian instead
+# (PhaseJacobianBlock, analyticjacobian.jl), falling back to their ForwardDiff block.
 const DiffResults = ForwardDiff.DiffResults
 using OptimizationAlgorithms: AbstractGaussNewton, update_direction!, objective!
 
+# A block has cols, out and J, and block_jacobian!(b, θ_block) fills out and J
+abstract type JacobianBlock end
+
 # g!(out, θ_block) writes the block's data rows (n) followed by its prior rows, if any
-struct ADBlock{G, C}
+struct ADBlock{G, C} <: JacobianBlock
     g!::G
     cols::UnitRange{Int}
     out::Vector{Float64}
@@ -35,7 +40,7 @@ struct BlockJacobianLM{T, F, D, R, JT, B, C} <: AbstractGaussNewton{T}
     d::D            # pre-allocation for parameter direction vector
     r::R            # DiffResult holding the assembled residual and Jacobian
     JJ::JT          # pre-allocation for Hessian approximation
-    blocks::B       # ADBlocks, one per phase and one for the wildcard
+    blocks::B       # JacobianBlocks, one per phase and one for the wildcard
     constant::C     # ConstantBlock of a linear background, or nothing
     base::Vector{T} # w .* y in the data rows, zero in the prior rows
     n::Int          # number of data rows
@@ -62,7 +67,7 @@ function OptimizationAlgorithms.update_jacobian!(LM::BlockJacobianLM, x::Abstrac
     y .= LM.base
     J .= 0
     for b in LM.blocks
-        ForwardDiff.jacobian!(b.J, b.g!, b.out, x[b.cols], b.cfg)
+        block_jacobian!(b, x[b.cols])
         add_block!(y, J, b, LM.n)
     end
     if !isnothing(LM.constant)
