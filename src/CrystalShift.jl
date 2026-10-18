@@ -84,6 +84,7 @@ include("shift/phasemodel.jl")
 include("shift/phaseresult.jl")
 include("shift/optimizationsettings.jl")
 include("shift/lmsolver.jl")
+include("shift/analyticjacobian.jl")
 include("shift/optimize.jl")
 
 # Tree search and probabilistic labeling (merged from CrystalTree.jl)

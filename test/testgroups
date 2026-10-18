@@ -9,6 +9,7 @@ shift/phasemodel
 shift/wildcard
 shift/optimizationsettings
 shift/optimize
+shift/analyticjacobian
 shift/background
 shift/fixedbackground
 shift/basisbackground
