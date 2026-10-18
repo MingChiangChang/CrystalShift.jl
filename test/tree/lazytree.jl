@@ -90,6 +90,17 @@ ind = argmin(res)
 # display(plt)
 @test Set(get_phase_ids(t[ind])) == Set([0, 1])
 
+# The background SVD is computed once per search and shared by all nodes,
+# while each node keeps its own coefficients
+@testset "Background built once per search" begin
+    LT = Lazytree(cs, x)
+    ts_stn = TreeSearchSettings{Float64}(2, 3, false, true, 5., opt_stn)
+    nodes = reduce(vcat, search!(LT, x, y, ts_stn)[2:end])
+    bgs = [n.phase_model.background for n in nodes]
+    @test all(b -> b.K === bgs[1].K && parent(b.U) === parent(bgs[1].U), bgs)
+    @test allunique(objectid.(b.c for b in bgs))
+end
+
 LT = Lazytree(cs, x)
 ts_stn = TreeSearchSettings{Float64}(3, [3, 2, 1],  false, false, 5., cs[1], opt_stn)
 @time t = search!(LT, x, y, ts_stn) 
