@@ -100,13 +100,23 @@ reconstruct_BG!(θ::AbstractVector, B::Nothing) = θ, nothing
 # Output: Ui is the low rank matrix given coefficients α, Ui*α is the background model.
 # To be true to the original kernel model, have to add least-squares regularizer on α
 # with variances equal to the singular values Si.
+# K is symmetric positive semi-definite, so its leading eigenpairs are its leading singular
+# pairs. Only the leading r are computed (r doubles until one falls below rank_tol), which
+# is several times cheaper than a full SVD. As before, the vectors kept run down to and
+# including the first whose value is below rank_tol, in descending order.
 function low_rank_background_model(x::AbstractVector, k, rank_tol::Real = DEFAULT_RANK_TOL)
     K = kernel_matrix(k, x)
-    U, S, V = svd(K)
-    i = findfirst(<(rank_tol), S)
-    Ui = @view U[:, 1:i]
-    Si = @view S[1:i]
-    return K, Ui, Si
+    m = size(K, 1)
+    r = min(m, 64)
+    while true
+        λ, V = eigen(Symmetric(K), m-r+1:m) # ascending
+        i = findfirst(<(rank_tol), reverse(λ))
+        if !isnothing(i) || r == m
+            i = something(i, r)
+            return K, V[:, r:-1:r-i+1], λ[r:-1:r-i+1]
+        end
+        r = min(m, 2r)
+    end
 end
 
 # function evaluate(B::BackgroundModel, c::AbstractVector)
