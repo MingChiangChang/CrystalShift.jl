@@ -55,6 +55,7 @@ function search!(mptree::MPTree, x::AbstractVector, y::AbstractVector, y_uncer::
     end
 
     # expand!(LT, LT.nodes[1])
+    bg = make_background(x, setting.background, setting.background_length)
 
     for level in 1:depth+1
         nodes = get_nodes_at_level(mptree, level-1)
@@ -81,7 +82,7 @@ function search!(mptree::MPTree, x::AbstractVector, y::AbstractVector, y_uncer::
 
         if level != depth+1
             for node in top_k_nodes
-                mp_expand!(mptree, node, x, setting.mp_top_k, setting.background, setting.background_length)
+                mp_expand!(mptree, node, setting.mp_top_k, bg)
             end
         end
     end
@@ -89,12 +90,20 @@ function search!(mptree::MPTree, x::AbstractVector, y::AbstractVector, y_uncer::
 end
 
 function mp_expand!(mptree::MPTree, node::Node, x::AbstractVector, k::Integer, background::Bool, background_length::Float64)
-    starting_id = get_max_id(mptree) + 1
-    mp_expand!(mptree, node, x, k, background, background_length, starting_id)
+    mp_expand!(mptree, node, k, make_background(x, background, background_length))
 end
 
 function mp_expand!(mpt::MPTree, node::Node, x::AbstractVector, k::Integer, background::Bool, background_length::Float64, starting_id::Int)
-    child_nodes = create_child_nodes_mp(mpt, node, x, k, background, background_length, starting_id)
+    mp_expand!(mpt, node, k, make_background(x, background, background_length), starting_id)
+end
+
+function mp_expand!(mptree::MPTree, node::Node, k::Integer, bg::Union{Nothing, BackgroundModel})
+    starting_id = get_max_id(mptree) + 1
+    mp_expand!(mptree, node, k, bg, starting_id)
+end
+
+function mp_expand!(mpt::MPTree, node::Node, k::Integer, bg::Union{Nothing, BackgroundModel}, starting_id::Int)
+    child_nodes = create_child_nodes_mp(mpt, node, k, bg, starting_id)
     attach_child_nodes!(node, child_nodes)
     push!(mpt.nodes, child_nodes...)
     # println(Set.(get_phase_ids.(child_nodes))...) # TODO: This fails when k is larger than the number of phase
@@ -106,11 +115,16 @@ end
 
 function create_child_nodes_mp(mpt::MPTree, node::Node, x::AbstractVector, k::Integer,
                                 background::Bool, background_length::Float64, starting_id::Int)
+    create_child_nodes_mp(mpt, node, k, make_background(x, background, background_length), starting_id)
+end
+
+function create_child_nodes_mp(mpt::MPTree, node::Node, k::Integer,
+                                bg::Union{Nothing, BackgroundModel}, starting_id::Int)
 
     new_nodes = Node[]
     if isnothing(node.phase_model.CPs) || isempty(node.phase_model.CPs)# Root node case
         for i in eachindex(mpt.phases)
-            push!(new_nodes, Node(add_phase(node.phase_model, mpt.phases[i], x, background, background_length),
+            push!(new_nodes, Node(add_phase(node.phase_model, mpt.phases[i], bg),
                                  starting_id+i-1))
         end
         return new_nodes
@@ -119,7 +133,7 @@ function create_child_nodes_mp(mpt::MPTree, node::Node, x::AbstractVector, k::In
     top_indices = get_top_max_inner!(mpt.mp_res, mpt.simulated_patterns, node.residual)[1:k]
     for i in eachindex(top_indices)#eachindex(LT.phases)
         if is_allowed_new_phase(mpt, node, mpt.phases[top_indices[i]])
-            push!(new_nodes, Node(add_phase(node.phase_model, mpt.phases[top_indices[i]], x, background, background_length),
+            push!(new_nodes, Node(add_phase(node.phase_model, mpt.phases[top_indices[i]], bg),
                                  starting_id+i-1))
         end
     end

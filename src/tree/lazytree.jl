@@ -14,14 +14,25 @@ function Lazytree(CPs::AbstractVector{<:AbstractPhase}, x::AbstractVector)
 end
 
 
+# Background shared by every node of a search; built once because the kernel SVD is O(m³)
+make_background(x::AbstractVector, background::Bool, l::Real) = background ? BackgroundModel(x, EQ(), l) : nothing
+
 function expand!(LT::Lazytree, node::Node, x::AbstractVector, background::Bool, l::Real)
+    expand!(LT, node, make_background(x, background, l))
+end
+
+function expand!(LT::Lazytree, node::Node, x::AbstractVector, background::Bool, l::Real, starting_id::Int)
+    expand!(LT, node, make_background(x, background, l), starting_id)
+end
+
+function expand!(LT::Lazytree, node::Node, bg::Union{Nothing, BackgroundModel})
     starting_id = get_max_id(LT) + 1
-    expand!(LT, node, x, background, l, starting_id)
+    expand!(LT, node, bg, starting_id)
 end
 
 
-function expand!(LT::Lazytree, node::Node, x::AbstractVector, background::Bool, l::Real, starting_id::Int)
-    child_nodes = create_child_nodes(LT, node, x, background, l, starting_id)
+function expand!(LT::Lazytree, node::Node, bg::Union{Nothing, BackgroundModel}, starting_id::Int)
+    child_nodes = create_child_nodes(LT, node, bg, starting_id)
     attach_child_nodes!(node, child_nodes)
     push!(LT.nodes, child_nodes...)
     # println(Set.(get_phase_ids.(child_nodes))...) # TODO: This fails when k is larger than the number of phase
@@ -33,11 +44,12 @@ end
 
 
 function add_phase(PM::PhaseModel, phase::AbstractPhase, x::AbstractVector, background::Bool, l::Real)
-    if background
-        bg = BackgroundModel(x, EQ(), l)
-    else
-        bg = nothing
-    end
+    add_phase(PM, phase, make_background(x, background, l))
+end
+
+# The child gets bg's basis with zero coefficients, not the parent's fitted background
+function add_phase(PM::PhaseModel, phase::AbstractPhase, bg::Union{Nothing, BackgroundModel})
+    bg = with_zero_coefficients(bg)
     if isnothing(PM.CPs)  || isempty(PM.CPs)
         return PhaseModel([phase], PM.wildcard, bg)
     else
@@ -47,10 +59,14 @@ end
 
 
 function create_child_nodes(LT::Lazytree, node::Node, x::AbstractVector, background::Bool, l::Real, starting_id::Int)
+    create_child_nodes(LT, node, make_background(x, background, l), starting_id)
+end
+
+function create_child_nodes(LT::Lazytree, node::Node, bg::Union{Nothing, BackgroundModel}, starting_id::Int)
     new_nodes = Node[]
     for i in eachindex(LT.phases)
         if isnothing(node.phase_model.CPs) || is_allowed_new_phase(LT, node, LT.phases[i])
-            push!(new_nodes, Node(add_phase(node.phase_model, LT.phases[i], x, background, l),
+            push!(new_nodes, Node(add_phase(node.phase_model, LT.phases[i], bg),
                                  starting_id+i-1))
         end
     end
@@ -89,6 +105,7 @@ function search!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer::Ab
     end
 
     # expand!(LT, LT.nodes[1])
+    bg = make_background(x, ts_stn.background, ts_stn.background_length)
 
     for level in 1:depth+1
         nodes = get_nodes_at_level(LT, level-1)
@@ -115,7 +132,7 @@ function search!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer::Ab
 
         if level != depth+1
             for i in top_k
-                expand!(LT, i, x, ts_stn.background, ts_stn.background_length)
+                expand!(LT, i, bg)
             end
         end
     end
@@ -170,7 +187,8 @@ function search_k2n!(LT::Lazytree, x::AbstractVector, y::AbstractVector, y_uncer
     end
 
     result = Vector{Node}()
-    search_k2n!(result, LT, LT.nodes[1], x, y, y_uncer, ts_stn)
+    bg = make_background(x, ts_stn.background, ts_stn.background_length)
+    search_k2n!(result, LT, LT.nodes[1], x, y, y_uncer, ts_stn, bg)
     @threads for i in eachindex(result)
         if isassigned(result, i) && !result[i].is_optimized
             pm = optimize!(result[i].phase_model, x, y, y_uncer, ts_stn.opt_stn)
@@ -189,13 +207,19 @@ end
 # Doing a mixed version of depth-first search and breadth-first search
 # doing best-first strategy at each level than dig futher down
 function search_k2n!(result::AbstractVector, LT::Lazytree, node::Node, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector, ts_stn::TreeSearchSettings)
+    bg = make_background(x, ts_stn.background, ts_stn.background_length)
+    search_k2n!(result, LT, node, x, y, y_uncer, ts_stn, bg)
+end
+
+function search_k2n!(result::AbstractVector, LT::Lazytree, node::Node, x::AbstractVector, y::AbstractVector, y_uncer::AbstractVector,
+                     ts_stn::TreeSearchSettings, bg::Union{Nothing, BackgroundModel})
 
     if size(node)[1] == ts_stn.depth
         push!(result, node)
         return
     end
 
-    child_nodes = expand!(LT, node, x, ts_stn.background, ts_stn.background_length)
+    child_nodes = expand!(LT, node, bg)
     @threads for i in eachindex(child_nodes)
         pm = optimize!(child_nodes[i].phase_model, x, y, y_uncer, ts_stn.opt_stn)
         child_nodes[i] = Node(child_nodes[i], pm, x, y, true)
@@ -206,7 +230,7 @@ function search_k2n!(result::AbstractVector, LT::Lazytree, node::Node, x::Abstra
     ts_stn.k isa AbstractVector && error("Vector k is not supported for search_k2n!")
     top_k = get_top_nodes(child_nodes, ts_stn.k)
     for j in eachindex(top_k)
-        search_k2n!(result, LT, top_k[j], x, y, y_uncer, ts_stn)
+        search_k2n!(result, LT, top_k[j], x, y, y_uncer, ts_stn, bg)
     end
 end
 

@@ -79,6 +79,12 @@ function BackgroundModel(x::AbstractVector, k, l::Real, λ::Real = 1; rank_tol::
     BackgroundModel(k, K, U, S, λ, c)
 end
 
+# Same kernel, Gram matrix and SVD basis as B (shared, not copied) with fresh zero
+# coefficients, so many models can reuse one O(m³) decomposition. c is not shared
+# because change_c! scales it in place.
+with_zero_coefficients(B::BackgroundModel) = BackgroundModel(B.k, B.K, B.U, B.S, B.λ, zero(B.c))
+with_zero_coefficients(::Nothing) = nothing
+
 function reconstruct_BG!(θ::AbstractVector, B::BackgroundModel)
     param_num = get_param_nums(B)
     new_B = BackgroundModel(B.k, B.K, B.U, B.S, B.λ, θ[1:param_num])
