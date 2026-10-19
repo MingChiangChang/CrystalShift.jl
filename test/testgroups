@@ -10,6 +10,7 @@ shift/wildcard
 shift/optimizationsettings
 shift/optimize
 shift/analyticjacobian
+shift/dogleg
 shift/background
 shift/fixedbackground
 shift/basisbackground

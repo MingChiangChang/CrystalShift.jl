@@ -579,16 +579,22 @@ end
 # dogleg_optimize! call, as a box bound in log space
 const DOGLEG_MAX_STRAIN = 0.05
 
+# false: always use LeastSquaresOptim's Dogleg (for comparison)
+const USE_BLOCK_DOGLEG = Ref(true)
+
 # Same least-squares problem as lm_optimize! (residual, priors, log-space parameters),
-# solved with the Dogleg trust-region method of LeastSquaresOptim. In the benchmarks in
-# benchmark/FINDINGS.md it took far fewer iterations than the LM above and recovered
-# lattice parameters at least as well. The Jacobian comes from ForwardDiff over all
-# parameters, including linear backgrounds.
+# solved with the Dogleg trust-region method. In the benchmarks in benchmark/FINDINGS.md
+# it took far fewer iterations than the LM above and recovered lattice parameters at
+# least as well. When lm_optimize! would use block Jacobians (no background, or a linear
+# one), dogleg_loop! (lmsolver.jl) runs on the same BlockJacobianLM; otherwise, or with
+# USE_BLOCK_DOGLEG[] = false, LeastSquaresOptim's Dogleg with ForwardDiff over all parameters.
+# pred_tol: dogleg_loop!'s predicted-decrease stopping rule (0: stop like LeastSquaresOptim).
 # Unlike the LM, whose steps are capped at 0.1 in log space, the trust region can take
 # large steps, which let wrong phases strain far to fit part of a pattern during tree
 # search; lattice parameters are therefore bounded to ±DOGLEG_MAX_STRAIN of the start.
 function dogleg_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector, y::AbstractVector,
-                          y_uncer::AbstractVector, opt_stn::OptimizationSettings)
+                          y_uncer::AbstractVector, opt_stn::OptimizationSettings;
+                          pred_tol::Real = DOGLEG_PRED_TOL)
 	opt_stn.objective == "LS" || error("dogleg only works with LS for now")
 
 	f = get_lm_objective_func(pm, x, y, y_uncer, opt_stn)
@@ -609,11 +615,20 @@ function dogleg_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVec
 		end
 	end
 	θ0 = copy(log_θ)
-	problem = LeastSquaresOptim.LeastSquaresProblem(x = log_θ, f! = f!, output_length = n_res,
-	                                                autodiff = :forward)
-	result = LeastSquaresOptim.optimize!(problem, LeastSquaresOptim.Dogleg(); lower, upper,
-	                                     iterations = opt_stn.maxiter, show_trace = opt_stn.verbose)
-	log_θ .= all(isfinite, result.minimizer) ? result.minimizer : θ0
+	np = length(log_θ) - get_param_nums(pm.background)
+	if USE_BLOCK_DOGLEG[] && np > 0 && (isnothing(pm.background) || is_linear(pm.background))
+		# same block Jacobians as lm_optimize! (per phase, hand-written where supported)
+		r = zeros(eltype(log_θ), n_res)
+		LM = block_lm(f, pm, x, y, y_uncer, log_θ, r, opt_stn)
+		dogleg_loop!(LM, log_θ, r, lower, upper; iterations = opt_stn.maxiter, pred_tol)
+	else
+		problem = LeastSquaresOptim.LeastSquaresProblem(x = log_θ, f! = f!, output_length = n_res,
+		                                                autodiff = :forward)
+		result = LeastSquaresOptim.optimize!(problem, LeastSquaresOptim.Dogleg(); lower, upper,
+		                                     iterations = opt_stn.maxiter, show_trace = opt_stn.verbose)
+		log_θ .= result.minimizer
+	end
+	all(isfinite, log_θ) || (log_θ .= θ0)
 	return log_θ
 end
 

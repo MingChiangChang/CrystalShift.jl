@@ -1,5 +1,67 @@
 # Optimizer benchmark: findings
 
+## Update 2026-10-18: Dogleg on the block Jacobians (`dogleg_loop!`)
+
+After #61 (per-phase Jacobian blocks) and #64 (hand-written phase Jacobian), LM caught up with
+LeastSquaresOptim's Dogleg, which still used ForwardDiff over all parameters. Tree search
+(`tree.jl`, 4 threads) was LM 3.4 s against Dogleg 4.0 s, down from 18.4 / 9.3 s on 2026-10-06.
+On real data Dogleg was 1.5× slower than LM.
+
+**Change:** `dogleg_loop!` (`src/shift/lmsolver.jl`) runs the same dogleg on the
+`BlockJacobianLM` that LM uses. `dogleg_optimize!` uses it whenever `lm_optimize!` would use
+block Jacobians (no background, or a linear one). Otherwise, or with `USE_BLOCK_DOGLEG[] = false`,
+it uses LeastSquaresOptim as before. It follows the same algorithm, constants and box handling,
+with three differences:
+- **Gauss-Newton solve:** through the p×p J'J (Cholesky, with QR as fallback) instead of QR of
+  the full Jacobian.
+- **Skipped retries:** a rejected Gauss-Newton step that still fits in the halved trust region
+  would be retried unchanged (same x and J), so Δ is halved past it at once. The skipped
+  halvings still count as iterations, so the result is exactly that of retrying.
+- **Predicted-decrease stop:** it stops when the predicted decrease of ‖r‖² is below
+  `DOGLEG_PRED_TOL = 1e-6` relative, about LM's `min_decrease`. Without it, Dogleg kept
+  rejecting round-off-sized steps until the 1e-8 x tolerance stopped it.
+
+Two findings drove the last two changes:
+- **Rejections:** in EM mode (5 loops, each restart with `maxiter = 32` and a reset trust
+  region), about 2/3 of Dogleg's re-run steps were rejected. That is ~31 iterations per call,
+  against LM's ~9.
+- **LM under-converges on PseudoVoigt:** at the default `maxiter = 128` it often stops short. In
+  one single-phase fit it stopped at cost 2677 with a = 10.522, against the true 10.5324. It
+  needs more than 128 iterations, while Dogleg reaches cost 481.8 in 0.4 ms.
+
+**Accuracy:**
+- **Exact parity:** with `pred_tol = 0`, block Dogleg reproduces LeastSquaresOptim's Dogleg to
+  round-off. Fit parameters agree within 1e-8, and real-data labels and lattices are identical
+  (≤ 1e-15).
+- **Default `pred_tol`:** fit quality is the same. Costs agree within 2e-6 relative, real-data
+  labels are identical, and lattices agree within 8e-5.
+
+**Results:** Apple M3 Pro, Julia 1.10.9.
+
+| | LM | LeastSquaresOptim Dogleg | block Dogleg |
+|---|---|---|---|
+| Single fits, Lorentz, 1–3 phases, m = 1024 / 4096 | 0.6–6.6 ms | 0.25–7.4 ms | 0.16–2.9 ms |
+| Single fits, PseudoVoigt, same | 4.3–69 ms (often unconverged) | 0.55–11.5 ms | 0.25–3.5 ms |
+| `tree.jl`, 28 patterns, 4 threads | 3.5 s, 24/28 | 4.0 s, 24/28 | 1.5 s, 24/28 |
+| `tree.jl` with `FullOptimizeSettings` | 10.9 s, 28/28 | 10.0 s, 28/28 | 5.9 s, 28/28 |
+| Real Ta-Sn-O, 90 bases, 4 threads | 41.1 s, 81/90 | 60.3 s, 82/90 | 31.0 s, 82/90 |
+
+- **Data:** single fits are on `data/tree_test_sticks.csv` phases strained +0.5% / −0.4% with
+  1% noise, x = 8–45, maxiter 128, best of 5.
+- **Real Ta-Sn-O:** `paper/data/TaSnO`, 60 stripes spread over the wafer, 90 crystalline NMF
+  bases, with `paper/TaSnO.jl` settings: Lorentz, `std_noise` .03, priors [1, .5, .2] ± .05,
+  maxiter 256, depth 3, k 3, EM with 5 loops, MCBL background subtraction. `TaSnO_uncer.npy` is
+  not in `paper/data`, so `y_uncer = 0`.
+- **Real-data per basis:** Dogleg was 1.40× faster than LM (median; 1.13–1.56× for p10–p90). Its
+  labels matched LM's on 89/90 bases; the exception is one basis LM got wrong.
+- **What limits the real-data speed-up:**
+  - `get_probabilities` (ForwardDiff Hessians, solver-independent) is ~20% of the time.
+  - EM restarts reset the trust region.
+  - Each iteration still evaluates the residual.
+
+**Not done:** making Dogleg the default. It is faster in every case above and converges where LM
+does not on PseudoVoigt, but it changes every fit's results slightly. Do it as its own change.
+
 ## Update 2026-10-06: Dogleg added as `method = dogleg`
 
 Rerun on current `main` (files in `src/shift/`, tree search merged; the current LM now uses
