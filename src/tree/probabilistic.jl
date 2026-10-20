@@ -14,7 +14,8 @@ function get_probabilities(results::AbstractVector{<:Node},
         objective::AbstractObjective = LeastSquares(),
         renormalize::Bool = true,
         normalization_constant::Real = 1.,
-        n_sigma::Real = 1.)
+        n_sigma::Real = 1.,
+        hessian::Symbol = :exact)
 
     neg_log_prob = zeros(length(results))
     std_noise = n_sigma * std_noise
@@ -23,7 +24,8 @@ function get_probabilities(results::AbstractVector{<:Node},
         θ = get_free_params(results[i].phase_model)
         full_mean_θ, full_std_θ = extend_priors(mean_θ, std_θ, results[i].phase_model.CPs)
         neg_log_prob[i] = approximate_negative_log_evidence(results[i], θ, x, y, y_uncer,
-                                                            std_noise, full_mean_θ, full_std_θ, objective)
+                                                            std_noise, full_mean_θ, full_std_θ, objective;
+                                                            hessian)
     end
 
     if renormalize
@@ -45,14 +47,15 @@ function get_probabilities(results::AbstractVector{<:Node},
         objective::AbstractObjective = LeastSquares(),
         renormalize::Bool = true,
         normalization_constant::Real = 1.,
-        n_sigma::Real = 1.)
+        n_sigma::Real = 1.,
+        hessian::Symbol = :exact)
 
     y_uncer = zero(y)
     get_probabilities(results, x, y, y_uncer, std_noise, mean_θ, std_θ,
                       objective=objective,
                       renormalize=renormalize,
                       normalization_constant=normalization_constant,
-                      n_sigma=n_sigma)
+                      n_sigma=n_sigma, hessian=hessian)
 end
 
 
@@ -66,13 +69,14 @@ function get_probabilities(results::AbstractVector{<:Node},
         objective::AbstractObjective = LeastSquares(),
         renormalize::Bool = true,
         normalization_constant::Real = 1.,
-        n_sigma::Real = 1.)
+        n_sigma::Real = 1.,
+        hessian::Symbol = :exact)
 
     std_noise = n_sigma * minimum([std(y.- evaluate!(zero(x), results[i].phase_model, x)) for i in eachindex(results)])
     get_probabilities(results, x, y, y_uncer, std_noise, mean_θ, std_θ,
                       objective=objective,
                       renormalize=renormalize,
-                      normalization_constant=normalization_constant)
+                      normalization_constant=normalization_constant, hessian=hessian)
 end
 
 function get_probabilities(results::AbstractVector{<:Node},
@@ -83,13 +87,14 @@ function get_probabilities(results::AbstractVector{<:Node},
         objective::AbstractObjective = LeastSquares(),
         renormalize::Bool = true,
         normalization_constant::Real = 1.,
-        n_sigma::Real = 1.)
+        n_sigma::Real = 1.,
+        hessian::Symbol = :exact)
     y_uncer = zero(y)
     std_noise = n_sigma * minimum([std(y.- evaluate!(zero(x), results[i].phase_model, x)) for i in eachindex(results)])
     get_probabilities(results, x, y, y_uncer, std_noise, mean_θ, std_θ,
                       objective=objective,
                       renormalize=renormalize,
-                      normalization_constant=normalization_constant)
+                      normalization_constant=normalization_constant, hessian=hessian)
 end
 
 
@@ -130,8 +135,13 @@ function approximate_negative_log_evidence(node::Node,
         std_θ::RealOrVec,
         objective::AbstractObjective,
         λ::Real = 1e-6,
-        verbose::Bool = false)
+        verbose::Bool = false;
+        hessian::Symbol = :exact)
 
+    hessian in (:exact, :gauss_newton, :forwarddiff) ||
+        throw(ArgumentError("hessian must be :exact, :gauss_newton or :forwarddiff, got :$hessian"))
+    hessian != :forwarddiff && !(objective isa LeastSquares) &&
+        throw(ArgumentError("hessian = :$hessian needs the LeastSquares objective (use :forwarddiff)"))
     mean_log_θ = log.(mean_θ)
 
     f = if objective isa LeastSquares
@@ -149,7 +159,51 @@ function approximate_negative_log_evidence(node::Node,
     log_θ = θ
     # IDEA: chek norm of gradient. If it exceeds a threshold, apply fine-tuning.
     # newton!(f, log_θ)
-    return approximate_negative_log_evidence(f, log_θ, verbose)
+    H = hessian == :forwarddiff ? nothing :
+        least_squares_hessian(node.phase_model, log_θ, x, y, y_uncer, std_noise,
+                              t -> ls_regularizer(node.phase_model, t, mean_log_θ, std_θ);
+                              exact = hessian == :exact)
+    return approximate_negative_log_evidence(f, log_θ, verbose, H)
+end
+
+# Hessian of ls_objective at log_θ, f = Σⱼ rⱼ² + regularizer with r the weighted residual
+# (_weighted_residual!):
+#   exact = true:  2(JᵀJ + Σⱼ rⱼ ∇²rⱼ) + ∇²regularizer
+#   exact = false: 2JᵀJ + ∇²regularizer (Gauss–Newton; always positive semidefinite)
+# The regularizer is quadratic, so its Hessian costs no model evaluations. For phases-only
+# models J comes from the per-phase Jacobian blocks of the LM solver (hand-written where
+# supported), and Σⱼ rⱼ ∇²rⱼ, which is block diagonal by phase since phases add, from
+# residual_curvature! (analyticjacobian.jl). With a wildcard or background, J comes from
+# ForwardDiff, and the exact Hessian is the ForwardDiff Hessian of the full objective.
+function least_squares_hessian(pm::PhaseModel, log_θ::AbstractVector, x::AbstractVector,
+        y::AbstractVector, y_uncer::AbstractVector, std_noise::Real, regularizer; exact::Bool)
+    n = length(y)
+    r!(t) = _weighted_residual!(pm, t, x, y, y_uncer, zeros(eltype(t), n), std_noise)
+    if !(isnothing(pm.wildcard) && isnothing(pm.background))
+        exact && return ForwardDiff.hessian(t -> sum(abs2, r!(t)) + regularizer(t), log_θ)
+        J = ForwardDiff.jacobian(r!, log_θ)
+        return 2 .* (J' * J) .+ ForwardDiff.hessian(regularizer, log_θ)
+    end
+    w = @. 1 / (sqrt(2) * sqrt(y_uncer^2 + std_noise^2))
+    J = zeros(n, length(log_θ))
+    r = w .* y # the full residual, assembled from the blocks' -w .* model
+    blocks = JacobianBlock[]
+    start = 1
+    for CP in something(pm.CPs, AbstractPhase[])
+        cols = start:start+get_param_nums(CP)-1
+        b = crystal_phase_block(CP, cols, x, w, n, false, zeros(length(cols)), ones(length(cols)))
+        J[:, cols] .= block_jacobian!(b, log_θ[cols])
+        r .+= view(b.out, 1:n)
+        push!(blocks, b)
+        start += length(cols)
+    end
+    H = J' * J
+    if exact
+        for b in blocks
+            H[b.cols, b.cols] .+= residual_curvature!(zeros(length(b.cols), length(b.cols)), b, log_θ[b.cols], r)
+        end
+    end
+    2 .* H .+ ForwardDiff.hessian(regularizer, log_θ)
 end
 
 # function get_probabilities(results::AbstractVector{<:Node},
@@ -271,11 +325,12 @@ end
 
 # NOTE assumes θ is stationary point of θ (i.e. ∇f = 0)
 # computes approximation to \int exp(-f(θ)) dθ via Laplace approximation
-function approximate_negative_log_evidence(f, θ, verbose::Bool = false)
+# H: Hessian of f at θ, or nothing to compute it exactly with ForwardDiff
+function approximate_negative_log_evidence(f, θ, verbose::Bool = false, H = nothing)
     # calculate marginal likelihood
     d = length(θ)
     val = f(θ)
-    H = ForwardDiff.hessian(f, θ)
+    isnothing(H) && (H = ForwardDiff.hessian(f, θ))
     Σ = inverse(H) # reinterpret Hessian of minimization problem as inverse of covariance matrix
     if verbose
         println("in approximate_negative_log_evidence")

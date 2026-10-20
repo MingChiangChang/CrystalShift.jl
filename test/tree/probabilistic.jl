@@ -89,5 +89,56 @@ prob = get_probabilities(results, x, y, std_noise, mean_θ, std_θ, renormalize=
 @test sum(prob) ≈ 1
 @test all(≥(0), prob)
 @test exp.(-neg_log_prob) / sum(exp.(-neg_log_prob)) ≈ prob
+
+# Hessians for get_probabilities: exact (block JᵀJ + hand-written curvature) and Gauss–Newton
+# (2JᵀJ + prior), against ForwardDiff
+using ForwardDiff
+using CrystalShift: least_squares_hessian, ls_regularizer, ls_objective, _weighted_residual!, BackgroundModel,
+                    EQ, PhaseModel, get_param_nums, Gauss, PseudoVoigt, FixedPseudoVoigt, USE_ANALYTIC_JACOBIAN
+function log_point(pm)
+    θ = get_free_params(pm)
+    m, s = extend_priors(mean_θ, std_θ, pm.CPs)
+    nc = get_param_nums(pm.CPs)
+    log_θ = copy(θ); log_θ[1:nc] .= log.(log_θ[1:nc])
+    log_θ, t -> ls_regularizer(pm, t, log.(m), s), log.(m), s
+end
+weighted_r(pm, t) = _weighted_residual!(pm, t, x, y, zero(y), zeros(eltype(t), length(y)), std_noise)
+
+# fitted nodes (Lorentz), every supported profile away from the optimum, and a background model
+hessian_models = [[r.phase_model for r in results[1:min(end, 5)]];
+                  [PhaseModel(CrystalPhase.(String.(s[[1, 6]]), (0.1,), (P,))) for P in (Gauss(), PseudoVoigt(0.5), FixedPseudoVoigt(0.5))];
+                  PhaseModel(cs[[1]], nothing, BackgroundModel(x, EQ(), 8., 10., rank_tol = 1e-3))]
+
+@testset "Exact Hessian matches ForwardDiff" begin
+    for pm in hessian_models, analytic in (true, false)
+        log_θ, R, mlog, sd = log_point(pm)
+        USE_ANALYTIC_JACOBIAN[] = analytic
+        H = least_squares_hessian(pm, log_θ, x, y, zero(y), std_noise, R; exact = true)
+        USE_ANALYTIC_JACOBIAN[] = true
+        @test H ≈ ForwardDiff.hessian(t -> ls_objective(pm, t, x, y, zero(y), std_noise, mlog, sd), log_θ) rtol = 1e-10
+    end
+end
+
+@testset "Gauss–Newton Hessian matches 2JᵀJ + prior Hessian" begin
+    for pm in hessian_models
+        log_θ, R, _, _ = log_point(pm)
+        J = ForwardDiff.jacobian(t -> weighted_r(pm, t), log_θ)
+        H = least_squares_hessian(pm, log_θ, x, y, zero(y), std_noise, R; exact = false)
+        @test H ≈ 2J'J + ForwardDiff.hessian(R, log_θ) rtol = 1e-10
+    end
+end
+
+@testset "get_probabilities hessian options" begin
+    prob_fd = get_probabilities(results, x, y, std_noise, mean_θ, std_θ, hessian = :forwarddiff)
+    @test get_probabilities(results, x, y, std_noise, mean_θ, std_θ) ≈ prob_fd # :exact is the default
+    prob_gn = get_probabilities(results, x, y, std_noise, mean_θ, std_θ, hessian = :gauss_newton)
+    @test sum(prob_gn) ≈ 1
+    @test all(≥(0), prob_gn)
+    @test argmax(prob_gn) == argmax(prob_fd)
+    θ = get_free_params(results[1].phase_model)
+    m, sd = extend_priors(mean_θ, std_θ, results[1].phase_model.CPs)
+    @test_throws ArgumentError approximate_negative_log_evidence(results[1], θ, x, y, zero(y), std_noise, m, sd,
+                                                                 objective; hessian = :newton)
+end
 println("End of probabilistic.jl test")
 end # TestProbabilistic module
