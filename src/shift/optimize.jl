@@ -512,6 +512,22 @@ function lm_optimize!(log_θ::AbstractVector, pm::PhaseModel, x::AbstractVector,
 	return log_θ
 end
 
+# Jacobian block of one phase in columns cols: its weighted contribution to the n data rows
+# (as in _weighted_residual!) and, if reg, its prior rows. Hand-written Jacobian for supported
+# CrystalPhases, ForwardDiff otherwise.
+function crystal_phase_block(CP::AbstractPhase, cols::UnitRange{Int}, x::AbstractVector, w::AbstractVector,
+							 n::Int, reg::Bool, mean_log_θ::AbstractVector, std_θ::AbstractVector)
+	g! = (out, θ) -> begin
+		data = view(out, 1:n)
+		data .= 0
+		evaluate_residual!(CP, exp.(θ), x, data)
+		data .*= w
+		reg && @views @. out[n+1:end] = (θ - mean_log_θ) / (sqrt(2) * std_θ)
+		out
+	end
+	phase_block(ADBlock(g!, cols, reg ? n + length(cols) : n), CP, x, w, n, reg, mean_log_θ, std_θ)
+end
+
 # BlockJacobianLM (see lmsolver.jl) for the residual f of get_lm_objective_func at log_θ:
 # one ForwardDiff block per phase and one for the wildcard, each computing its weighted
 # contribution to the data rows (as in _weighted_residual!) and its own prior rows (as in f),
@@ -527,17 +543,7 @@ function block_lm(f, pm::PhaseModel, x::AbstractVector, y::AbstractVector, y_unc
 	start = 1
 	for CP in something(pm.CPs, AbstractPhase[])
 		cols = start:start+get_param_nums(CP)-1
-		mean_log_θ, std_cols = log.(mean_θ[cols]), std_θ[cols]
-		g! = (out, θ) -> begin
-			data = view(out, 1:n)
-			data .= 0
-			evaluate_residual!(CP, exp.(θ), x, data)
-			data .*= w
-			reg && @views @. out[n+1:end] = (θ - mean_log_θ) / (sqrt(2) * std_cols)
-			out
-		end
-		# hand-written Jacobian for supported CrystalPhases, ForwardDiff otherwise
-		push!(blocks, phase_block(ADBlock(g!, cols, prior_rows(cols)), CP, x, w, n, reg, mean_log_θ, std_cols))
+		push!(blocks, crystal_phase_block(CP, cols, x, w, n, reg, log.(mean_θ[cols]), std_θ[cols]))
 		start += length(cols)
 	end
 	if !isnothing(pm.wildcard)
